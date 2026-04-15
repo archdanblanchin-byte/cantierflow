@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
