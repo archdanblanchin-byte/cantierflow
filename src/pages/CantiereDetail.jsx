@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -6,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowLeft, MapPin, Clock, Pencil, FileText, Shield, Truck, Zap, Calculator,
+  ArrowLeft, MapPin, Pencil, FileText, Shield, Truck, Calculator, Camera,
 } from "lucide-react";
+import FotoCard from "@/components/foto/FotoCard";
+import ReportPDFButton, { ReportPDFContent } from "@/components/ReportPDF";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -30,6 +33,12 @@ export default function CantiereDetail() {
   const { data: rapportini = [] } = useQuery({
     queryKey: ["rapportini_cantiere", id],
     queryFn: () => base44.entities.Rapportino.filter({ cantiere_id: id }),
+    enabled: !!id,
+  });
+
+  const { data: fotoCantiere = [] } = useQuery({
+    queryKey: ["foto_cantiere", id],
+    queryFn: () => base44.entities.Foto.filter({ cantiere_id: id }),
     enabled: !!id,
   });
 
@@ -88,11 +97,14 @@ export default function CantiereDetail() {
               <p className="text-xs text-muted-foreground">{cantiere.citta}</p>
             </div>
           </div>
-          <Link to={`/cantieri/${id}/modifica`}>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Pencil className="w-3.5 h-3.5" /> Modifica
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <ReportPDFButton cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} />
+            <Link to={`/cantieri/${id}/modifica`}>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Pencil className="w-3.5 h-3.5" /> Modifica
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -163,10 +175,24 @@ export default function CantiereDetail() {
           )}
         </div>
 
-        {/* Foto cantiere */}
+        {/* Foto cantiere (dall'entità Foto) */}
+        {fotoCantiere.length > 0 && (
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+              <Camera className="w-3.5 h-3.5" /> Foto e Colori ({fotoCantiere.length})
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {fotoCantiere.map((f) => (
+                <FotoCard key={f.id} foto={f} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Foto strutturali cantiere */}
         {(cantiere.foto_cantiere || []).length > 0 && (
           <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Foto Cantiere</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Foto Cantiere (strutturali)</h2>
             <div className="flex flex-wrap gap-2">
               {cantiere.foto_cantiere.map((url, i) => (
                 <a key={i} href={url} target="_blank" rel="noopener noreferrer">
@@ -232,6 +258,11 @@ export default function CantiereDetail() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Contenuto PDF nascosto usato per la stampa */}
+      <div className="hidden">
+        <ReportPDFContent cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} />
       </div>
     </div>
   );

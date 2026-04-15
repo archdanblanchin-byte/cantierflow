@@ -4,35 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload, X, Camera } from "lucide-react";
+import { Plus, Camera } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import NewCantiereModal from "./NewCantiereModal";
 import MezziSection from "./MezziSection";
+import FotoRapportino from "./FotoRapportino";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
 export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieriRefresh }) {
   const [showNewCantiere, setShowNewCantiere] = useState(false);
-  const [uploading, setUploading] = useState(false);
-
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-    setUploading(true);
-    const urls = [];
-    for (const file of files) {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      urls.push(file_url);
-    }
-    onChange({ foto: [...(data.foto || []), ...urls] });
-    setUploading(false);
-  };
-
-  const removePhoto = (index) => {
-    const newFoto = [...(data.foto || [])];
-    newFoto.splice(index, 1);
-    onChange({ foto: newFoto });
-  };
 
   return (
     <div className="space-y-6">
@@ -87,27 +68,10 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
         </div>
       </div>
 
-      <div>
-        <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Foto</Label>
-        <div className="mt-1.5 flex flex-wrap gap-3">
-          {(data.foto || []).map((url, i) => (
-            <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group">
-              <img src={url} alt="" className="w-full h-full object-cover" />
-              <button
-                onClick={() => removePhoto(i)}
-                className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-          <label className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center cursor-pointer transition-colors">
-            <Upload className="w-5 h-5 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground mt-1">{uploading ? "..." : "Carica"}</span>
-            <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
-          </label>
-        </div>
-      </div>
+      <FotoRapportino
+        foto={data.foto_annotate || []}
+        onChange={(v) => onChange({ foto_annotate: v })}
+      />
 
       <div>
         <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Note Generali</Label>

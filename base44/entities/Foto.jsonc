@@ -1,0 +1,54 @@
+{
+  "name": "Foto",
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string",
+      "description": "URL della foto"
+    },
+    "url_annotata": {
+      "type": "string",
+      "description": "URL della foto con annotazioni applicate"
+    },
+    "nota": {
+      "type": "string",
+      "description": "Nota/descrizione della foto"
+    },
+    "cantiere_id": {
+      "type": "string",
+      "description": "ID del cantiere"
+    },
+    "cantiere_nome": {
+      "type": "string",
+      "description": "Nome del cantiere"
+    },
+    "rapportino_id": {
+      "type": "string",
+      "description": "ID del rapportino (opzionale)"
+    },
+    "annotazioni": {
+      "type": "array",
+      "description": "Lista annotazioni disegnate",
+      "items": {
+        "type": "object"
+      }
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "foto",
+        "codice_colore"
+      ],
+      "default": "foto",
+      "description": "Tipo di media"
+    },
+    "colore": {
+      "type": "string",
+      "description": "Codice colore (se tipo=codice_colore)"
+    }
+  },
+  "required": [
+    "url",
+    "cantiere_id"
+  ]
+}

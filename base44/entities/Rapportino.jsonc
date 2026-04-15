@@ -21,9 +21,33 @@
     },
     "foto": {
       "type": "array",
-      "description": "Array di URL foto",
+      "description": "Array di URL foto (legacy)",
       "items": {
         "type": "string"
+      }
+    },
+    "foto_annotate": {
+      "type": "array",
+      "description": "Foto con note e annotazioni",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "url_annotata": {
+            "type": "string"
+          },
+          "nota": {
+            "type": "string"
+          },
+          "annotazioni": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
       }
     },
     "note_generali": {
@@ -33,6 +57,24 @@
     "ore_utilizzo_piattaforma": {
       "type": "number",
       "description": "Ore utilizzo piattaforma aerea"
+    },
+    "piattaforma": {
+      "type": "object",
+      "description": "Dati piattaforma (tipo + ore)"
+    },
+    "macchinari": {
+      "type": "array",
+      "description": "Macchinari utilizzati",
+      "items": {
+        "type": "object"
+      }
+    },
+    "attrezzi": {
+      "type": "array",
+      "description": "Attrezzi utilizzati",
+      "items": {
+        "type": "object"
+      }
     },
     "descrizione_noleggio_mezzi": {
       "type": "string"
@@ -48,7 +90,7 @@
     },
     "ore_totali_squadra": {
       "type": "number",
-      "description": "Ore totali della squadra"
+      "description": "Ore squadra"
     },
     "collaboratori": {
       "type": "array",
