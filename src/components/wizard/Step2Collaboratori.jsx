@@ -106,9 +106,10 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList }
         </div>
       </div>
 
-      {/* Ore totali squadra */}
+      {/* Ore squadra */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-        <Label className="text-xs font-medium uppercase tracking-wider text-primary">Ore Totali Squadra *</Label>
+        <Label className="text-xs font-medium uppercase tracking-wider text-primary">Ore Squadra *</Label>
+        <p className="text-[11px] text-primary/70 mt-0.5 mb-1">Ore totali della squadra (non la somma dei singoli)</p>
         <div className="flex items-center gap-3 mt-1">
           <Clock className="w-5 h-5 text-primary flex-shrink-0" />
           <div className="flex-1 max-w-xs">
@@ -121,26 +122,15 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList }
         </div>
       </div>
 
-      {/* Aggiungi collaboratore */}
-      {available.length > 0 && (
-        <div>
-          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Aggiungi collaboratore</Label>
-          <Select onValueChange={addCollaboratore}>
-            <SelectTrigger className="mt-1.5">
-              <SelectValue placeholder="Seleziona collaboratore..." />
-            </SelectTrigger>
-            <SelectContent>
-              {available.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.nome} {c.ruolo ? `— ${c.ruolo}` : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Lista collaboratori + aggiungi in fondo */}
+      {collaboratori.length === 0 && (
+        <div className="rounded-xl border-2 border-dashed border-border p-8 text-center text-muted-foreground">
+          <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
+          <p className="text-sm">Nessun collaboratore aggiunto</p>
+          <p className="text-xs mt-1">Seleziona un collaboratore dal menu qui sotto</p>
         </div>
       )}
 
-      {/* Lista collaboratori */}
       {collaboratori.length > 0 && (
         <div className="space-y-3">
           {collaboratori.map((coll, i) => (
@@ -179,25 +169,36 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList }
         </div>
       )}
 
+      {/* Aggiungi collaboratore — sempre in fondo alla lista */}
+      {available.length > 0 && (
+        <div>
+          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Aggiungi collaboratore</Label>
+          <Select onValueChange={addCollaboratore}>
+            <SelectTrigger className="mt-1.5">
+              <SelectValue placeholder="Seleziona collaboratore..." />
+            </SelectTrigger>
+            <SelectContent>
+              {available.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.nome} {c.ruolo ? `— ${c.ruolo}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Totale ore lavoratori */}
       {collaboratori.length > 0 && (
         <div className="rounded-xl border border-border bg-muted/30 p-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Users className="w-4 h-4" />
-            <span>{collaboratori.length} lavorator{collaboratori.length === 1 ? "e" : "i"} × ore inserite</span>
+            <span>{collaboratori.length} lavorator{collaboratori.length === 1 ? "e" : "i"}</span>
           </div>
           <div className="text-right">
             <span className="text-lg font-bold text-foreground">{totaleOreLavoratori.toFixed(2).replace(".", ",")}h</span>
             <p className="text-[10px] text-muted-foreground">Totale ore lavoratori</p>
           </div>
-        </div>
-      )}
-
-      {collaboratori.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-border p-8 text-center text-muted-foreground">
-          <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-          <p className="text-sm">Nessun collaboratore aggiunto</p>
-          <p className="text-xs mt-1">Seleziona un collaboratore dal menu sopra</p>
         </div>
       )}
     </div>

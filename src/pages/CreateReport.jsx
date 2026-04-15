@@ -81,12 +81,13 @@ export default function CreateReport() {
       return false;
     }
     if (step === 4) {
-      const somma = (formData.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
-      const oreCollab = (formData.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0);
-      const oreRif = oreCollab > 0 ? oreCollab : (formData.ore_totali_squadra || 0);
-      const delta = oreRif - somma;
+      const oreLavoratori = (formData.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0) || (formData.ore_totali_squadra || 0);
+      const oreExtra = formData.has_lavorazioni_extra ? (formData.lavorazioni_extra || []).reduce((s, l) => s + (l.ore || 0), 0) : 0;
+      const oreNormali = (formData.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
+      const delta = oreLavoratori - oreExtra - oreNormali;
       if (Math.abs(delta) >= 0.01) {
-        toast.error(`Le ore non quadrano. Mancano ${delta.toFixed(2)}h da assegnare.`);
+        if (delta > 0) toast.error(`⚠️ Mancano ${delta.toFixed(2)}h da assegnare alle lavorazioni.`);
+        else toast.error(`❌ Hai sforato di ${Math.abs(delta).toFixed(2)}h.`);
         return false;
       }
     }
@@ -110,10 +111,10 @@ export default function CreateReport() {
   };
 
   const canProceedStep6 = (() => {
-    const somma = (formData.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
-    const oreCollab = (formData.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0);
-    const oreRif = oreCollab > 0 ? oreCollab : (formData.ore_totali_squadra || 0);
-    return Math.abs(oreRif - somma) < 0.01;
+    const oreLavoratori = (formData.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0) || (formData.ore_totali_squadra || 0);
+    const oreExtra = formData.has_lavorazioni_extra ? (formData.lavorazioni_extra || []).reduce((s, l) => s + (l.ore || 0), 0) : 0;
+    const oreNormali = (formData.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
+    return Math.abs(oreLavoratori - oreExtra - oreNormali) < 0.01;
   })();
 
   const stepContent = {

@@ -9,9 +9,7 @@ export default function Step3LavorazioniExtra({ data, onChange }) {
   const hasExtra = data.has_lavorazioni_extra || false;
 
   const addExtra = () => {
-    onChange({
-      lavorazioni_extra: [...extras, { descrizione: "", ore: 0 }],
-    });
+    onChange({ lavorazioni_extra: [...extras, { descrizione: "", ore: 0 }] });
   };
 
   const updateExtra = (index, field, value) => {
@@ -24,6 +22,8 @@ export default function Step3LavorazioniExtra({ data, onChange }) {
     onChange({ lavorazioni_extra: extras.filter((_, i) => i !== index) });
   };
 
+  const totaleExtra = extras.reduce((sum, e) => sum + (e.ore || 0), 0);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-2">
@@ -32,7 +32,7 @@ export default function Step3LavorazioniExtra({ data, onChange }) {
         </div>
         <div>
           <h2 className="text-lg font-semibold">Lavorazioni Extra</h2>
-          <p className="text-sm text-muted-foreground">Attività aggiuntive non previste</p>
+          <p className="text-sm text-muted-foreground">Attività aggiuntive non previste dal preventivo</p>
         </div>
       </div>
 
@@ -56,7 +56,7 @@ export default function Step3LavorazioniExtra({ data, onChange }) {
                       value={extra.descrizione || ""}
                       onChange={(e) => updateExtra(i, "descrizione", e.target.value)}
                       className="mt-1"
-                      placeholder="Descrivi la lavorazione..."
+                      placeholder="Descrivi la lavorazione extra..."
                     />
                   </div>
                   <div>
@@ -64,7 +64,7 @@ export default function Step3LavorazioniExtra({ data, onChange }) {
                     <Input
                       type="number"
                       min="0"
-                      step="0.5"
+                      step="0.25"
                       value={extra.ore ?? ""}
                       onChange={(e) => updateExtra(i, "ore", parseFloat(e.target.value) || 0)}
                       className="mt-1"
@@ -77,10 +77,18 @@ export default function Step3LavorazioniExtra({ data, onChange }) {
               </div>
             </div>
           ))}
+
           <Button variant="outline" onClick={addExtra} className="gap-2">
             <Plus className="w-4 h-4" />
             Aggiungi Lavorazione Extra
           </Button>
+
+          {extras.length > 0 && (
+            <div className="rounded-xl border border-border bg-muted/30 p-4 flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Totale ore extra</span>
+              <span className="text-lg font-bold">{totaleExtra.toFixed(2).replace(".", ",")}h</span>
+            </div>
+          )}
         </>
       )}
     </div>

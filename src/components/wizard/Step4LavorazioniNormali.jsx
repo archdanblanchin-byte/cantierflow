@@ -3,19 +3,29 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus, Trash2, Wrench, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Wrench, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazione }) {
   const lavorazioni = data.lavorazioni_normali || [];
 
-  // Ore di riferimento = somma ore dei collaboratori (se presenti), altrimenti ore_totali_squadra
-  const oreCollaboratori = (data.collaboratori || []).reduce((sum, c) => sum + (c.ore_lavorate || 0), 0);
-  const oreRiferimento = oreCollaboratori > 0 ? oreCollaboratori : (data.ore_totali_squadra || 0);
+  // Ore lavoratori: somma ore dei collaboratori (se presenti), altrimenti ore_squadra
+  const oreLavoratori = (data.collaboratori || []).reduce((sum, c) => sum + (c.ore_lavorate || 0), 0)
+    || (data.ore_totali_squadra || 0);
 
-  const sommaOreLavorazioni = lavorazioni.reduce((sum, l) => sum + (l.ore_totali || 0), 0);
-  const delta = oreRiferimento - sommaOreLavorazioni;
+  // Ore extra
+  const oreExtra = data.has_lavorazioni_extra
+    ? (data.lavorazioni_extra || []).reduce((sum, l) => sum + (l.ore || 0), 0)
+    : 0;
+
+  // Ore normali
+  const oreNormali = lavorazioni.reduce((sum, l) => sum + (l.ore_totali || 0), 0);
+
+  // Formula: ore_lavoratori - ore_extra - ore_normali = 0
+  const delta = oreLavoratori - oreExtra - oreNormali;
   const isValid = Math.abs(delta) < 0.01;
+  const isSforato = delta < -0.01;
+  const isMancante = delta > 0.01;
 
   const addLavorazione = () => {
     onChange({
@@ -56,50 +66,54 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
         </div>
         <div>
           <h2 className="text-lg font-semibold">Lavorazioni Normali</h2>
-          <p className="text-sm text-muted-foreground">Attività svolte durante la giornata</p>
+          <p className="text-sm text-muted-foreground">Attività svolte durante la giornata (da preventivo)</p>
         </div>
       </div>
 
-      {/* Indicatore ore — si aggiorna ad ogni lavorazione aggiunta */}
-      <div
-        className={cn(
-          "rounded-xl p-4 border transition-colors",
-          isValid
-            ? "border-green-200 bg-green-50 text-green-800"
-            : "border-amber-200 bg-amber-50 text-amber-800"
-        )}
-      >
-        <div className="flex items-start gap-3">
-          {isValid ? (
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          ) : (
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          )}
-          <div className="flex-1">
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
-              <span>Ore lavoratori: <strong>{oreRiferimento.toFixed(2).replace(".", ",")}h</strong></span>
-              <span>Ore assegnate: <strong>{sommaOreLavorazioni.toFixed(2).replace(".", ",")}h</strong></span>
+      {/* Quadro riepilogativo */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-4 py-3 bg-muted/40 border-b border-border">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quadro ore</span>
+        </div>
+        <div className="divide-y divide-border">
+          <div className="flex justify-between items-center px-4 py-2.5 text-sm">
+            <span className="text-muted-foreground">Ore lavoratori</span>
+            <span className="font-semibold">{oreLavoratori.toFixed(2).replace(".", ",")}h</span>
+          </div>
+          <div className="flex justify-between items-center px-4 py-2.5 text-sm">
+            <span className="text-muted-foreground">− Ore extra</span>
+            <span className="font-semibold text-amber-600">−{oreExtra.toFixed(2).replace(".", ",")}h</span>
+          </div>
+          <div className="flex justify-between items-center px-4 py-2.5 text-sm">
+            <span className="text-muted-foreground">− Ore normali (da preventivo)</span>
+            <span className="font-semibold text-primary">−{oreNormali.toFixed(2).replace(".", ",")}h</span>
+          </div>
+          <div
+            className={cn(
+              "flex justify-between items-center px-4 py-3 text-sm font-bold border-t-2",
+              isValid && "border-green-300 bg-green-50 text-green-800",
+              isMancante && "border-amber-300 bg-amber-50 text-amber-800",
+              isSforato && "border-red-300 bg-red-50 text-red-700",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              {isValid && <CheckCircle2 className="w-4 h-4" />}
+              {isMancante && <AlertTriangle className="w-4 h-4" />}
+              {isSforato && <AlertCircle className="w-4 h-4" />}
+              <span>
+                {isValid && "✅ In pareggio — puoi procedere"}
+                {isMancante && `⚠️ Mancano ${Math.abs(delta).toFixed(2).replace(".", ",")}h da assegnare`}
+                {isSforato && `❌ Sforato di ${Math.abs(delta).toFixed(2).replace(".", ",")}h`}
+              </span>
             </div>
-            {!isValid && (
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-sm">
-                  {delta > 0
-                    ? `Mancano ancora `
-                    : `Eccedenza di `}
-                  <strong className="text-base">
-                    {Math.abs(delta).toFixed(2).replace(".", ",")}h
-                  </strong>
-                  {delta > 0 ? " da assegnare alle lavorazioni" : " rispetto alle ore disponibili"}
-                </span>
-              </div>
-            )}
-            {isValid && (
-              <p className="text-sm mt-1">Tutte le ore sono state assegnate correttamente ✓</p>
-            )}
+            <span className={isValid ? "text-green-700" : isSforato ? "text-red-700" : "text-amber-700"}>
+              = {delta.toFixed(2).replace(".", ",")}h
+            </span>
           </div>
         </div>
       </div>
 
+      {/* Lista lavorazioni */}
       {lavorazioni.map((lav, i) => (
         <div key={i} className="rounded-xl border border-border p-4 bg-card space-y-3">
           <div className="flex items-start justify-between">
@@ -113,10 +127,7 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
                       updateLavorazione(i, { tipo_lavorazione_id: "", tipo_lavorazione_nome: "" });
                     } else {
                       const tipo = tipiLavorazione.find((t) => t.id === val);
-                      updateLavorazione(i, {
-                        tipo_lavorazione_id: val,
-                        tipo_lavorazione_nome: tipo?.nome || "",
-                      });
+                      updateLavorazione(i, { tipo_lavorazione_id: val, tipo_lavorazione_nome: tipo?.nome || "" });
                     }
                   }}
                 >
@@ -191,12 +202,7 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Ore totali</Label>
-                <Input
-                  type="number"
-                  value={lav.ore_totali ?? 0}
-                  disabled
-                  className="mt-1 bg-muted font-semibold"
-                />
+                <Input type="number" value={lav.ore_totali ?? 0} disabled className="mt-1 bg-muted font-semibold" />
               </div>
             </div>
           ) : (
