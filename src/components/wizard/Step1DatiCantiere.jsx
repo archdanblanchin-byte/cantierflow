@@ -161,16 +161,16 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs text-muted-foreground">Noleggio plexi — Descrizione</Label>
+            <Label className="text-xs text-muted-foreground">Noleggio attrezzi — Tipo di attrezzo</Label>
             <Input
               value={data.descrizione_noleggio_plexi || ""}
               onChange={(e) => onChange({ descrizione_noleggio_plexi: e.target.value })}
               className="mt-1"
-              placeholder="Tipo plexi..."
+              placeholder="Tipo attrezzo..."
             />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Ore noleggio plexi</Label>
+            <Label className="text-xs text-muted-foreground">Ore noleggio attrezzi</Label>
             <Input
               type="number"
               min="0"

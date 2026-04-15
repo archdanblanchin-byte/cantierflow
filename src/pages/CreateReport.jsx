@@ -35,7 +35,7 @@ export default function CreateReport() {
     ore_noleggio_mezzi: 0,
     descrizione_noleggio_plexi: "",
     ore_noleggio_plexi: 0,
-    ore_totali_squadra: 0,
+    ore_totali_squadra: 8,
     collaboratori: [],
     has_lavorazioni_extra: false,
     lavorazioni_extra: [],
@@ -82,9 +82,11 @@ export default function CreateReport() {
     }
     if (step === 4) {
       const somma = (formData.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
-      const delta = (formData.ore_totali_squadra || 0) - somma;
+      const oreCollab = (formData.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0);
+      const oreRif = oreCollab > 0 ? oreCollab : (formData.ore_totali_squadra || 0);
+      const delta = oreRif - somma;
       if (Math.abs(delta) >= 0.01) {
-        toast.error(`Le ore non quadrano. Delta: ${delta.toFixed(1)}h`);
+        toast.error(`Le ore non quadrano. Mancano ${delta.toFixed(2)}h da assegnare.`);
         return false;
       }
     }
@@ -109,7 +111,9 @@ export default function CreateReport() {
 
   const canProceedStep6 = (() => {
     const somma = (formData.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
-    return Math.abs((formData.ore_totali_squadra || 0) - somma) < 0.01;
+    const oreCollab = (formData.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0);
+    const oreRif = oreCollab > 0 ? oreCollab : (formData.ore_totali_squadra || 0);
+    return Math.abs(oreRif - somma) < 0.01;
   })();
 
   const stepContent = {

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,10 +8,13 @@ import { cn } from "@/lib/utils";
 
 export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazione }) {
   const lavorazioni = data.lavorazioni_normali || [];
-  const oreTotaliSquadra = data.ore_totali_squadra || 0;
+
+  // Ore di riferimento = somma ore dei collaboratori (se presenti), altrimenti ore_totali_squadra
+  const oreCollaboratori = (data.collaboratori || []).reduce((sum, c) => sum + (c.ore_lavorate || 0), 0);
+  const oreRiferimento = oreCollaboratori > 0 ? oreCollaboratori : (data.ore_totali_squadra || 0);
 
   const sommaOreLavorazioni = lavorazioni.reduce((sum, l) => sum + (l.ore_totali || 0), 0);
-  const delta = oreTotaliSquadra - sommaOreLavorazioni;
+  const delta = oreRiferimento - sommaOreLavorazioni;
   const isValid = Math.abs(delta) < 0.01;
 
   const addLavorazione = () => {
@@ -35,7 +37,6 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
   const updateLavorazione = (index, updates) => {
     const updated = [...lavorazioni];
     updated[index] = { ...updated[index], ...updates };
-    // Auto-calc when "per_persone" mode
     if (updated[index].modalita_calcolo === "per_persone") {
       updated[index].ore_totali =
         (updated[index].numero_persone || 0) * (updated[index].ore_per_persona || 0);
@@ -59,29 +60,43 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
         </div>
       </div>
 
-      {/* Validation indicator */}
+      {/* Indicatore ore — si aggiorna ad ogni lavorazione aggiunta */}
       <div
         className={cn(
-          "rounded-xl p-4 border flex items-center gap-3 transition-colors",
+          "rounded-xl p-4 border transition-colors",
           isValid
             ? "border-green-200 bg-green-50 text-green-800"
-            : "border-destructive/30 bg-destructive/5 text-destructive"
+            : "border-amber-200 bg-amber-50 text-amber-800"
         )}
       >
-        {isValid ? (
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-        ) : (
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-        )}
-        <div className="text-sm">
-          <span className="font-medium">Ore squadra: {oreTotaliSquadra}h</span>
-          <span className="mx-2">|</span>
-          <span>Ore distribuite: {sommaOreLavorazioni.toFixed(1)}h</span>
-          {!isValid && (
-            <span className="ml-2 font-semibold">
-              (Delta: {delta > 0 ? "+" : ""}{delta.toFixed(1)}h)
-            </span>
+        <div className="flex items-start gap-3">
+          {isValid ? (
+            <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          ) : (
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           )}
+          <div className="flex-1">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
+              <span>Ore lavoratori: <strong>{oreRiferimento.toFixed(2).replace(".", ",")}h</strong></span>
+              <span>Ore assegnate: <strong>{sommaOreLavorazioni.toFixed(2).replace(".", ",")}h</strong></span>
+            </div>
+            {!isValid && (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-sm">
+                  {delta > 0
+                    ? `Mancano ancora `
+                    : `Eccedenza di `}
+                  <strong className="text-base">
+                    {Math.abs(delta).toFixed(2).replace(".", ",")}h
+                  </strong>
+                  {delta > 0 ? " da assegnare alle lavorazioni" : " rispetto alle ore disponibili"}
+                </span>
+              </div>
+            )}
+            {isValid && (
+              <p className="text-sm mt-1">Tutte le ore sono state assegnate correttamente ✓</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -168,7 +183,7 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
                 <Input
                   type="number"
                   min="0"
-                  step="0.5"
+                  step="0.25"
                   value={lav.ore_per_persona ?? ""}
                   onChange={(e) => updateLavorazione(i, { ore_per_persona: parseFloat(e.target.value) || 0 })}
                   className="mt-1"
@@ -190,7 +205,7 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
               <Input
                 type="number"
                 min="0"
-                step="0.5"
+                step="0.25"
                 value={lav.ore_totali ?? ""}
                 onChange={(e) => updateLavorazione(i, { ore_totali: parseFloat(e.target.value) || 0 })}
                 className="mt-1"
