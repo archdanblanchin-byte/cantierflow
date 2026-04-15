@@ -102,8 +102,12 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
                   <Select
                     value={lav.tipo_lavorazione_id || ""}
                     onValueChange={(val) => {
-                      const tipo = tipiLavorazione.find((t) => t.id === val);
-                      updateLavorazione(i, { tipo_lavorazione_id: val, tipo_lavorazione_nome: tipo?.nome || "" });
+                      if (val === "__custom_tipo__") {
+                        updateLavorazione(i, { tipo_lavorazione_id: "", tipo_lavorazione_nome: "", descrizione_custom: "" });
+                      } else {
+                        const tipo = tipiLavorazione.find((t) => t.id === val);
+                        updateLavorazione(i, { tipo_lavorazione_id: val, tipo_lavorazione_nome: tipo?.nome || "", descrizione_custom: "" });
+                      }
                     }}
                   >
                     <SelectTrigger className="mt-1">
@@ -113,12 +117,22 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
                       {tipiLavorazione.filter(t => t.categoria === lav.categoria).map((t) => (
                         <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
                       ))}
+                      <SelectItem value="__custom_tipo__">✏️ Non trovata — scrivi manualmente</SelectItem>
                     </SelectContent>
                   </Select>
+                  {/* Campo libero se tipo non trovato nella lista */}
+                  {!lav.tipo_lavorazione_id && lav.categoria !== "__custom__" && (lav.descrizione_custom !== undefined) && (
+                    <Input
+                      value={lav.descrizione_custom || ""}
+                      onChange={(e) => updateLavorazione(i, { descrizione_custom: e.target.value, tipo_lavorazione_nome: e.target.value })}
+                      className="mt-2"
+                      placeholder="Descrivi il tipo di lavorazione..."
+                    />
+                  )}
                 </div>
               )}
 
-              {/* Campo libero per personalizzata */}
+              {/* Campo libero per categoria personalizzata */}
               {lav.categoria === "__custom__" && (
                 <div>
                   <Label className="text-xs text-muted-foreground">Descrizione personalizzata</Label>

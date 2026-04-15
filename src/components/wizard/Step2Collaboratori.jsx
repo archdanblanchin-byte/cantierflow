@@ -135,9 +135,9 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList }
     onChange({ collaboratori: collaboratori.filter((_, i) => i !== index) });
   };
 
-  const available = collaboratoriList.filter(
-    (c) => c.attivo !== false && !collaboratori.some((sel) => sel.collaboratore_id === c.id)
-  );
+  const available = collaboratoriList
+    .filter((c) => c.attivo !== false && !collaboratori.some((sel) => sel.collaboratore_id === c.id))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "it"));
 
   return (
     <div className="space-y-6">
@@ -221,7 +221,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList }
             <SelectContent>
               {available.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
-                  {c.nome} {c.ruolo ? `— ${c.ruolo}` : ""}
+                  {c.nome}
                 </SelectItem>
               ))}
             </SelectContent>

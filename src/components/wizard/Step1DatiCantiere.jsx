@@ -12,7 +12,7 @@ import FotoRapportino from "./FotoRapportino";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
-export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieriRefresh }) {
+export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieriRefresh, showErrors }) {
   const [showNewCantiere, setShowNewCantiere] = useState(false);
 
   return (
@@ -44,7 +44,9 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
       </div>
 
       <div>
-        <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Cantiere *</Label>
+        <Label className={`text-xs font-medium uppercase tracking-wider ${showErrors && !data.cantiere_id ? "text-destructive" : "text-muted-foreground"}`}>
+          Cantiere *
+        </Label>
         <div className="flex gap-2 mt-1.5">
           <Select
             value={data.cantiere_id || ""}
@@ -53,7 +55,7 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
               onChange({ cantiere_id: val, cantiere_nome: c?.nome || "" });
             }}
           >
-            <SelectTrigger className="flex-1">
+            <SelectTrigger className={`flex-1 ${showErrors && !data.cantiere_id ? "border-destructive ring-1 ring-destructive" : ""}`}>
               <SelectValue placeholder="Seleziona cantiere..." />
             </SelectTrigger>
             <SelectContent>
@@ -66,6 +68,9 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
             <Plus className="w-4 h-4" />
           </Button>
         </div>
+        {showErrors && !data.cantiere_id && (
+          <p className="text-xs text-destructive mt-1">⚠️ Devi selezionare un cantiere per continuare</p>
+        )}
       </div>
 
       <FotoRapportino

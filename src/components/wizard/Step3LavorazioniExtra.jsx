@@ -32,14 +32,19 @@ export default function Step3LavorazioniExtra({ data, onChange }) {
         </div>
         <div>
           <h2 className="text-lg font-semibold">Lavorazioni Extra</h2>
-          <p className="text-sm text-muted-foreground">Attività aggiuntive non previste dal preventivo</p>
+          <p className="text-sm text-muted-foreground">Attività aggiuntive non previste dal preventivo (Concordato)</p>
         </div>
       </div>
 
       <div className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card">
         <Switch
           checked={hasExtra}
-          onCheckedChange={(checked) => onChange({ has_lavorazioni_extra: checked })}
+          onCheckedChange={(checked) => {
+            onChange({
+              has_lavorazioni_extra: checked,
+              lavorazioni_extra: checked && extras.length === 0 ? [{ descrizione: "", ore: 0 }] : extras,
+            });
+          }}
         />
         <span className="text-sm font-medium">Ci sono lavorazioni extra?</span>
       </div>

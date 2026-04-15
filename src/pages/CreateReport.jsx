@@ -23,6 +23,7 @@ export default function CreateReport() {
   const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
   const [formData, setFormData] = useState({
     data: new Date().toISOString(),
     user_email: "",
@@ -95,7 +96,11 @@ export default function CreateReport() {
   };
 
   const handleNext = () => {
-    if (!validateStep()) return;
+    if (!validateStep()) {
+      setShowErrors(true);
+      return;
+    }
+    setShowErrors(false);
     setStep((s) => Math.min(s + 1, TOTAL_STEPS));
   };
 
@@ -118,7 +123,7 @@ export default function CreateReport() {
   })();
 
   const stepContent = {
-    1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} />,
+    1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} showErrors={showErrors} />,
     2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} />,
     3: <Step3LavorazioniExtra data={formData} onChange={updateForm} />,
     4: <Step4LavorazioniNormali data={formData} onChange={updateForm} tipiLavorazione={tipiLavorazione} />,
