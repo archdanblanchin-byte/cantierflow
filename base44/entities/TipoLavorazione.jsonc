@@ -6,12 +6,17 @@
       "type": "string",
       "description": "Nome del tipo di lavorazione"
     },
+    "categoria": {
+      "type": "string",
+      "description": "Categoria della lavorazione"
+    },
     "descrizione": {
       "type": "string",
       "description": "Descrizione del tipo di lavorazione"
     }
   },
   "required": [
-    "nome"
+    "nome",
+    "categoria"
   ]
 }

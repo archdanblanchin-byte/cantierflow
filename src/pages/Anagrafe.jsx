@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, Truck, Wrench, Droplets, FileText, UtensilsCrossed, BookOpen, Settings } from "lucide-react";
+import { ArrowLeft, Users, Truck, Wrench, Droplets, FileText, UtensilsCrossed, BookOpen } from "lucide-react";
 import AnagrafePage from "@/components/anagrafe/AnagrafePage";
+import LavorazioniPage from "@/components/anagrafe/LavorazioniPage";
 
 const SEZIONI = [
   { key: "collaboratori", label: "Collaboratori", icon: Users, color: "bg-blue-500", entity: "Collaboratore", fields: [
@@ -72,6 +73,8 @@ export default function Anagrafe() {
               </button>
             ))}
           </div>
+        ) : sezioneAttiva === "lavorazioni" ? (
+          <LavorazioniPage />
         ) : (
           <AnagrafePage sezione={sezione} />
         )}

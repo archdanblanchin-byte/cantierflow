@@ -1,0 +1,156 @@
+export const CATEGORIE_LAVORAZIONE = [
+  {
+    nome: "🔧 Preparazione e organizzazione cantiere",
+    tipi: [
+      "Allestire cantiere",
+      "Organizzare cantiere",
+      "Gestione cantiere",
+      "Sopralluoghi (vari)",
+      "Riunioni / corsi / formazione",
+      "Delimitare area di lavoro",
+      "Messa in sicurezza passaggi",
+      "Dirigere traffico",
+      "Copertura facciata / ponteggi / tende",
+      "Protezione pavimenti e superfici",
+      "Sgombero aree (giardino, locali, ecc.)",
+    ],
+  },
+  {
+    nome: "🚚 Logistica e movimentazione",
+    tipi: [
+      "Carico e scarico materiale",
+      "Carico/scarico furgone",
+      "Trasporto materiale (anche ai piani alti)",
+      "Carico/scarico ponteggi e trabattelli",
+      "Movimentazione attrezzature (ragno, cesta, ecc.)",
+      "Recupero / restituzione attrezzature a noleggio",
+      "Rifornimento materiali",
+    ],
+  },
+  {
+    nome: "🧹 Pulizia e manutenzione",
+    tipi: [
+      "Pulizia cantiere",
+      "Pulizia attrezzi e mezzi",
+      "Pulizia grondaie, terrazzi, vetri, pavimenti",
+      "Idrolavaggi",
+      "Pulizia vegetazione / superfici esterne",
+      "Manutenzione furgoni e magazzino",
+    ],
+  },
+  {
+    nome: "🧱 Demolizioni e rimozioni",
+    tipi: [
+      "Demolizione intonaci",
+      "Demolizione pavimenti e piastrelle",
+      "Demolizione tramezze (laterizio/cartongesso/alluminio)",
+      "Demolizioni cemento armato",
+      "Rimozione battiscopa, colla, cappotto, silicone",
+      "Smontaggio elementi (porte, lampade, zanzariere, ecc.)",
+      "Smaltimento rifiuti e ruderi",
+    ],
+  },
+  {
+    nome: "🏗️ Muratura e costruzioni",
+    tipi: [
+      "Realizzazione tramezzi",
+      "Intonaco (tradizionale, armato, B-mortar, rinzaffo)",
+      "Rasature (semplice, armata, elastica, XLime, ecc.)",
+      "Stuccature (varie tipologie e materiali)",
+      "Caldane e getti in cemento",
+      "Compensazione dislivelli",
+      "Ripristino calcestruzzo e intonaci",
+      "Ricostruzioni (colonne, murature)",
+    ],
+  },
+  {
+    nome: "🧰 Cartongesso",
+    tipi: [
+      "Strutture cartongesso",
+      "Contropareti e controsoffitti",
+      "Velette",
+      "Stuccatura e rasatura cartongesso",
+      "Demolizione e smaltimento cartongesso",
+    ],
+  },
+  {
+    nome: "🏠 Isolamenti e cappotto",
+    tipi: [
+      "Posa cappotto",
+      "Incollaggio pannelli (aerogel, isolanti, lana di vetro/roccia)",
+      "Rasatura armata cappotto",
+      "Ripristino cappotto",
+      "Isolamenti murali e davanzali",
+    ],
+  },
+  {
+    nome: "🌧️ Impermeabilizzazioni",
+    tipi: [
+      "Guaina liquida",
+      "Membrane impermeabilizzanti",
+      "Trattamenti idrorepellenti",
+      "Impermeabilizzazione terrazzi e camini",
+      "Sigillature e siliconature",
+    ],
+  },
+  {
+    nome: "🎨 Pitture e finiture",
+    tipi: [
+      "Pittura (interni/esterni)",
+      "Pitture lavabili, traspiranti, termoisolanti",
+      "Smalti (ferro, legno, radiatori, ecc.)",
+      "Verniciature varie",
+      "Finiture decorative (graffiato, marmorino, resina, microcemento)",
+      "Protettivi e impregnanti",
+    ],
+  },
+  {
+    nome: "🪚 Lavorazioni su legno e metallo",
+    tipi: [
+      "Carteggiature (legno, ferro, muri, ecc.)",
+      "Levigature",
+      "Raschiature vernici",
+      "Trattamenti antiruggine",
+      "Taglio ferri e metalli",
+    ],
+  },
+  {
+    nome: "🪟 Serramenti e dettagli",
+    tipi: [
+      "Montaggio/smontaggio porte e finestre",
+      "Siliconatura serramenti",
+      "Montaggio coprifili, battiscopa, soglie",
+      "Installazione cassaforte, cassette posta, numeri civici",
+    ],
+  },
+  {
+    nome: "🏢 Tetti e lattoneria",
+    tipi: [
+      "Grondaie e pluviali",
+      "Converse e lamiere",
+      "Scossaline",
+      "Sistemazione tegole",
+      "Sgocciolatoi",
+    ],
+  },
+  {
+    nome: "🧩 Finiture e dettagli estetici",
+    tipi: [
+      "Riquadri finestre",
+      "Spallette",
+      "Gocciolatoi e marcapiani",
+      "Ritocchi finali",
+      "Patinature",
+    ],
+  },
+  {
+    nome: "⚙️ Attività tecniche varie",
+    tipi: [
+      "Tracciamenti",
+      "Misurazioni (calibro, livelli)",
+      "Prove e campioni",
+      "Verifiche e controlli",
+      "Rilievi foto/video",
+    ],
+  },
+];
