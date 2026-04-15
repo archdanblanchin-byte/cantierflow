@@ -8,11 +8,14 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Home from './pages/Home';
 import CreateReport from './pages/CreateReport';
 import ReportDetail from './pages/ReportDetail';
+import Cantieri from './pages/Cantieri';
+import CantiereForm from './pages/CantiereForm';
+import CantiereDetail from './pages/CantiereDetail';
+import Placeholder from './pages/Placeholder';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
-  // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -21,31 +24,47 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
       navigateToLogin();
       return null;
     }
   }
 
-  // Render the main app
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+
+      {/* Rapportini */}
+      <Route path="/rapportini" element={<Home showRapportini />} />
       <Route path="/nuovo" element={<CreateReport />} />
       <Route path="/report/:id" element={<ReportDetail />} />
+
+      {/* Cantieri */}
+      <Route path="/cantieri" element={<Cantieri />} />
+      <Route path="/cantieri/nuovo" element={<CantiereForm />} />
+      <Route path="/cantieri/:id" element={<CantiereDetail />} />
+      <Route path="/cantieri/:id/modifica" element={<CantiereForm />} />
+
+      {/* Placeholder sezioni */}
+      <Route path="/foto" element={<Placeholder title="Foto" />} />
+      <Route path="/programma" element={<Placeholder title="Programma" />} />
+      <Route path="/cronoprogramma" element={<Placeholder title="Cronoprogramma" />} />
+      <Route path="/furgoni" element={<Placeholder title="Furgoni" />} />
+      <Route path="/documenti" element={<Placeholder title="Documenti" />} />
+      <Route path="/idropulitrice" element={<Placeholder title="Idropulitrice" />} />
+      <Route path="/ristorante" element={<Placeholder title="Ristorante" />} />
+      <Route path="/permessi" element={<Placeholder title="Permessi" />} />
+      <Route path="/corsi" element={<Placeholder title="Corsi" />} />
+
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 };
 
-
 function App() {
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>

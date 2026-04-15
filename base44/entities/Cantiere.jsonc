@@ -2,13 +2,21 @@
   "name": "Cantiere",
   "type": "object",
   "properties": {
+    "codice": {
+      "type": "string",
+      "description": "ID/Codice cantiere generato automaticamente"
+    },
     "nome": {
       "type": "string",
       "description": "Nome del cantiere"
     },
+    "citta": {
+      "type": "string",
+      "description": "Citt\u00e0 del cantiere"
+    },
     "indirizzo": {
       "type": "string",
-      "description": "Indirizzo del cantiere"
+      "description": "Indirizzo completo del cantiere"
     },
     "cliente": {
       "type": "string",
@@ -18,6 +26,49 @@
       "type": "boolean",
       "default": true,
       "description": "Se il cantiere \u00e8 attivo"
+    },
+    "ore_stimate": {
+      "type": "number",
+      "description": "Ore stimate per il cantiere"
+    },
+    "foto_cantiere": {
+      "type": "array",
+      "description": "Foto del cantiere",
+      "items": {
+        "type": "string"
+      }
+    },
+    "foto_estintore": {
+      "type": "array",
+      "description": "Foto estintore",
+      "items": {
+        "type": "string"
+      }
+    },
+    "foto_pronto_soccorso": {
+      "type": "array",
+      "description": "Foto cassetta pronto soccorso",
+      "items": {
+        "type": "string"
+      }
+    },
+    "documenti": {
+      "type": "array",
+      "description": "Documenti allegati",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [
