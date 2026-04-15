@@ -1,0 +1,17 @@
+{
+  "name": "MaterialeBase",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome del materiale"
+    },
+    "unita_misura": {
+      "type": "string",
+      "description": "Unit\u00e0 di misura predefinita"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

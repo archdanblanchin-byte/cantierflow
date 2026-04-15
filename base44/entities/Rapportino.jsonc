@@ -1,0 +1,159 @@
+{
+  "name": "Rapportino",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data del rapportino"
+    },
+    "cantiere_id": {
+      "type": "string",
+      "description": "ID del cantiere"
+    },
+    "cantiere_nome": {
+      "type": "string",
+      "description": "Nome del cantiere (denormalizzato)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email utente compilatore"
+    },
+    "foto": {
+      "type": "array",
+      "description": "Array di URL foto",
+      "items": {
+        "type": "string"
+      }
+    },
+    "note_generali": {
+      "type": "string",
+      "description": "Note generali"
+    },
+    "ore_utilizzo_piattaforma": {
+      "type": "number",
+      "description": "Ore utilizzo piattaforma aerea"
+    },
+    "descrizione_noleggio_mezzi": {
+      "type": "string"
+    },
+    "ore_noleggio_mezzi": {
+      "type": "number"
+    },
+    "descrizione_noleggio_plexi": {
+      "type": "string"
+    },
+    "ore_noleggio_plexi": {
+      "type": "number"
+    },
+    "ore_totali_squadra": {
+      "type": "number",
+      "description": "Ore totali della squadra"
+    },
+    "collaboratori": {
+      "type": "array",
+      "description": "Lista collaboratori con ore",
+      "items": {
+        "type": "object",
+        "properties": {
+          "collaboratore_id": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "ore_lavorate": {
+            "type": "number"
+          },
+          "note_imprevisti": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "has_lavorazioni_extra": {
+      "type": "boolean",
+      "default": false
+    },
+    "lavorazioni_extra": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "descrizione": {
+            "type": "string"
+          },
+          "ore": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "lavorazioni_normali": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tipo_lavorazione_id": {
+            "type": "string"
+          },
+          "tipo_lavorazione_nome": {
+            "type": "string"
+          },
+          "descrizione_custom": {
+            "type": "string"
+          },
+          "ore_totali": {
+            "type": "number"
+          },
+          "modalita_calcolo": {
+            "type": "string"
+          },
+          "numero_persone": {
+            "type": "number"
+          },
+          "ore_per_persona": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "materiali": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "materiale_id": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "descrizione_custom": {
+            "type": "string"
+          },
+          "unita_misura": {
+            "type": "string"
+          },
+          "quantita": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "stato": {
+      "type": "string",
+      "enum": [
+        "bozza",
+        "inviato"
+      ],
+      "default": "bozza",
+      "description": "Stato del rapportino"
+    }
+  },
+  "required": [
+    "data",
+    "cantiere_id",
+    "ore_totali_squadra"
+  ]
+}

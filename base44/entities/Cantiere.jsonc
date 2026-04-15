@@ -1,0 +1,26 @@
+{
+  "name": "Cantiere",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome del cantiere"
+    },
+    "indirizzo": {
+      "type": "string",
+      "description": "Indirizzo del cantiere"
+    },
+    "cliente": {
+      "type": "string",
+      "description": "Nome del cliente"
+    },
+    "attivo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se il cantiere \u00e8 attivo"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

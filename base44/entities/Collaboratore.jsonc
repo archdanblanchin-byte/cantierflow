@@ -1,0 +1,21 @@
+{
+  "name": "Collaboratore",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome completo del collaboratore"
+    },
+    "ruolo": {
+      "type": "string",
+      "description": "Ruolo del collaboratore"
+    },
+    "attivo": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

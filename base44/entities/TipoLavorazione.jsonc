@@ -1,0 +1,17 @@
+{
+  "name": "TipoLavorazione",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome del tipo di lavorazione"
+    },
+    "descrizione": {
+      "type": "string",
+      "description": "Descrizione del tipo di lavorazione"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}
