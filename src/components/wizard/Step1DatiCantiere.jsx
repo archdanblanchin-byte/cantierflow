@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload, X, Camera, Clock, Truck } from "lucide-react";
+import { Plus, Upload, X, Camera } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import NewCantiereModal from "./NewCantiereModal";
+import MezziSection from "./MezziSection";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -118,71 +119,7 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
         />
       </div>
 
-      {/* Mezzi / Noleggi */}
-      <div className="rounded-xl border border-border p-4 space-y-4 bg-muted/30">
-        <div className="flex items-center gap-2">
-          <Truck className="w-4 h-4 text-primary" />
-          <h3 className="font-semibold text-sm">Mezzi / Noleggi</h3>
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground">Piattaforma aerea — Ore utilizzo</Label>
-          <Input
-            type="number"
-            min="0"
-            step="0.5"
-            value={data.ore_utilizzo_piattaforma ?? ""}
-            onChange={(e) => onChange({ ore_utilizzo_piattaforma: parseFloat(e.target.value) || 0 })}
-            className="mt-1 w-40"
-            placeholder="0"
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label className="text-xs text-muted-foreground">Noleggio mezzi — Descrizione</Label>
-            <Input
-              value={data.descrizione_noleggio_mezzi || ""}
-              onChange={(e) => onChange({ descrizione_noleggio_mezzi: e.target.value })}
-              className="mt-1"
-              placeholder="Tipo mezzo..."
-            />
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Ore noleggio mezzi</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.5"
-              value={data.ore_noleggio_mezzi ?? ""}
-              onChange={(e) => onChange({ ore_noleggio_mezzi: parseFloat(e.target.value) || 0 })}
-              className="mt-1"
-              placeholder="0"
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label className="text-xs text-muted-foreground">Noleggio attrezzi — Tipo di attrezzo</Label>
-            <Input
-              value={data.descrizione_noleggio_plexi || ""}
-              onChange={(e) => onChange({ descrizione_noleggio_plexi: e.target.value })}
-              className="mt-1"
-              placeholder="Tipo attrezzo..."
-            />
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Ore noleggio attrezzi</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.5"
-              value={data.ore_noleggio_plexi ?? ""}
-              onChange={(e) => onChange({ ore_noleggio_plexi: parseFloat(e.target.value) || 0 })}
-              className="mt-1"
-              placeholder="0"
-            />
-          </div>
-        </div>
-      </div>
+      <MezziSection data={data} onChange={onChange} />
 
       <NewCantiereModal
         open={showNewCantiere}

@@ -70,50 +70,7 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
         </div>
       </div>
 
-      {/* Quadro riepilogativo */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="px-4 py-3 bg-muted/40 border-b border-border">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quadro ore</span>
-        </div>
-        <div className="divide-y divide-border">
-          <div className="flex justify-between items-center px-4 py-2.5 text-sm">
-            <span className="text-muted-foreground">Ore lavoratori</span>
-            <span className="font-semibold">{oreLavoratori.toFixed(2).replace(".", ",")}h</span>
-          </div>
-          <div className="flex justify-between items-center px-4 py-2.5 text-sm">
-            <span className="text-muted-foreground">− Ore extra</span>
-            <span className="font-semibold text-amber-600">−{oreExtra.toFixed(2).replace(".", ",")}h</span>
-          </div>
-          <div className="flex justify-between items-center px-4 py-2.5 text-sm">
-            <span className="text-muted-foreground">− Ore normali (da preventivo)</span>
-            <span className="font-semibold text-primary">−{oreNormali.toFixed(2).replace(".", ",")}h</span>
-          </div>
-          <div
-            className={cn(
-              "flex justify-between items-center px-4 py-3 text-sm font-bold border-t-2",
-              isValid && "border-green-300 bg-green-50 text-green-800",
-              isMancante && "border-amber-300 bg-amber-50 text-amber-800",
-              isSforato && "border-red-300 bg-red-50 text-red-700",
-            )}
-          >
-            <div className="flex items-center gap-2">
-              {isValid && <CheckCircle2 className="w-4 h-4" />}
-              {isMancante && <AlertTriangle className="w-4 h-4" />}
-              {isSforato && <AlertCircle className="w-4 h-4" />}
-              <span>
-                {isValid && "✅ In pareggio — puoi procedere"}
-                {isMancante && `⚠️ Mancano ${Math.abs(delta).toFixed(2).replace(".", ",")}h da assegnare`}
-                {isSforato && `❌ Sforato di ${Math.abs(delta).toFixed(2).replace(".", ",")}h`}
-              </span>
-            </div>
-            <span className={isValid ? "text-green-700" : isSforato ? "text-red-700" : "text-amber-700"}>
-              = {delta.toFixed(2).replace(".", ",")}h
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Lista lavorazioni */}
+      {/* Lista lavorazioni + aggiungi + quadro in fondo */}
       {lavorazioni.map((lav, i) => (
         <div key={i} className="rounded-xl border border-border p-4 bg-card space-y-3">
           <div className="flex items-start justify-between">
@@ -225,6 +182,49 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
         <Plus className="w-4 h-4" />
         Aggiungi Lavorazione
       </Button>
+
+      {/* Quadro riepilogativo — sempre in fondo */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-4 py-3 bg-muted/40 border-b border-border">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quadro ore</span>
+        </div>
+        <div className="divide-y divide-border">
+          <div className="flex justify-between items-center px-4 py-2.5 text-sm">
+            <span className="text-muted-foreground">Ore lavoratori</span>
+            <span className="font-semibold">{oreLavoratori.toFixed(2).replace(".", ",")}h</span>
+          </div>
+          <div className="flex justify-between items-center px-4 py-2.5 text-sm">
+            <span className="text-muted-foreground">− Ore extra</span>
+            <span className="font-semibold text-amber-600">−{oreExtra.toFixed(2).replace(".", ",")}h</span>
+          </div>
+          <div className="flex justify-between items-center px-4 py-2.5 text-sm">
+            <span className="text-muted-foreground">− Ore normali (da preventivo)</span>
+            <span className="font-semibold text-primary">−{oreNormali.toFixed(2).replace(".", ",")}h</span>
+          </div>
+          <div
+            className={cn(
+              "flex justify-between items-center px-4 py-3 text-sm font-bold border-t-2",
+              isValid && "border-green-300 bg-green-50 text-green-800",
+              isMancante && "border-amber-300 bg-amber-50 text-amber-800",
+              isSforato && "border-red-300 bg-red-50 text-red-700",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              {isValid && <CheckCircle2 className="w-4 h-4" />}
+              {isMancante && <AlertTriangle className="w-4 h-4" />}
+              {isSforato && <AlertCircle className="w-4 h-4" />}
+              <span>
+                {isValid && "✅ In pareggio — puoi procedere"}
+                {isMancante && `⚠️ Mancano ${Math.abs(delta).toFixed(2).replace(".", ",")}h da assegnare`}
+                {isSforato && `❌ Sforato di ${Math.abs(delta).toFixed(2).replace(".", ",")}h`}
+              </span>
+            </div>
+            <span className={isValid ? "text-green-700" : isSforato ? "text-red-700" : "text-amber-700"}>
+              = {delta.toFixed(2).replace(".", ",")}h
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

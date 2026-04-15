@@ -1,8 +1,53 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, Trash2, Users, Clock } from "lucide-react";
+
+const NOTE_OPTIONS = [
+  "Uscita anticipata dal cantiere concordata",
+  "Arrivo in cantiere posticipato concordato",
+  "Andato direttamente in cantiere senza passare dal magazzino",
+  "Andato in cantiere con il proprio veicolo dopo essere passato dal magazzino",
+  "Altro",
+];
+
+function NoteImprevisti({ value, onChange }) {
+  const isAltro = value && !NOTE_OPTIONS.slice(0, -1).includes(value);
+  const selectValue = isAltro ? "Altro" : (value || "");
+
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-muted-foreground">Note / Imprevisti</Label>
+      <Select
+        value={selectValue}
+        onValueChange={(v) => {
+          if (v === "Altro") onChange("Altro");
+          else onChange(v);
+        }}
+      >
+        <SelectTrigger className="mt-1 h-8 text-xs">
+          <SelectValue placeholder="Seleziona..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={null}>— Nessuna nota —</SelectItem>
+          {NOTE_OPTIONS.map((o) => (
+            <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {(selectValue === "Altro" || isAltro) && (
+        <Textarea
+          value={isAltro ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="mt-1 min-h-[60px] text-xs"
+          placeholder="Descrivi l'imprevisto..."
+        />
+      )}
+    </div>
+  );
+}
 
 function OreInput({ value, onChange }) {
   const step = 0.25;
@@ -109,7 +154,6 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList }
       {/* Ore squadra */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
         <Label className="text-xs font-medium uppercase tracking-wider text-primary">Ore Squadra *</Label>
-        <p className="text-[11px] text-primary/70 mt-0.5 mb-1">Ore totali della squadra (non la somma dei singoli)</p>
         <div className="flex items-center gap-3 mt-1">
           <Clock className="w-5 h-5 text-primary flex-shrink-0" />
           <div className="flex-1 max-w-xs">
@@ -155,12 +199,9 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList }
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Note / Imprevisti</Label>
-                  <Input
+                  <NoteImprevisti
                     value={coll.note_imprevisti || ""}
-                    onChange={(e) => updateCollaboratore(i, "note_imprevisti", e.target.value)}
-                    className="mt-1"
-                    placeholder="Opzionale..."
+                    onChange={(v) => updateCollaboratore(i, "note_imprevisti", v)}
                   />
                 </div>
               </div>
