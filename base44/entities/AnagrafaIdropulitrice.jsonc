@@ -1,0 +1,21 @@
+{
+  "name": "AnagrafaIdropulitrice",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome o modello dell'idropulitrice"
+    },
+    "note": {
+      "type": "string",
+      "description": "Note"
+    },
+    "attivo": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

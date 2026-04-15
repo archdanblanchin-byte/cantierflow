@@ -13,6 +13,7 @@ import CantiereForm from './pages/CantiereForm';
 import CantiereDetail from './pages/CantiereDetail';
 import Placeholder from './pages/Placeholder';
 import FotoPage from './pages/Foto';
+import Anagrafe from './pages/Anagrafe';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -51,6 +52,7 @@ const AuthenticatedApp = () => {
 
       {/* Placeholder sezioni */}
       <Route path="/foto" element={<FotoPage />} />
+      <Route path="/anagrafe" element={<Anagrafe />} />
       <Route path="/programma" element={<Placeholder title="Programma" />} />
       <Route path="/cronoprogramma" element={<Placeholder title="Cronoprogramma" />} />
       <Route path="/furgoni" element={<Placeholder title="Furgoni" />} />

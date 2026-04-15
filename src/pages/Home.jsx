@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, FileText, ArrowLeft, HardHat,
   ClipboardList, Building2, Camera, CalendarDays, BarChart2,
-  Truck, Droplets, UtensilsCrossed, ShieldCheck, GraduationCap
+  Truck, Droplets, UtensilsCrossed, ShieldCheck, GraduationCap, BookUser
 } from "lucide-react";
 import ReportCard from "@/components/home/ReportCard";
 
@@ -21,6 +21,7 @@ const MENU_ITEMS = [
   { label: "Ristorante", icon: UtensilsCrossed, path: "/ristorante", color: "bg-rose-500" },
   { label: "Permessi", icon: ShieldCheck, path: "/permessi", color: "bg-teal-500" },
   { label: "Corsi", icon: GraduationCap, path: "/corsi", color: "bg-violet-500" },
+  { label: "Anagrafe", icon: BookUser, path: "/anagrafe", color: "bg-slate-600" },
 ];
 
 function MenuGrid() {

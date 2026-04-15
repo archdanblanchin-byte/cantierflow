@@ -1,0 +1,21 @@
+{
+  "name": "Furgone",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome o targa del furgone"
+    },
+    "note": {
+      "type": "string",
+      "description": "Note"
+    },
+    "attivo": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

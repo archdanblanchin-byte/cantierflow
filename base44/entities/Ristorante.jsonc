@@ -1,0 +1,25 @@
+{
+  "name": "Ristorante",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome del ristorante"
+    },
+    "indirizzo": {
+      "type": "string",
+      "description": "Indirizzo"
+    },
+    "note": {
+      "type": "string",
+      "description": "Note"
+    },
+    "attivo": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

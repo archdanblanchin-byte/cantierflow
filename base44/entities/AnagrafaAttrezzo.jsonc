@@ -1,0 +1,21 @@
+{
+  "name": "AnagrafaAttrezzo",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome dell'attrezzo"
+    },
+    "note": {
+      "type": "string",
+      "description": "Note"
+    },
+    "attivo": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

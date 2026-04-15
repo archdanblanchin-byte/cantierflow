@@ -1,34 +1,12 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Trash2, Truck, Wrench, Hammer, ChevronDown, ChevronUp } from "lucide-react";
-
-const IDROPULITRICI_OPTIONS = [
-  "Idropulitrice piccola (proprietà)",
-  "Idropulitrice grande (proprietà)",
-  "Idropulitrice a noleggio",
-  "Altro",
-];
-
-const ATTREZZI_OPTIONS = [
-  "Trapano",
-  "Tassellatore",
-  "Avvitatore",
-  "Smerigliatrice angolare",
-  "Levigatrice",
-  "Sega circolare",
-  "Martello demolitore",
-  "Compressore",
-  "Aspiratore industriale",
-  "Intonacatrice",
-  "Betoniera",
-  "Scala",
-  "Ponteggio mobile",
-  "Altro",
-];
 
 function PiattaformeSection({ data, onChange }) {
   const piattaforma = data.piattaforma || { tipo: "", ore: 0 };
@@ -73,8 +51,14 @@ function PiattaformeSection({ data, onChange }) {
 
 function IdropulitriciSection({ data, onChange }) {
   const macchinari = data.macchinari || [];
+  const { data: anagrafe = [] } = useQuery({
+    queryKey: ["anagrafe", "AnagrafaIdropulitrice"],
+    queryFn: () => base44.entities.AnagrafaIdropulitrice.list(),
+  });
 
-  const add = () => onChange({ macchinari: [...macchinari, { tipo: "", ore: 0, proprieta: "proprieta" }] });
+  const options = [...anagrafe.map((a) => a.nome), "Altro"];
+
+  const add = () => onChange({ macchinari: [...macchinari, { tipo: "", ore: 0 }] });
   const remove = (i) => onChange({ macchinari: macchinari.filter((_, idx) => idx !== i) });
   const update = (i, field, val) => {
     const updated = [...macchinari];
@@ -89,7 +73,7 @@ function IdropulitriciSection({ data, onChange }) {
         <span className="text-sm font-semibold">Idropulitrici</span>
       </div>
       {macchinari.map((m, i) => (
-        <div key={i} className="rounded-lg border border-border p-3 bg-card space-y-2">
+        <div key={i} className="rounded-lg border border-border p-3 bg-card">
           <div className="flex items-start gap-2">
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
@@ -99,7 +83,7 @@ function IdropulitriciSection({ data, onChange }) {
                     <SelectValue placeholder="Seleziona..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {IDROPULITRICI_OPTIONS.map((opt) => (
+                    {options.map((opt) => (
                       <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                     ))}
                   </SelectContent>
@@ -130,12 +114,10 @@ function IdropulitriciSection({ data, onChange }) {
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
           </div>
-
         </div>
       ))}
       <Button variant="outline" size="sm" onClick={add} className="gap-1.5 text-xs">
-        <Plus className="w-3.5 h-3.5" />
-        Aggiungi idropulitrice
+        <Plus className="w-3.5 h-3.5" /> Aggiungi idropulitrice
       </Button>
     </div>
   );
@@ -143,8 +125,14 @@ function IdropulitriciSection({ data, onChange }) {
 
 function AttrezziSection({ data, onChange }) {
   const attrezzi = data.attrezzi || [];
+  const { data: anagrafe = [] } = useQuery({
+    queryKey: ["anagrafe", "AnagrafaAttrezzo"],
+    queryFn: () => base44.entities.AnagrafaAttrezzo.list(),
+  });
 
-  const add = () => onChange({ attrezzi: [...attrezzi, { tipo: "", ore: 0, proprieta: "proprieta" }] });
+  const options = [...anagrafe.map((a) => a.nome), "Altro"];
+
+  const add = () => onChange({ attrezzi: [...attrezzi, { tipo: "", ore: 0 }] });
   const remove = (i) => onChange({ attrezzi: attrezzi.filter((_, idx) => idx !== i) });
   const update = (i, field, val) => {
     const updated = [...attrezzi];
@@ -159,7 +147,7 @@ function AttrezziSection({ data, onChange }) {
         <span className="text-sm font-semibold">Attrezzi</span>
       </div>
       {attrezzi.map((a, i) => (
-        <div key={i} className="rounded-lg border border-border p-3 bg-card space-y-2">
+        <div key={i} className="rounded-lg border border-border p-3 bg-card">
           <div className="flex items-start gap-2">
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
@@ -169,7 +157,7 @@ function AttrezziSection({ data, onChange }) {
                     <SelectValue placeholder="Seleziona..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {ATTREZZI_OPTIONS.map((opt) => (
+                    {options.map((opt) => (
                       <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                     ))}
                   </SelectContent>
@@ -200,12 +188,10 @@ function AttrezziSection({ data, onChange }) {
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
           </div>
-
         </div>
       ))}
       <Button variant="outline" size="sm" onClick={add} className="gap-1.5 text-xs">
-        <Plus className="w-3.5 h-3.5" />
-        Aggiungi attrezzo
+        <Plus className="w-3.5 h-3.5" /> Aggiungi attrezzo
       </Button>
     </div>
   );
