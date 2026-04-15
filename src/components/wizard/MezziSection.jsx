@@ -3,7 +3,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Trash2, Truck, Wrench, Hammer, ChevronDown, ChevronUp } from "lucide-react";
 
 const IDROPULITRICI_OPTIONS = [
@@ -130,20 +129,7 @@ function IdropulitriciSection({ data, onChange }) {
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
           </div>
-          <RadioGroup
-            value={m.proprieta || "proprieta"}
-            onValueChange={(v) => update(i, "proprieta", v)}
-            className="flex gap-4"
-          >
-            <div className="flex items-center gap-1.5">
-              <RadioGroupItem value="proprieta" id={`mac-prop-${i}`} />
-              <Label htmlFor={`mac-prop-${i}`} className="text-xs cursor-pointer">Di proprietà</Label>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <RadioGroupItem value="noleggio" id={`mac-nol-${i}`} />
-              <Label htmlFor={`mac-nol-${i}`} className="text-xs cursor-pointer">Noleggiato</Label>
-            </div>
-          </RadioGroup>
+
         </div>
       ))}
       <Button variant="outline" size="sm" onClick={add} className="gap-1.5 text-xs">
@@ -213,20 +199,7 @@ function AttrezziSection({ data, onChange }) {
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
           </div>
-          <RadioGroup
-            value={a.proprieta || "proprieta"}
-            onValueChange={(v) => update(i, "proprieta", v)}
-            className="flex gap-4"
-          >
-            <div className="flex items-center gap-1.5">
-              <RadioGroupItem value="proprieta" id={`att-prop-${i}`} />
-              <Label htmlFor={`att-prop-${i}`} className="text-xs cursor-pointer">Di proprietà</Label>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <RadioGroupItem value="noleggio" id={`att-nol-${i}`} />
-              <Label htmlFor={`att-nol-${i}`} className="text-xs cursor-pointer">Noleggiato</Label>
-            </div>
-          </RadioGroup>
+
         </div>
       ))}
       <Button variant="outline" size="sm" onClick={add} className="gap-1.5 text-xs">

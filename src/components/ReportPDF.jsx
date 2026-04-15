@@ -1,14 +1,19 @@
-import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
-function Section({ title, children }) {
+function fmt(n) {
+  return `${(n || 0).toFixed(1)}h`;
+}
+
+function DaySection({ title, children }) {
   return (
     <div className="mb-6">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-primary border-b border-primary/20 pb-1 mb-3">{title}</h3>
+      <h3 style={{ fontSize: 13, fontWeight: 700, color: "#2563eb", borderBottom: "1px solid #bfdbfe", paddingBottom: 4, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>
+        {title}
+      </h3>
       {children}
     </div>
   );
@@ -17,142 +22,76 @@ function Section({ title, children }) {
 function Row({ label, value }) {
   if (!value && value !== 0) return null;
   return (
-    <div className="flex justify-between py-1 border-b border-gray-100 text-sm">
-      <span className="text-gray-500">{label}</span>
-      <span className="font-medium text-right">{value}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f3f4f6", padding: "4px 0", fontSize: 13 }}>
+      <span style={{ color: "#6b7280" }}>{label}</span>
+      <span style={{ fontWeight: 500 }}>{value}</span>
     </div>
   );
 }
 
-function fmt(n) {
-  return `${(n || 0).toFixed(1)}h`;
-}
-
 export function ReportPDFContent({ cantiere, rapportini = [], foto = [] }) {
-  // ---- Totali aggregati ----
+  const sortedRapportini = [...rapportini].sort((a, b) => new Date(a.data) - new Date(b.data));
+
+  // Totali aggregati
   const totOreSquadra = rapportini.reduce((s, r) => {
     const c = (r.collaboratori || []).reduce((a, c) => a + (c.ore_lavorate || 0), 0);
     return s + (c || r.ore_totali_squadra || 0);
   }, 0);
-
   const totOreExtra = rapportini.reduce((s, r) => {
     if (!r.has_lavorazioni_extra) return s;
     return s + (r.lavorazioni_extra || []).reduce((a, l) => a + (l.ore || 0), 0);
   }, 0);
-
   const totOreNormali = rapportini.reduce((s, r) =>
     s + (r.lavorazioni_normali || []).reduce((a, l) => a + (l.ore_totali || 0), 0), 0);
-
   const totPiattaforma = rapportini.reduce((s, r) => s + (r.piattaforma?.ore || r.ore_utilizzo_piattaforma || 0), 0);
   const totMezzi = rapportini.reduce((s, r) => s + (r.ore_noleggio_mezzi || 0), 0);
-  const totAttrezzi = rapportini.reduce((s, r) => s + (r.ore_noleggio_plexi || 0), 0);
 
-  // Aggregati lavorazioni normali
-  const lavorazioniAgg = {};
-  rapportini.forEach((r) => {
-    (r.lavorazioni_normali || []).forEach((l) => {
-      const key = l.tipo_lavorazione_nome || l.descrizione_custom || "—";
-      lavorazioniAgg[key] = (lavorazioniAgg[key] || 0) + (l.ore_totali || 0);
-    });
-  });
-
-  // Aggregati lavorazioni extra
-  const extraAgg = {};
-  rapportini.forEach((r) => {
-    if (!r.has_lavorazioni_extra) return;
-    (r.lavorazioni_extra || []).forEach((l) => {
-      const key = l.descrizione || "—";
-      extraAgg[key] = (extraAgg[key] || 0) + (l.ore || 0);
-    });
-  });
-
-  // Aggregati collaboratori
-  const collabAgg = {};
-  rapportini.forEach((r) => {
-    (r.collaboratori || []).forEach((c) => {
-      if (!collabAgg[c.nome]) collabAgg[c.nome] = 0;
-      collabAgg[c.nome] += c.ore_lavorate || 0;
-    });
-  });
-
-  // Aggregati materiali
-  const materialiAgg = {};
-  rapportini.forEach((r) => {
-    (r.materiali || []).forEach((m) => {
-      const key = m.nome || m.descrizione_custom || "—";
-      if (!materialiAgg[key]) materialiAgg[key] = { qta: 0, um: m.unita_misura };
-      materialiAgg[key].qta += m.quantita || 0;
-    });
-  });
-
-  // Sort rapportini per data
-  const sortedRapportini = [...rapportini].sort((a, b) => new Date(a.data) - new Date(b.data));
+  // Prima foto cantiere (facciata)
+  const fotoFacciata = foto.find(f => f.tipo !== "codice_colore") || null;
 
   return (
-    <div id="pdf-content" className="bg-white p-8 max-w-3xl mx-auto font-sans text-gray-800">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8 pb-6 border-b-2 border-blue-600">
+    <div id="pdf-content" style={{ background: "white", padding: 32, maxWidth: 720, margin: "0 auto", fontFamily: "sans-serif", color: "#1f2937" }}>
+
+      {/* HEADER */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "3px solid #2563eb", paddingBottom: 20, marginBottom: 24 }}>
         <div>
-          <h1 className="text-2xl font-bold text-blue-600">{cantiere?.nome}</h1>
-          {cantiere?.indirizzo && <p className="text-gray-500 text-sm mt-1">{cantiere.indirizzo}{cantiere.citta ? `, ${cantiere.citta}` : ""}</p>}
-          {cantiere?.cliente && <p className="text-sm mt-0.5">Cliente: <strong>{cantiere.cliente}</strong></p>}
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#2563eb", margin: 0 }}>{cantiere?.nome}</h1>
+          {cantiere?.indirizzo && <p style={{ color: "#6b7280", fontSize: 13, marginTop: 4 }}>{cantiere.indirizzo}{cantiere.citta ? `, ${cantiere.citta}` : ""}</p>}
+          {cantiere?.cliente && <p style={{ fontSize: 13, marginTop: 2 }}>Cliente: <strong>{cantiere.cliente}</strong></p>}
+          {cantiere?.codice && <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 2, fontFamily: "monospace" }}>{cantiere.codice}</p>}
         </div>
-        <div className="text-right text-xs text-gray-400">
+        <div style={{ textAlign: "right", fontSize: 12, color: "#9ca3af" }}>
           <p>Generato il {new Date().toLocaleDateString("it-IT")}</p>
-          <p className="mt-1 font-bold text-blue-600">{rapportini.length} rapportini</p>
+          <p style={{ marginTop: 4, fontWeight: 700, color: "#2563eb" }}>{rapportini.length} rapportini</p>
         </div>
       </div>
 
-      {/* ===== SEZIONE RIEPILOGO GENERALE ===== */}
-      <Section title="Riepilogo Generale — Ore Totali">
+      {/* IMMAGINE FACCIATA */}
+      {fotoFacciata && (
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#9ca3af", marginBottom: 8 }}>Immagine Cantiere</p>
+          <img
+            src={fotoFacciata.url_annotata || fotoFacciata.url}
+            alt="Facciata cantiere"
+            style={{ width: "100%", maxHeight: 240, objectFit: "cover", borderRadius: 12, border: "1px solid #e5e7eb" }}
+          />
+          {fotoFacciata.nota && <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{fotoFacciata.nota}</p>}
+        </div>
+      )}
+
+      {/* RIEPILOGO ORE TOTALI */}
+      <DaySection title="Riepilogo Totale Ore">
         <Row label="Ore totali squadra" value={fmt(totOreSquadra)} />
         <Row label="di cui ore normali (preventivo)" value={fmt(totOreNormali)} />
         <Row label="di cui ore extra" value={fmt(totOreExtra)} />
         {totPiattaforma > 0 && <Row label="Ore piattaforma" value={fmt(totPiattaforma)} />}
         {totMezzi > 0 && <Row label="Ore noleggio mezzi" value={fmt(totMezzi)} />}
-        {totAttrezzi > 0 && <Row label="Ore noleggio attrezzi" value={fmt(totAttrezzi)} />}
         {cantiere?.ore_stimate > 0 && <Row label="Ore stimate totali" value={fmt(cantiere.ore_stimate)} />}
-      </Section>
+      </DaySection>
 
-      {/* ===== LAVORAZIONI NORMALI AGGREGATE ===== */}
-      {Object.keys(lavorazioniAgg).length > 0 && (
-        <Section title="Lavorazioni Normali — Totale">
-          {Object.entries(lavorazioniAgg).map(([k, v]) => (
-            <Row key={k} label={k} value={fmt(v)} />
-          ))}
-        </Section>
-      )}
-
-      {/* ===== LAVORAZIONI EXTRA AGGREGATE ===== */}
-      {Object.keys(extraAgg).length > 0 && (
-        <Section title="Lavorazioni Extra — Totale">
-          {Object.entries(extraAgg).map(([k, v]) => (
-            <Row key={k} label={k} value={fmt(v)} />
-          ))}
-        </Section>
-      )}
-
-      {/* ===== COLLABORATORI AGGREGATI ===== */}
-      {Object.keys(collabAgg).length > 0 && (
-        <Section title="Collaboratori — Totale Ore">
-          {Object.entries(collabAgg).map(([nome, ore]) => (
-            <Row key={nome} label={nome} value={fmt(ore)} />
-          ))}
-        </Section>
-      )}
-
-      {/* ===== MATERIALI AGGREGATI ===== */}
-      {Object.keys(materialiAgg).length > 0 && (
-        <Section title="Materiali Utilizzati — Totale">
-          {Object.entries(materialiAgg).map(([nome, { qta, um }]) => (
-            <Row key={nome} label={nome} value={`${qta} ${um || ""}`} />
-          ))}
-        </Section>
-      )}
-
-      {/* ===== DETTAGLIO PER GIORNO ===== */}
-      <div className="mt-8 mb-4">
-        <h2 className="text-base font-bold uppercase tracking-wider text-blue-600 border-b-2 border-blue-600 pb-2">
+      {/* DETTAGLIO PER GIORNO */}
+      <div style={{ borderTop: "2px solid #2563eb", paddingTop: 16, marginTop: 8, marginBottom: 12 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "#2563eb", textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>
           Dettaglio Per Giorno
         </h2>
       </div>
@@ -163,111 +102,104 @@ export function ReportPDFContent({ cantiere, rapportini = [], foto = [] }) {
         const oreExtraGiorno = r.has_lavorazioni_extra
           ? (r.lavorazioni_extra || []).reduce((s, l) => s + (l.ore || 0), 0) : 0;
         const oreNormGiorno = (r.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
+        const hasMezzi = r.piattaforma?.ore > 0 || r.ore_noleggio_mezzi > 0 ||
+          (r.macchinari || []).length > 0 || (r.attrezzi || []).length > 0;
 
         return (
-          <div key={r.id} className="mb-8 border border-gray-200 rounded-xl overflow-hidden">
+          <div key={r.id} style={{ marginBottom: 28, border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
             {/* Header giorno */}
-            <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-b border-gray-200">
-              <div>
-                <span className="font-bold text-sm">{dataStr}</span>
-                {r.note_generali && <p className="text-xs text-gray-500 mt-0.5">{r.note_generali}</p>}
-              </div>
-              <span className={`text-xs px-2 py-1 rounded-full font-medium ${r.stato === "inviato" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+            <div style={{ background: "#eff6ff", padding: "10px 16px", borderBottom: "1px solid #bfdbfe", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <strong style={{ fontSize: 14, color: "#1e40af" }}>{dataStr}</strong>
+              <span style={{
+                fontSize: 11, padding: "2px 8px", borderRadius: 999, fontWeight: 600,
+                background: r.stato === "inviato" ? "#dcfce7" : "#fef9c3",
+                color: r.stato === "inviato" ? "#166534" : "#854d0e"
+              }}>
                 {r.stato === "inviato" ? "Inviato" : "Bozza"}
               </span>
             </div>
 
-            <div className="p-4 space-y-4">
-              {/* Ore giorno */}
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Ore</p>
-                <Row label="Ore squadra" value={fmt(r.ore_totali_squadra)} />
-                {oreCollGiorno > 0 && <Row label="Ore lavoratori" value={fmt(oreCollGiorno)} />}
-                {oreNormGiorno > 0 && <Row label="Ore normali" value={fmt(oreNormGiorno)} />}
-                {oreExtraGiorno > 0 && <Row label="Ore extra" value={fmt(oreExtraGiorno)} />}
-              </div>
+            <div style={{ padding: "12px 16px" }}>
+              {r.note_generali && (
+                <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 8, fontStyle: "italic" }}>{r.note_generali}</p>
+              )}
 
-              {/* Collaboratori del giorno */}
+              {/* ORE */}
+              <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#9ca3af", marginBottom: 4 }}>Ore</p>
+              <Row label="Ore squadra" value={fmt(r.ore_totali_squadra)} />
+              {oreNormGiorno > 0 && <Row label="Ore normali" value={fmt(oreNormGiorno)} />}
+              {oreExtraGiorno > 0 && <Row label="Ore extra" value={fmt(oreExtraGiorno)} />}
+
+              {/* LAVORAZIONI NORMALI */}
+              {(r.lavorazioni_normali || []).length > 0 && (
+                <div style={{ marginTop: 10 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#9ca3af", marginBottom: 4 }}>Lavorazioni</p>
+                  {r.lavorazioni_normali.map((l, i) => (
+                    <Row key={i} label={l.tipo_lavorazione_nome || l.descrizione_custom || "—"} value={fmt(l.ore_totali)} />
+                  ))}
+                </div>
+              )}
+
+              {/* LAVORAZIONI EXTRA */}
+              {r.has_lavorazioni_extra && (r.lavorazioni_extra || []).length > 0 && (
+                <div style={{ marginTop: 10 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#9ca3af", marginBottom: 4 }}>Lavorazioni Extra</p>
+                  {r.lavorazioni_extra.map((l, i) => (
+                    <Row key={i} label={l.descrizione || "—"} value={fmt(l.ore)} />
+                  ))}
+                </div>
+              )}
+
+              {/* LAVORATORI */}
               {(r.collaboratori || []).length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Collaboratori</p>
+                <div style={{ marginTop: 10 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#9ca3af", marginBottom: 4 }}>Lavoratori</p>
                   {r.collaboratori.map((c, i) => (
-                    <div key={i} className="flex justify-between text-sm py-0.5 border-b border-gray-50">
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f3f4f6", padding: "3px 0", fontSize: 13 }}>
                       <span>{c.nome}</span>
-                      <span className="text-gray-500">
+                      <span style={{ color: "#6b7280" }}>
                         {fmt(c.ore_lavorate)}
-                        {c.note_imprevisti ? <em className="ml-1 text-xs text-gray-400">({c.note_imprevisti})</em> : ""}
+                        {c.note_imprevisti ? <em style={{ marginLeft: 4, fontSize: 11, color: "#9ca3af" }}>({c.note_imprevisti})</em> : ""}
                       </span>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Mezzi del giorno */}
-              {(r.piattaforma?.ore > 0 || r.ore_noleggio_mezzi > 0 || r.ore_noleggio_plexi > 0 ||
-                (r.macchinari || []).length > 0 || (r.attrezzi || []).length > 0) && (
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Mezzi e Attrezzature</p>
+              {/* MEZZI */}
+              {hasMezzi && (
+                <div style={{ marginTop: 10 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#9ca3af", marginBottom: 4 }}>Mezzi e Attrezzature</p>
                   {r.piattaforma?.ore > 0 && <Row label={`Piattaforma (${r.piattaforma.tipo || ""})`} value={fmt(r.piattaforma.ore)} />}
                   {r.ore_noleggio_mezzi > 0 && <Row label={r.descrizione_noleggio_mezzi || "Noleggio mezzi"} value={fmt(r.ore_noleggio_mezzi)} />}
-                  {r.ore_noleggio_plexi > 0 && <Row label={r.descrizione_noleggio_plexi || "Noleggio attrezzi"} value={fmt(r.ore_noleggio_plexi)} />}
                   {(r.macchinari || []).map((m, i) => (
-                    <Row key={i} label={`Idropulitrice: ${m.tipo_custom || m.tipo}`} value={fmt(m.ore)} />
+                    <Row key={i} label={`Idropulitrice: ${m.tipo_custom || m.tipo}`} value={m.ore > 0 ? fmt(m.ore) : "—"} />
                   ))}
                   {(r.attrezzi || []).map((a, i) => (
-                    <Row key={i} label={`Attrezzo: ${a.tipo_custom || a.tipo}`} value={fmt(a.ore)} />
+                    <Row key={i} label={`Attrezzo: ${a.tipo_custom || a.tipo}`} value={a.ore > 0 ? fmt(a.ore) : "—"} />
                   ))}
                 </div>
               )}
 
-              {/* Lavorazioni normali del giorno */}
-              {(r.lavorazioni_normali || []).length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Lavorazioni Normali</p>
-                  {r.lavorazioni_normali.map((l, i) => (
-                    <div key={i} className="flex justify-between text-sm py-0.5 border-b border-gray-50">
-                      <span>{l.tipo_lavorazione_nome || l.descrizione_custom}</span>
-                      <span>{fmt(l.ore_totali)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Lavorazioni extra del giorno */}
-              {r.has_lavorazioni_extra && (r.lavorazioni_extra || []).length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Lavorazioni Extra</p>
-                  {r.lavorazioni_extra.map((l, i) => (
-                    <div key={i} className="flex justify-between text-sm py-0.5 border-b border-gray-50">
-                      <span>{l.descrizione}</span>
-                      <span>{fmt(l.ore)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Materiali del giorno */}
+              {/* MATERIALI */}
               {(r.materiali || []).length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Materiali</p>
+                <div style={{ marginTop: 10 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#9ca3af", marginBottom: 4 }}>Materiali</p>
                   {r.materiali.map((m, i) => (
-                    <div key={i} className="flex justify-between text-sm py-0.5 border-b border-gray-50">
-                      <span>{m.nome || m.descrizione_custom}</span>
-                      <span>{m.quantita} {m.unita_misura}</span>
-                    </div>
+                    <Row key={i} label={m.nome || m.descrizione_custom || "—"} value={`${m.quantita || 0} ${m.unita_misura || ""}`} />
                   ))}
                 </div>
               )}
 
-              {/* Foto del giorno */}
+              {/* FOTO DEL GIORNO */}
               {(r.foto_annotate || []).length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Foto</p>
-                  <div className="grid grid-cols-3 gap-2">
+                <div style={{ marginTop: 10 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#9ca3af", marginBottom: 6 }}>Foto</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                     {r.foto_annotate.map((f, i) => (
                       <div key={i}>
-                        <img src={f.url_annotata || f.url} alt="" className="w-full aspect-video object-cover rounded-lg border border-gray-100" />
-                        {f.nota && <p className="text-xs text-gray-400 mt-1">{f.nota}</p>}
+                        <img src={f.url_annotata || f.url} alt="" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, border: "1px solid #e5e7eb" }} />
+                        {f.nota && <p style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{f.nota}</p>}
                       </div>
                     ))}
                   </div>
@@ -278,28 +210,38 @@ export function ReportPDFContent({ cantiere, rapportini = [], foto = [] }) {
         );
       })}
 
-      {/* Foto cantiere */}
-      {foto.length > 0 && (
-        <Section title="Foto Cantiere">
-          <div className="grid grid-cols-3 gap-3">
-            {foto.map((f, i) => (
+      {/* FOTO CANTIERE (esclusa quella già usata come facciata) */}
+      {foto.filter(f => f.tipo !== "codice_colore" && f.id !== fotoFacciata?.id).length > 0 && (
+        <DaySection title="Altre Foto Cantiere">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+            {foto.filter(f => f.tipo !== "codice_colore" && f.id !== fotoFacciata?.id).map((f, i) => (
               <div key={i}>
-                {f.tipo === "codice_colore" ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded border border-gray-200" style={{ background: f.colore }} />
-                    <span className="text-xs font-mono">{f.colore}</span>
-                  </div>
-                ) : (
-                  <img src={f.url_annotata || f.url} alt="" className="w-full aspect-video object-cover rounded-xl border border-gray-100" />
-                )}
-                {f.nota && <p className="text-xs text-gray-400 mt-1 text-center">{f.nota}</p>}
+                <img src={f.url_annotata || f.url} alt="" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 10, border: "1px solid #e5e7eb" }} />
+                {f.nota && <p style={{ fontSize: 10, color: "#9ca3af", marginTop: 3, textAlign: "center" }}>{f.nota}</p>}
               </div>
             ))}
           </div>
-        </Section>
+        </DaySection>
       )}
 
-      <div className="mt-8 pt-4 border-t border-gray-100 text-xs text-gray-300 text-center">
+      {/* CODICI COLORE */}
+      {foto.filter(f => f.tipo === "codice_colore").length > 0 && (
+        <DaySection title="Codici Colore">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+            {foto.filter(f => f.tipo === "codice_colore").map((f, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb", background: f.colore }} />
+                <div>
+                  <p style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 600 }}>{f.colore}</p>
+                  {f.nota && <p style={{ fontSize: 10, color: "#9ca3af" }}>{f.nota}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </DaySection>
+      )}
+
+      <div style={{ marginTop: 32, paddingTop: 12, borderTop: "1px solid #f3f4f6", fontSize: 11, color: "#d1d5db", textAlign: "center" }}>
         Report generato automaticamente — {new Date().toLocaleString("it-IT")}
       </div>
     </div>
@@ -317,7 +259,7 @@ export default function ReportPDFButton({ cantiere, rapportini, foto }) {
     w.document.write(`
       <html><head><title>Report ${cantiere?.nome}</title>
       <style>
-        body { font-family: sans-serif; padding: 24px; color: #1a1a2e; }
+        body { margin: 0; padding: 0; font-family: sans-serif; }
         img { max-width: 100%; }
         @media print { button { display: none; } }
       </style></head><body>
