@@ -62,11 +62,11 @@ export default function AggiungiFotoModal({ open, onClose, cantieri = [], onSave
     const cantiere = cantieri.find((c) => c.id === cantiereId);
     const payload = {
       url: imageUrl || colore,
-      url_annotata: tipo === "foto" ? finalUrl : undefined,
+      url_annotata: finalUrl !== imageUrl ? finalUrl : undefined,
       nota,
       cantiere_id: cantiereId,
       cantiere_nome: cantiere?.nome || "",
-      annotazioni: tipo === "foto" ? annotazioni : [],
+      annotazioni,
       tipo,
       colore: tipo === "codice_colore" ? colore : undefined,
     };
@@ -175,7 +175,7 @@ export default function AggiungiFotoModal({ open, onClose, cantieri = [], onSave
 
             {/* Codice colore */}
             {tipo === "codice_colore" && (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
                   <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Seleziona colore</Label>
                   <div className="flex items-center gap-3 mt-2">
@@ -191,6 +191,53 @@ export default function AggiungiFotoModal({ open, onClose, cantieri = [], onSave
                     </div>
                     <div className="w-16 h-16 rounded-xl border border-border" style={{ background: colore }} />
                   </div>
+                </div>
+
+                {/* Foto opzionale per codice colore */}
+                <div>
+                  <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Foto di riferimento (opzionale)</Label>
+                  {imageUrl ? (
+                    <div className="space-y-2 mt-2">
+                      <div className="relative rounded-xl overflow-hidden border border-border">
+                        <img src={urlAnnotata || imageUrl} alt="" className="w-full max-h-48 object-contain bg-black" />
+                        {annotazioni.length > 0 && (
+                          <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
+                            {annotazioni.length} annotazioni
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setStep("annotate")}>
+                          <Edit3 className="w-3.5 h-3.5" />
+                          {annotazioni.length > 0 ? "Modifica annotazioni" : "Aggiungi annotazioni"}
+                        </Button>
+                        <label className="cursor-pointer">
+                          <Button variant="ghost" size="sm" asChild>
+                            <span className="gap-1.5"><Upload className="w-3.5 h-3.5" />Cambia foto</span>
+                          </Button>
+                          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      <label className="cursor-pointer rounded-xl border-2 border-dashed border-border hover:border-primary/50 p-4 flex flex-col items-center gap-2 transition-colors">
+                        <Camera className="w-5 h-5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground text-center">Scatta foto</span>
+                        <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
+                      </label>
+                      <label className="cursor-pointer rounded-xl border-2 border-dashed border-border hover:border-primary/50 p-4 flex flex-col items-center gap-2 transition-colors">
+                        <Upload className="w-5 h-5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground text-center">Carica da galleria</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                      </label>
+                    </div>
+                  )}
+                  {uploading && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Caricamento...
+                    </div>
+                  )}
                 </div>
               </div>
             )}

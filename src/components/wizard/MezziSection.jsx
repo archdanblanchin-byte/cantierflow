@@ -6,9 +6,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Trash2, Truck, Wrench, Hammer, ChevronDown, ChevronUp } from "lucide-react";
 
-const MACCHINARI_OPTIONS = [
-  "Idropulitrice", "Intonacatrice", "Betoniera", "Compressore", "Martello demolitore",
-  "Smerigliatrice angolare", "Sega circolare", "Levigatrice", "Aspiratore industriale", "Altro"
+const IDROPULITRICI_OPTIONS = [
+  "Idropulitrice piccola (proprietà)",
+  "Idropulitrice grande (proprietà)",
+  "Idropulitrice a noleggio",
+  "Altro",
+];
+
+const ATTREZZI_OPTIONS = [
+  "Trapano",
+  "Tassellatore",
+  "Avvitatore",
+  "Smerigliatrice angolare",
+  "Levigatrice",
+  "Sega circolare",
+  "Martello demolitore",
+  "Compressore",
+  "Aspiratore industriale",
+  "Intonacatrice",
+  "Betoniera",
+  "Scala",
+  "Ponteggio mobile",
+  "Altro",
 ];
 
 function PiattaformeSection({ data, onChange }) {
@@ -52,7 +71,7 @@ function PiattaformeSection({ data, onChange }) {
   );
 }
 
-function MacchinariSection({ data, onChange }) {
+function IdropulitriciSection({ data, onChange }) {
   const macchinari = data.macchinari || [];
 
   const add = () => onChange({ macchinari: [...macchinari, { tipo: "", ore: 0, proprieta: "proprieta" }] });
@@ -67,20 +86,20 @@ function MacchinariSection({ data, onChange }) {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Wrench className="w-4 h-4 text-primary" />
-        <span className="text-sm font-semibold">Macchinari</span>
+        <span className="text-sm font-semibold">Idropulitrici</span>
       </div>
       {macchinari.map((m, i) => (
         <div key={i} className="rounded-lg border border-border p-3 bg-card space-y-2">
           <div className="flex items-start gap-2">
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <Label className="text-xs text-muted-foreground">Tipo macchinario</Label>
+                <Label className="text-xs text-muted-foreground">Tipo idropulitrice</Label>
                 <Select value={m.tipo || ""} onValueChange={(v) => update(i, "tipo", v)}>
                   <SelectTrigger className="mt-1 h-8 text-sm">
                     <SelectValue placeholder="Seleziona..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {MACCHINARI_OPTIONS.map((opt) => (
+                    {IDROPULITRICI_OPTIONS.map((opt) => (
                       <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                     ))}
                   </SelectContent>
@@ -129,7 +148,7 @@ function MacchinariSection({ data, onChange }) {
       ))}
       <Button variant="outline" size="sm" onClick={add} className="gap-1.5 text-xs">
         <Plus className="w-3.5 h-3.5" />
-        Aggiungi macchinario
+        Aggiungi idropulitrice
       </Button>
     </div>
   );
@@ -158,12 +177,24 @@ function AttrezziSection({ data, onChange }) {
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <Label className="text-xs text-muted-foreground">Tipo attrezzo</Label>
-                <Input
-                  value={a.tipo || ""}
-                  onChange={(e) => update(i, "tipo", e.target.value)}
-                  className="mt-1 h-8 text-sm"
-                  placeholder="Es. trapano, tassellatore..."
-                />
+                <Select value={a.tipo || ""} onValueChange={(v) => update(i, "tipo", v)}>
+                  <SelectTrigger className="mt-1 h-8 text-sm">
+                    <SelectValue placeholder="Seleziona..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ATTREZZI_OPTIONS.map((opt) => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {a.tipo === "Altro" && (
+                  <Input
+                    value={a.tipo_custom || ""}
+                    onChange={(e) => update(i, "tipo_custom", e.target.value)}
+                    className="mt-1 h-8 text-sm"
+                    placeholder="Specifica..."
+                  />
+                )}
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Ore utilizzo</Label>
@@ -218,7 +249,7 @@ export default function MezziSection({ data, onChange }) {
       >
         <div className="flex items-center gap-2">
           <Truck className="w-4 h-4 text-primary" />
-          <span className="font-semibold text-sm">Mezzi, Macchinari e Attrezzi</span>
+          <span className="font-semibold text-sm">Mezzi, Idropulitrici e Attrezzi</span>
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
       </button>
@@ -227,7 +258,7 @@ export default function MezziSection({ data, onChange }) {
         <div className="p-4 space-y-6 border-t border-border">
           <PiattaformeSection data={data} onChange={onChange} />
           <div className="border-t border-border pt-4">
-            <MacchinariSection data={data} onChange={onChange} />
+            <IdropulitriciSection data={data} onChange={onChange} />
           </div>
           <div className="border-t border-border pt-4">
             <AttrezziSection data={data} onChange={onChange} />
