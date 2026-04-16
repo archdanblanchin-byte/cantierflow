@@ -14,6 +14,7 @@ import CantiereDetail from './pages/CantiereDetail';
 import Placeholder from './pages/Placeholder';
 import FotoPage from './pages/Foto';
 import Anagrafe from './pages/Anagrafe';
+import EditReport from './pages/EditReport';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -43,6 +44,7 @@ const AuthenticatedApp = () => {
       <Route path="/rapportini" element={<Home showRapportini />} />
       <Route path="/nuovo" element={<CreateReport />} />
       <Route path="/report/:id" element={<ReportDetail />} />
+      <Route path="/modifica-report/:id" element={<EditReport />} />
 
       {/* Cantieri */}
       <Route path="/cantieri" element={<Cantieri />} />

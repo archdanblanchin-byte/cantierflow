@@ -4,10 +4,10 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 import { it } from "date-fns/locale";
 import {
-  ArrowLeft, MapPin, Truck, Users, Zap, Wrench, Package, Calendar, User, Trash2,
+  ArrowLeft, MapPin, Truck, Users, Zap, Wrench, Package, Calendar, User, Trash2, Pencil,
 } from "lucide-react";
 import DetailSection, { DetailRow } from "@/components/detail/DetailSection";
 import {
@@ -22,6 +22,11 @@ export default function ReportDetail() {
   const id = window.location.pathname.split("/report/")[1];
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then((u) => setCurrentUser(u));
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -30,6 +35,10 @@ export default function ReportDetail() {
       setLoading(false);
     });
   }, [id]);
+
+  const canEdit = report && currentUser &&
+    report.user_email === currentUser.email &&
+    isToday(new Date(report.data));
 
   const handleDelete = async () => {
     await base44.entities.Rapportino.delete(id);
@@ -78,6 +87,11 @@ export default function ReportDetail() {
               <Badge variant={d.stato === "inviato" ? "default" : "secondary"} className="text-xs uppercase">
                 {d.stato === "inviato" ? "Inviato" : "Bozza"}
               </Badge>
+              {canEdit && (
+                <Button variant="ghost" size="icon" onClick={() => navigate(`/modifica-report/${id}`)}>
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="text-destructive">

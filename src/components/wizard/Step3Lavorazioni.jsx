@@ -30,16 +30,6 @@ function LavorazioniExtra({ data, onChange }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center">
-          <Zap className="w-4 h-4 text-amber-600" />
-        </div>
-        <div>
-          <h3 className="font-semibold">Lavorazioni Extra</h3>
-          <p className="text-xs text-muted-foreground">Attività non previste dal preventivo (Concordato)</p>
-        </div>
-      </div>
-
       <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
         <Switch
           checked={hasExtra}
@@ -135,16 +125,6 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Wrench className="w-4 h-4 text-primary" />
-        </div>
-        <div>
-          <h3 className="font-semibold">Lavorazioni da Preventivo</h3>
-          <p className="text-xs text-muted-foreground">Attività svolte durante la giornata</p>
-        </div>
-      </div>
-
       <div className="space-y-3">
         {lavorazioni.map((lav, i) => (
           <div key={i} className="rounded-xl border border-border p-3 bg-card space-y-3">
@@ -326,19 +306,33 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
 export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
           <Wrench className="w-5 h-5 text-primary" />
         </div>
         <div>
           <h2 className="text-lg font-semibold">Lavorazioni</h2>
-          <p className="text-sm text-muted-foreground">Extra e da preventivo</p>
+          <p className="text-sm text-muted-foreground">Inserisci le lavorazioni extra e quelle preventivate</p>
         </div>
       </div>
 
-      <LavorazioniExtra data={data} onChange={onChange} />
+      {/* Sezione 1 */}
+      <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-amber-200">
+          <Zap className="w-4 h-4 text-amber-600" />
+          <h3 className="font-semibold text-amber-900">Lavorazioni Extra</h3>
+          <span className="text-xs text-amber-700 ml-1">(concordate, non in preventivo)</span>
+        </div>
+        <LavorazioniExtra data={data} onChange={onChange} />
+      </div>
 
-      <div className="border-t border-border pt-6">
+      {/* Sezione 2 */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-primary/20">
+          <Wrench className="w-4 h-4 text-primary" />
+          <h3 className="font-semibold text-primary">Lavorazioni Preventivate</h3>
+          <span className="text-xs text-primary/70 ml-1">(da preventivo)</span>
+        </div>
         <LavorazioniNormali data={data} onChange={onChange} tipiLavorazione={tipiLavorazione} />
       </div>
     </div>

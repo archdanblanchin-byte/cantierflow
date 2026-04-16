@@ -93,20 +93,25 @@ function OreInput({ value, onChange }) {
 
 export default function Step2Collaboratori({ data, onChange, collaboratoriList, showErrors }) {
   const [showPicker, setShowPicker] = useState(false);
+  const [selected, setSelected] = useState([]);
   const collaboratori = data.collaboratori || [];
   const oreTotali = data.ore_totali_squadra ?? 8;
   const totaleOreLavoratori = collaboratori.reduce((sum, c) => sum + (c.ore_lavorate || 0), 0);
 
-  const addCollaboratore = (id) => {
-    const found = collaboratoriList.find((c) => c.id === id);
-    if (!found || collaboratori.some((c) => c.collaboratore_id === id)) return;
-    onChange({
-      collaboratori: [
-        ...collaboratori,
-        { collaboratore_id: id, nome: found.nome, ore_lavorate: oreTotali, note_imprevisti: "" },
-      ],
-    });
-    // NON chiudere il picker così si possono aggiungere più collaboratori
+  const toggleSelected = (id) => {
+    setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+
+  const confirmAdd = () => {
+    const nuovi = selected
+      .filter((id) => !collaboratori.some((c) => c.collaboratore_id === id))
+      .map((id) => {
+        const found = collaboratoriList.find((c) => c.id === id);
+        return { collaboratore_id: id, nome: found.nome, ore_lavorate: oreTotali, note_imprevisti: "" };
+      });
+    onChange({ collaboratori: [...collaboratori, ...nuovi] });
+    setSelected([]);
+    setShowPicker(false);
   };
 
   const updateCollaboratore = (index, field, value) => {
@@ -158,13 +163,6 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
       )}
 
       {collaboratori.length > 0 && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 flex items-start gap-2">
-          <span className="text-base leading-none mt-0.5">💡</span>
-          <span>Ricordati di controllare le <strong>ore individuali</strong> e le eventuali <strong>dinamiche diverse</strong> per ogni lavoratore.</span>
-        </div>
-      )}
-
-      {collaboratori.length > 0 && (
         <div className="space-y-3">
           {collaboratori.map((coll, i) => (
             <div key={coll.collaboratore_id} className="rounded-xl border border-border p-4 bg-card space-y-3">
@@ -206,7 +204,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
             <Button
               variant="outline"
               className="w-full h-12 gap-2 border-dashed text-base"
-              onClick={() => setShowPicker(true)}
+              onClick={() => { setSelected([]); setShowPicker(true); }}
             >
               <Plus className="w-5 h-5" />
               Aggiungi Collaboratore
@@ -214,26 +212,41 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
           ) : (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Scegli collaboratore</p>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowPicker(false)}>
+                <p className="text-sm font-medium">Seleziona uno o più collaboratori</p>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelected([]); setShowPicker(false); }}>
                   <ChevronUp className="w-4 h-4" />
                 </Button>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {available.map((c) => (
-                  <Button
-                    key={c.id}
-                    variant="outline"
-                    className="h-11 justify-start gap-2 text-sm"
-                    onClick={() => addCollaboratore(c.id)}
-                  >
-                    <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-xs font-bold flex-shrink-0">
-                      {c.nome.charAt(0)}
-                    </div>
-                    {c.nome}
-                  </Button>
-                ))}
+                {available.map((c) => {
+                  const isChosen = selected.includes(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => toggleSelected(c.id)}
+                      className={`h-11 rounded-lg border-2 flex items-center gap-2 px-3 text-sm font-medium transition-all ${
+                        isChosen
+                          ? "border-primary bg-primary text-primary-foreground shadow-md"
+                          : "border-border bg-card text-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                        isChosen ? "bg-primary-foreground/20 text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                      }`}>
+                        {c.nome.charAt(0)}
+                      </div>
+                      <span className="truncate">{c.nome}</span>
+                    </button>
+                  );
+                })}
               </div>
+              {selected.length > 0 && (
+                <Button className="w-full gap-2" onClick={confirmAdd}>
+                  <Plus className="w-4 h-4" />
+                  Aggiungi {selected.length} collaborator{selected.length === 1 ? "e" : "i"}
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -250,6 +263,14 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
             <span className="text-lg font-bold text-foreground">{totaleOreLavoratori.toFixed(2).replace(".", ",")}h</span>
             <p className="text-[10px] text-muted-foreground">Totale ore lavoratori</p>
           </div>
+        </div>
+      )}
+
+      {/* Banner promemoria — solo se ci sono collaboratori */}
+      {collaboratori.length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 flex items-start gap-2">
+          <span className="text-base leading-none mt-0.5">💡</span>
+          <span>Ricordati di controllare le <strong>ore</strong> e le eventuali <strong>dinamiche</strong> per ogni lavoratore.</span>
         </div>
       )}
     </div>
