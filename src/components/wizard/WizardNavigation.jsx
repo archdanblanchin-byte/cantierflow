@@ -6,27 +6,36 @@ export default function WizardNavigation({ currentStep, totalSteps, onPrev, onNe
   const isLast = currentStep === totalSteps;
 
   return (
-    <div className="flex items-center justify-between pt-6 border-t border-border mt-6">
-      <Button
-        variant="ghost"
-        onClick={onPrev}
-        disabled={isFirst}
-        className="gap-2"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        Indietro
-      </Button>
-      {isLast ? (
-        <Button onClick={onSubmit} className="gap-2 px-6 shadow-lg shadow-primary/20" disabled={!canProceed}>
-          <Send className="w-4 h-4" />
-          Invia Rapportino
+    <div className="fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur border-t border-border safe-area-bottom">
+      <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <Button
+          variant="outline"
+          onClick={onPrev}
+          disabled={isFirst}
+          className="flex-1 h-12 gap-2 text-base"
+        >
+          <ChevronLeft className="w-5 h-5" />
+          Indietro
         </Button>
-      ) : (
-        <Button onClick={onNext} className="gap-2 px-6" disabled={!canProceed}>
-          Avanti
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      )}
+        {isLast ? (
+          <Button
+            onClick={onSubmit}
+            className="flex-1 h-12 gap-2 text-base shadow-lg shadow-primary/20"
+            disabled={!canProceed}
+          >
+            <Send className="w-4 h-4" />
+            Invia
+          </Button>
+        ) : (
+          <Button
+            onClick={onNext}
+            className="flex-1 h-12 gap-2 text-base"
+          >
+            Avanti
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

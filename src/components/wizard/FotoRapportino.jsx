@@ -112,7 +112,7 @@ export default function FotoRapportino({ foto = [], onChange }) {
               <span className="text-[10px] text-muted-foreground mt-1">Carica foto</span>
             </>
           )}
-          <input type="file" multiple accept="image/*" capture="environment" className="hidden" onChange={handleUpload} />
+          <input type="file" multiple accept="image/*" className="hidden" onChange={handleUpload} />
         </label>
       </div>
 

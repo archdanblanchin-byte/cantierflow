@@ -2,15 +2,14 @@ import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 
 const STEPS = [
-  "Dati Cantiere",
-  "Collaboratori",
-  "Lav. Extra",
-  "Lav. Normali",
+  "Cantiere",
+  "Squadra",
+  "Lavorazioni",
   "Materiali",
   "Riepilogo",
 ];
 
-export default function StepIndicator({ currentStep }) {
+export default function StepIndicator({ currentStep, totalSteps }) {
   return (
     <div className="w-full px-2">
       <div className="flex items-center justify-between">

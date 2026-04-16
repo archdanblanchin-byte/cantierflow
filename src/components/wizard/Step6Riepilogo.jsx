@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
-  MapPin, Calendar, User, Camera, Truck, Users, Zap, Wrench, Package, FileText,
+  MapPin, Truck, Users, Zap, Wrench, Package, FileText,
 } from "lucide-react";
 
 function Section({ icon: Icon, title, children }) {
@@ -73,7 +73,6 @@ export default function Step6Riepilogo({ data }) {
 
         <div className="p-4">
           <Section icon={Users} title={`Collaboratori (${(data.collaboratori || []).length})`}>
-            <Row label="Ore totali squadra" value={`${data.ore_totali_squadra || 0}h`} />
             {(data.collaboratori || []).map((c, i) => (
               <div key={i} className="flex items-center justify-between py-1 text-sm">
                 <span>{c.nome}</span>

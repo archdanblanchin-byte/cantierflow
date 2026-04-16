@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -11,12 +11,12 @@ import StepIndicator from "@/components/wizard/StepIndicator";
 import WizardNavigation from "@/components/wizard/WizardNavigation";
 import Step1DatiCantiere from "@/components/wizard/Step1DatiCantiere";
 import Step2Collaboratori from "@/components/wizard/Step2Collaboratori";
-import Step3LavorazioniExtra from "@/components/wizard/Step3LavorazioniExtra";
-import Step4LavorazioniNormali from "@/components/wizard/Step4LavorazioniNormali";
-import Step5Materiali from "@/components/wizard/Step5Materiali";
-import Step6Riepilogo from "@/components/wizard/Step6Riepilogo";
+import Step3Lavorazioni from "@/components/wizard/Step3Lavorazioni";
+import Step4Materiali from "@/components/wizard/Step5Materiali";
+import Step5Riepilogo from "@/components/wizard/Step6Riepilogo";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
+const AUTOSAVE_INTERVAL = 30000; // 30 secondi
 
 export default function CreateReport() {
   const navigate = useNavigate();
@@ -24,12 +24,17 @@ export default function CreateReport() {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [draftId, setDraftId] = useState(null);
+  const autosaveRef = useRef(null);
+
   const [formData, setFormData] = useState({
     data: new Date().toISOString(),
     user_email: "",
     cantiere_id: "",
     cantiere_nome: "",
     foto: [],
+    foto_annotate: [],
     note_generali: "",
     ore_utilizzo_piattaforma: 0,
     descrizione_noleggio_mezzi: "",
@@ -50,6 +55,28 @@ export default function CreateReport() {
       if (user) setFormData((prev) => ({ ...prev, user_email: user.email }));
     });
   }, []);
+
+  // Autosave ogni 30 secondi
+  useEffect(() => {
+    autosaveRef.current = formData;
+  }, [formData]);
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const data = autosaveRef.current;
+      if (!data.cantiere_id) return; // non salvare senza cantiere
+      try {
+        if (draftId) {
+          await base44.entities.Rapportino.update(draftId, { ...data, stato: "bozza" });
+        } else {
+          const saved = await base44.entities.Rapportino.create({ ...data, stato: "bozza" });
+          setDraftId(saved.id);
+        }
+        setLastSaved(new Date());
+      } catch (_) {}
+    }, AUTOSAVE_INTERVAL);
+    return () => clearInterval(interval);
+  }, [draftId]);
 
   const { data: cantieri = [], refetch: refetchCantieri } = useQuery({
     queryKey: ["cantieri"],
@@ -77,11 +104,15 @@ export default function CreateReport() {
       toast.error("Seleziona un cantiere");
       return false;
     }
+    if (step === 2 && (formData.collaboratori || []).length === 0) {
+      toast.error("Aggiungi almeno un collaboratore");
+      return false;
+    }
     if (step === 2 && (!formData.ore_totali_squadra || formData.ore_totali_squadra <= 0)) {
       toast.error("Inserisci le ore totali squadra");
       return false;
     }
-    if (step === 4) {
+    if (step === 3) {
       const oreLavoratori = (formData.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0) || (formData.ore_totali_squadra || 0);
       const oreExtra = formData.has_lavorazioni_extra ? (formData.lavorazioni_extra || []).reduce((s, l) => s + (l.ore || 0), 0) : 0;
       const oreNormali = (formData.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
@@ -102,20 +133,29 @@ export default function CreateReport() {
     }
     setShowErrors(false);
     setStep((s) => Math.min(s + 1, TOTAL_STEPS));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handlePrev = () => setStep((s) => Math.max(s - 1, 1));
+  const handlePrev = () => {
+    setShowErrors(false);
+    setStep((s) => Math.max(s - 1, 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    await base44.entities.Rapportino.create({ ...formData, stato: "inviato" });
+    if (draftId) {
+      await base44.entities.Rapportino.update(draftId, { ...formData, stato: "inviato" });
+    } else {
+      await base44.entities.Rapportino.create({ ...formData, stato: "inviato" });
+    }
     queryClient.invalidateQueries({ queryKey: ["rapportini"] });
     toast.success("Rapportino inviato con successo!");
     setSubmitting(false);
     navigate("/");
   };
 
-  const canProceedStep6 = (() => {
+  const canProceedStep5 = (() => {
     const oreLavoratori = (formData.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0) || (formData.ore_totali_squadra || 0);
     const oreExtra = formData.has_lavorazioni_extra ? (formData.lavorazioni_extra || []).reduce((s, l) => s + (l.ore || 0), 0) : 0;
     const oreNormali = (formData.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
@@ -124,28 +164,36 @@ export default function CreateReport() {
 
   const stepContent = {
     1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} showErrors={showErrors} />,
-    2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} />,
-    3: <Step3LavorazioniExtra data={formData} onChange={updateForm} />,
-    4: <Step4LavorazioniNormali data={formData} onChange={updateForm} tipiLavorazione={tipiLavorazione} />,
-    5: <Step5Materiali data={formData} onChange={updateForm} materialiBase={materialiBase} />,
-    6: <Step6Riepilogo data={formData} />,
+    2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} showErrors={showErrors} />,
+    3: <Step3Lavorazioni data={formData} onChange={updateForm} tipiLavorazione={tipiLavorazione} />,
+    4: <Step4Materiali data={formData} onChange={updateForm} materialiBase={materialiBase} />,
+    5: <Step5Riepilogo data={formData} />,
   };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-lg font-bold">Nuovo Rapportino</h1>
+        <div className="max-w-2xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-base font-bold">Nuovo Rapportino</h1>
+            </div>
+            {lastSaved && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Save className="w-3 h-3" />
+                <span>Salvato {lastSaved.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}</span>
+              </div>
+            )}
           </div>
-          <StepIndicator currentStep={step} />
+          <StepIndicator currentStep={step} totalSteps={TOTAL_STEPS} />
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      {/* Padding bottom per la nav fissa */}
+      <div className="max-w-2xl mx-auto px-4 py-6 pb-28">
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -157,16 +205,16 @@ export default function CreateReport() {
             {stepContent[step]}
           </motion.div>
         </AnimatePresence>
-
-        <WizardNavigation
-          currentStep={step}
-          totalSteps={TOTAL_STEPS}
-          onPrev={handlePrev}
-          onNext={handleNext}
-          onSubmit={handleSubmit}
-          canProceed={step === 6 ? canProceedStep6 && !submitting : true}
-        />
       </div>
+
+      <WizardNavigation
+        currentStep={step}
+        totalSteps={TOTAL_STEPS}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        onSubmit={handleSubmit}
+        canProceed={step === TOTAL_STEPS ? canProceedStep5 && !submitting : true}
+      />
     </div>
   );
 }
