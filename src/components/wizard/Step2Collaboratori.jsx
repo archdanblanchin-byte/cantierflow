@@ -20,7 +20,7 @@ function NoteImprevisti({ value, onChange }) {
 
   return (
     <div className="space-y-1">
-      <Label className="text-xs text-muted-foreground">Note / Imprevisti</Label>
+      <Label className="text-xs text-muted-foreground">Dinamica diversa</Label>
       <Select
         value={selectValue}
         onValueChange={(v) => {
@@ -69,9 +69,11 @@ function OreInput({ value, onChange }) {
       <div className="flex-1 relative">
         <Input
           type="number"
+          inputMode="decimal"
           min="0"
           step="0.25"
           value={value ?? 0}
+          onFocus={(e) => e.target.select()}
           onChange={(e) => {
             const v = parseFloat(e.target.value);
             if (!isNaN(v)) onChange(Math.round(v * 4) / 4);
@@ -104,7 +106,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
         { collaboratore_id: id, nome: found.nome, ore_lavorate: oreTotali, note_imprevisti: "" },
       ],
     });
-    setShowPicker(false);
+    // NON chiudere il picker così si possono aggiungere più collaboratori
   };
 
   const updateCollaboratore = (index, field, value) => {
@@ -152,6 +154,13 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
             {showErrors ? "⚠️ Aggiungi almeno un collaboratore" : "Nessun collaboratore aggiunto"}
           </p>
           <p className="text-xs mt-1 text-muted-foreground">Premi il bottone qui sotto per aggiungere</p>
+        </div>
+      )}
+
+      {collaboratori.length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 flex items-start gap-2">
+          <span className="text-base leading-none mt-0.5">💡</span>
+          <span>Ricordati di controllare le <strong>ore individuali</strong> e le eventuali <strong>dinamiche diverse</strong> per ogni lavoratore.</span>
         </div>
       )}
 
