@@ -46,9 +46,18 @@ const STEP_CONFIG = {
 
 const ORDINE = ["ingresso", "pausa_inizio", "pausa_fine", "uscita"];
 
-function fmtOre(ms) {
-  if (!ms || ms < 0) return "0.0h";
-  return `${(ms / 3600000).toFixed(1)}h`;
+function arrotondaQuarti(ms) {
+  if (!ms || ms < 0) return 0;
+  const ore = ms / 3600000;
+  return Math.round(ore * 4) / 4;
+}
+
+function fmtOre(oreQuarti) {
+  if (!oreQuarti || oreQuarti <= 0) return "0h";
+  const h = Math.floor(oreQuarti);
+  const min = Math.round((oreQuarti - h) * 60);
+  if (min === 0) return `${h}h`;
+  return `${h}h ${min}min`;
 }
 
 export default function TimbraturaRapportino({ cantiere, rapportinoId, onEnsureDraft, onChange }) {
@@ -78,11 +87,10 @@ export default function TimbraturaRapportino({ cantiere, rapportinoId, onEnsureD
   const t_pausa_fine = getT("pausa_fine");
   const t_uscita = getT("uscita");
 
-  const oreMattina = t_ingresso && t_pausa_inizio ? new Date(t_pausa_inizio.data_ora) - new Date(t_ingresso.data_ora) : 0;
-  const orePomeriggio = t_pausa_fine && t_uscita ? new Date(t_uscita.data_ora) - new Date(t_pausa_fine.data_ora) : 0;
-  const durataPausa = t_pausa_inizio && t_pausa_fine ? new Date(t_pausa_fine.data_ora) - new Date(t_pausa_inizio.data_ora) : 0;
-  const oreTotali = oreMattina + orePomeriggio;
-  const oreTotaliHours = Math.round((oreTotali / 3600000) * 100) / 100;
+  const oreMattina = arrotondaQuarti(t_ingresso && t_pausa_inizio ? new Date(t_pausa_inizio.data_ora) - new Date(t_ingresso.data_ora) : 0);
+  const orePomeriggio = arrotondaQuarti(t_pausa_fine && t_uscita ? new Date(t_uscita.data_ora) - new Date(t_pausa_fine.data_ora) : 0);
+  const durataPausa = arrotondaQuarti(t_pausa_inizio && t_pausa_fine ? new Date(t_pausa_fine.data_ora) - new Date(t_pausa_inizio.data_ora) : 0);
+  const oreTotaliHours = oreMattina + orePomeriggio;
 
   // Auto-aggiorna ore_totali_squadra nel rapportino quando la giornata è completa
   useEffect(() => {
@@ -146,7 +154,7 @@ export default function TimbraturaRapportino({ cantiere, rapportinoId, onEnsureD
       {t_ingresso && (
         <div className="grid grid-cols-3 gap-2">
           <div className="rounded-lg bg-primary/10 p-3 text-center">
-            <p className="text-lg font-bold text-primary">{fmtOre(oreTotali)}</p>
+            <p className="text-lg font-bold text-primary">{fmtOre(oreTotaliHours)}</p>
             <p className="text-[10px] text-muted-foreground uppercase">Ore squadra</p>
           </div>
           <div className="rounded-lg bg-amber-50 p-3 text-center">
@@ -186,7 +194,7 @@ export default function TimbraturaRapportino({ cantiere, rapportinoId, onEnsureD
           <div className="text-sm">
             <p className="font-medium text-emerald-900">Giornata completata</p>
             <p className="text-xs text-emerald-700">
-              Totale: {fmtOre(oreTotali)} • Pausa: {fmtOre(durataPausa)} • Ore squadra aggiornate automaticamente
+              Totale: {fmtOre(oreTotaliHours)} • Pausa: {fmtOre(durataPausa)} • Ore squadra aggiornate automaticamente
             </p>
           </div>
         </div>

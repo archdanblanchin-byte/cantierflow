@@ -2,7 +2,8 @@ import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 
 const STEPS = [
-  "Cantiere",
+  "Timbratura",
+  "Dettagli",
   "Squadra",
   "Lavorazioni",
   "Materiali",

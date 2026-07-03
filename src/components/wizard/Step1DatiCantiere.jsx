@@ -1,30 +1,21 @@
-import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Plus, Camera } from "lucide-react";
-import { base44 } from "@/api/base44Client";
-import NewCantiereModal from "./NewCantiereModal";
 import MezziSection from "./MezziSection";
-import TimbraturaRapportino from "./TimbraturaRapportino";
 import FotoRapportino from "./FotoRapportino";
 import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { FileText } from "lucide-react";
 
-export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieriRefresh, showErrors, rapportinoId, onEnsureDraft }) {
-  const [showNewCantiere, setShowNewCantiere] = useState(false);
-
+export default function Step1DatiCantiere({ data, onChange }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Camera className="w-5 h-5 text-primary" />
+          <FileText className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Dati Cantiere</h2>
-          <p className="text-sm text-muted-foreground">Informazioni generali del rapportino</p>
+          <h2 className="text-lg font-semibold">Dettagli</h2>
+          <p className="text-sm text-muted-foreground">Foto, note e mezzi</p>
         </div>
       </div>
 
@@ -44,45 +35,6 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
         </div>
       </div>
 
-      <div>
-        <Label className={`text-xs font-medium uppercase tracking-wider ${showErrors && !data.cantiere_id ? "text-destructive" : "text-muted-foreground"}`}>
-          Cantiere *
-        </Label>
-        <div className="flex gap-2 mt-1.5">
-          <Select
-            value={data.cantiere_id || ""}
-            onValueChange={(val) => {
-              const c = cantieri.find((c) => c.id === val);
-              onChange({ cantiere_id: val, cantiere_nome: c?.nome || "" });
-            }}
-          >
-            <SelectTrigger className={`flex-1 ${showErrors && !data.cantiere_id ? "border-destructive ring-1 ring-destructive" : ""}`}>
-              <SelectValue placeholder="Seleziona cantiere..." />
-            </SelectTrigger>
-            <SelectContent>
-              {cantieri.filter(c => c.attivo !== false).map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon" onClick={() => setShowNewCantiere(true)}>
-            <Plus className="w-4 h-4" />
-          </Button>
-        </div>
-        {showErrors && !data.cantiere_id && (
-          <p className="text-xs text-destructive mt-1">⚠️ Devi selezionare un cantiere per continuare</p>
-        )}
-      </div>
-
-      {data.cantiere_id && (
-        <TimbraturaRapportino
-          cantiere={cantieri.find((c) => c.id === data.cantiere_id)}
-          rapportinoId={rapportinoId}
-          onEnsureDraft={onEnsureDraft}
-          onChange={onChange}
-        />
-      )}
-
       <FotoRapportino
         foto={data.foto_annotate || []}
         onChange={(v) => onChange({ foto_annotate: v })}
@@ -99,15 +51,6 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
       </div>
 
       <MezziSection data={data} onChange={onChange} />
-
-      <NewCantiereModal
-        open={showNewCantiere}
-        onClose={() => setShowNewCantiere(false)}
-        onCreated={(c) => {
-          onCantieriRefresh();
-          onChange({ cantiere_id: c.id, cantiere_nome: c.nome });
-        }}
-      />
     </div>
   );
 }
