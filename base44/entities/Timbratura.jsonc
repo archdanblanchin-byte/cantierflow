@@ -1,0 +1,62 @@
+{
+  "name": "Timbratura",
+  "type": "object",
+  "properties": {
+    "cantiere_id": {
+      "type": "string",
+      "description": "ID del cantiere"
+    },
+    "cantiere_nome": {
+      "type": "string",
+      "description": "Nome del cantiere (denormalizzato)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email dell'utente che ha timbrato"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome dell'utente (denormalizzato)"
+    },
+    "tipo_evento": {
+      "type": "string",
+      "enum": [
+        "ingresso",
+        "pausa_inizio",
+        "pausa_fine",
+        "uscita"
+      ],
+      "description": "Tipo di timbratura"
+    },
+    "data_ora": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data e ora della timbratura"
+    },
+    "latitudine": {
+      "type": "number",
+      "description": "Latitudine GPS al momento della timbratura"
+    },
+    "longitudine": {
+      "type": "number",
+      "description": "Longitudine GPS al momento della timbratura"
+    },
+    "distanza_metri": {
+      "type": "number",
+      "description": "Distanza in metri dalla posizione del cantiere"
+    },
+    "in_cantiere": {
+      "type": "boolean",
+      "description": "Se la timbratura \u00e8 stata effettuata entro il raggio del cantiere"
+    },
+    "note": {
+      "type": "string",
+      "description": "Note opzionali (es. giustificazione se fuori cantiere)"
+    }
+  },
+  "required": [
+    "cantiere_id",
+    "tipo_evento",
+    "data_ora"
+  ]
+}

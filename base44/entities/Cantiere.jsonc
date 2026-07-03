@@ -31,6 +31,19 @@
       "type": "number",
       "description": "Ore stimate per il cantiere"
     },
+    "latitudine": {
+      "type": "number",
+      "description": "Latitudine GPS del cantiere per validazione timbrature"
+    },
+    "longitudine": {
+      "type": "number",
+      "description": "Longitudine GPS del cantiere per validazione timbrature"
+    },
+    "raggio_metri": {
+      "type": "number",
+      "default": 150,
+      "description": "Raggio di accettazione timbrature in metri"
+    },
     "foto_cantiere": {
       "type": "array",
       "description": "Foto del cantiere",
