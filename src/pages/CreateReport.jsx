@@ -99,6 +99,21 @@ export default function CreateReport() {
     setFormData((prev) => ({ ...prev, ...updates }));
   };
 
+  // Crea subito il draft se non esiste, restituendo l'ID (per le timbrature)
+  const ensureDraft = async () => {
+    if (draftId) return draftId;
+    const data = autosaveRef.current;
+    if (!data.cantiere_id) return null;
+    try {
+      const saved = await base44.entities.Rapportino.create({ ...data, stato: "bozza" });
+      setDraftId(saved.id);
+      setLastSaved(new Date());
+      return saved.id;
+    } catch (e) {
+      return null;
+    }
+  };
+
   const validateStep = () => {
     if (step === 1 && !formData.cantiere_id) {
       toast.error("Seleziona un cantiere");
@@ -163,7 +178,7 @@ export default function CreateReport() {
   })();
 
   const stepContent = {
-    1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} showErrors={showErrors} />,
+    1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} showErrors={showErrors} rapportinoId={draftId} onEnsureDraft={ensureDraft} />,
     2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} showErrors={showErrors} />,
     3: <Step3Lavorazioni data={formData} onChange={updateForm} tipiLavorazione={tipiLavorazione} />,
     4: <Step4Materiali data={formData} onChange={updateForm} materialiBase={materialiBase} />,

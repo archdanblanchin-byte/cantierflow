@@ -8,11 +8,12 @@ import { Plus, Camera } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import NewCantiereModal from "./NewCantiereModal";
 import MezziSection from "./MezziSection";
+import TimbraturaRapportino from "./TimbraturaRapportino";
 import FotoRapportino from "./FotoRapportino";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
-export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieriRefresh, showErrors }) {
+export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieriRefresh, showErrors, rapportinoId, onEnsureDraft }) {
   const [showNewCantiere, setShowNewCantiere] = useState(false);
 
   return (
@@ -72,6 +73,15 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
           <p className="text-xs text-destructive mt-1">⚠️ Devi selezionare un cantiere per continuare</p>
         )}
       </div>
+
+      {data.cantiere_id && (
+        <TimbraturaRapportino
+          cantiere={cantieri.find((c) => c.id === data.cantiere_id)}
+          rapportinoId={rapportinoId}
+          onEnsureDraft={onEnsureDraft}
+          onChange={onChange}
+        />
+      )}
 
       <FotoRapportino
         foto={data.foto_annotate || []}

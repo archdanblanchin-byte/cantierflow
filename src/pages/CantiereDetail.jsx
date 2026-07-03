@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import FotoCard from "@/components/foto/FotoCard";
 import ReportPDFButton, { ReportPDFContent } from "@/components/ReportPDF";
-import TimbraturaCantiere from "@/components/cantiere/TimbraturaCantiere";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -126,9 +125,6 @@ export default function CantiereDetail() {
             </a>
           )}
         </div>
-
-        {/* Timbratura giornaliera */}
-        {cantiere.attivo !== false && <TimbraturaCantiere cantiere={cantiere} />}
 
         {/* Statistiche ore */}
         <div>

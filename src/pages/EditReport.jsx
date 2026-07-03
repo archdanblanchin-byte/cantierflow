@@ -119,7 +119,7 @@ export default function EditReport() {
   })();
 
   const stepContent = {
-    1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} showErrors={showErrors} />,
+    1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} showErrors={showErrors} rapportinoId={id} />,
     2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} showErrors={showErrors} />,
     3: <Step3Lavorazioni data={formData} onChange={updateForm} tipiLavorazione={tipiLavorazione} />,
     4: <Step4Materiali data={formData} onChange={updateForm} materialiBase={materialiBase} />,

@@ -6,12 +6,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   LogIn, Coffee, LogOut, PlayCircle, MapPin, Loader2, Clock,
-  AlertTriangle, CheckCircle2, CalendarDays,
+  AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
-// Distanza Haversine tra due coordinate in metri
 function distanzaM(lat1, lon1, lat2, lon2) {
   const R = 6371000;
   const toRad = (d) => (d * Math.PI) / 180;
@@ -31,11 +30,7 @@ function getPosizione() {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) =>
-        resolve({
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-        }),
+        resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy }),
       (err) => reject(new Error("Impossibile ottenere la posizione: " + err.message)),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -43,30 +38,10 @@ function getPosizione() {
 }
 
 const STEP_CONFIG = {
-  ingresso: {
-    label: "Ingresso mattina",
-    icon: LogIn,
-    color: "bg-emerald-600 hover:bg-emerald-700",
-    next: "pausa_inizio",
-  },
-  pausa_inizio: {
-    label: "Inizio pausa pranzo",
-    icon: Coffee,
-    color: "bg-amber-500 hover:bg-amber-600",
-    next: "pausa_fine",
-  },
-  pausa_fine: {
-    label: "Fine pausa pranzo",
-    icon: PlayCircle,
-    color: "bg-blue-600 hover:bg-blue-700",
-    next: "uscita",
-  },
-  uscita: {
-    label: "Fine giornata",
-    icon: LogOut,
-    color: "bg-rose-600 hover:bg-rose-700",
-    next: null,
-  },
+  ingresso: { label: "Ingresso mattina", icon: LogIn, color: "bg-emerald-600 hover:bg-emerald-700" },
+  pausa_inizio: { label: "Inizio pausa pranzo", icon: Coffee, color: "bg-amber-500 hover:bg-amber-600" },
+  pausa_fine: { label: "Fine pausa pranzo", icon: PlayCircle, color: "bg-blue-600 hover:bg-blue-700" },
+  uscita: { label: "Fine giornata", icon: LogOut, color: "bg-rose-600 hover:bg-rose-700" },
 };
 
 const ORDINE = ["ingresso", "pausa_inizio", "pausa_fine", "uscita"];
@@ -76,12 +51,7 @@ function fmtOre(ms) {
   return `${(ms / 3600000).toFixed(1)}h`;
 }
 
-function fmtDataOra(iso) {
-  if (!iso) return "—";
-  return format(new Date(iso), "HH:mm", { locale: it });
-}
-
-export default function TimbraturaCantiere({ cantiere }) {
+export default function TimbraturaRapportino({ cantiere, rapportinoId, onEnsureDraft, onChange }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -92,77 +62,59 @@ export default function TimbraturaCantiere({ cantiere }) {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const oggi = format(new Date(), "yyyy-MM-dd");
-
   const { data: timbrature = [], isLoading } = useQuery({
-    queryKey: ["timbrature", cantiere.id, oggi],
-    queryFn: () =>
-      base44.entities.Timbratura.filter({
-        cantiere_id: cantiere.id,
-        user_email: user?.email,
-      }),
-    enabled: !!user?.email && !!cantiere.id,
+    queryKey: ["timbrature", rapportinoId],
+    queryFn: () => base44.entities.Timbratura.filter({ rapportino_id: rapportinoId }),
+    enabled: !!rapportinoId,
   });
 
-  // Filtra solo timbrature di oggi e ordinali
-  const timbratureOggi = (timbrature || [])
-    .filter((t) => t.data_ora && format(new Date(t.data_ora), "yyyy-MM-dd") === oggi)
-    .sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
-
-  // Determina il prossimo step
-  const tipiFatti = new Set(timbratureOggi.map((t) => t.tipo_evento));
+  const timbratureOrd = (timbrature || []).slice().sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
+  const tipiFatti = new Set(timbratureOrd.map((t) => t.tipo_evento));
   const prossimoStep = ORDINE.find((s) => !tipiFatti.has(s)) || null;
 
-  // Trova timbrature per tipo
-  const getTimbratura = (tipo) => timbratureOggi.find((t) => t.tipo_evento === tipo);
+  const getT = (tipo) => timbratureOrd.find((t) => t.tipo_evento === tipo);
+  const t_ingresso = getT("ingresso");
+  const t_pausa_inizio = getT("pausa_inizio");
+  const t_pausa_fine = getT("pausa_fine");
+  const t_uscita = getT("uscita");
 
-  const t_ingresso = getTimbratura("ingresso");
-  const t_pausa_inizio = getTimbratura("pausa_inizio");
-  const t_pausa_fine = getTimbratura("pausa_fine");
-  const t_uscita = getTimbratura("uscita");
-
-  // Calcoli ore
-  const oreMattina =
-    t_ingresso && t_pausa_inizio
-      ? new Date(t_pausa_inizio.data_ora) - new Date(t_ingresso.data_ora)
-      : 0;
-  const orePomeriggio =
-    t_pausa_fine && t_uscita
-      ? new Date(t_uscita.data_ora) - new Date(t_pausa_fine.data_ora)
-      : 0;
-  const durataPausa =
-    t_pausa_inizio && t_pausa_fine
-      ? new Date(t_pausa_fine.data_ora) - new Date(t_pausa_inizio.data_ora)
-      : 0;
+  const oreMattina = t_ingresso && t_pausa_inizio ? new Date(t_pausa_inizio.data_ora) - new Date(t_ingresso.data_ora) : 0;
+  const orePomeriggio = t_pausa_fine && t_uscita ? new Date(t_uscita.data_ora) - new Date(t_pausa_fine.data_ora) : 0;
+  const durataPausa = t_pausa_inizio && t_pausa_fine ? new Date(t_pausa_fine.data_ora) - new Date(t_pausa_inizio.data_ora) : 0;
   const oreTotali = oreMattina + orePomeriggio;
+  const oreTotaliHours = Math.round((oreTotali / 3600000) * 100) / 100;
+
+  // Auto-aggiorna ore_totali_squadra nel rapportino quando la giornata è completa
+  useEffect(() => {
+    if (t_uscita && oreTotaliHours > 0 && onChange) {
+      onChange({ ore_totali_squadra: oreTotaliHours });
+    }
+  }, [t_uscita?.id, oreTotaliHours]);
 
   const handleTimbra = async (tipoEvento) => {
     setLoading(true);
     setError(null);
     setSuccessMsg(null);
     try {
+      let rId = rapportinoId;
+      if (!rId && onEnsureDraft) rId = await onEnsureDraft();
+      if (!rId) throw new Error("Salva il rapportino prima di timbrare");
       if (!user) throw new Error("Utente non autenticato");
+
       const pos = await getPosizione();
 
-      // Calcola distanza dal cantiere se ha coordinate
       let distanza = null;
       let inCantiere = true;
-      if (cantiere.latitudine && cantiere.longitudine) {
-        distanza = distanzaM(
-          pos.lat,
-          pos.lon,
-          cantiere.latitudine,
-          cantiere.longitudine
-        );
-        const raggio = cantiere.raggio_metri || 150;
-        inCantiere = distanza <= raggio;
+      if (cantiere?.latitudine && cantiere?.longitudine) {
+        distanza = distanzaM(pos.lat, pos.lon, cantiere.latitudine, cantiere.longitudine);
+        inCantiere = distanza <= (cantiere.raggio_metri || 150);
       }
 
       const now = new Date().toISOString();
-
       await base44.entities.Timbratura.create({
         cantiere_id: cantiere.id,
         cantiere_nome: cantiere.nome,
+        rapportino_id: rId,
         user_email: user.email,
         user_nome: user.full_name || "",
         tipo_evento: tipoEvento,
@@ -173,10 +125,8 @@ export default function TimbraturaCantiere({ cantiere }) {
         in_cantiere: inCantiere,
       });
 
-      queryClient.invalidateQueries({ queryKey: ["timbrature", cantiere.id, oggi] });
-
-      const cfg = STEP_CONFIG[tipoEvento];
-      setSuccessMsg(`${cfg.label} registrata alle ${format(new Date(), "HH:mm")}`);
+      queryClient.invalidateQueries({ queryKey: ["timbrature", rId] });
+      setSuccessMsg(`${STEP_CONFIG[tipoEvento].label} registrata alle ${format(new Date(), "HH:mm")}`);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -184,24 +134,16 @@ export default function TimbraturaCantiere({ cantiere }) {
     }
   };
 
-  // Se la giornata è completa
   const giornataCompleta = !!t_uscita;
 
   return (
-    <Card className="p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold uppercase tracking-wider">Timbratura Giornaliera</h2>
-        </div>
-        <Badge variant="outline" className="text-[10px] gap-1">
-          <CalendarDays className="w-3 h-3" />
-          {format(new Date(), "d MMM yyyy", { locale: it })}
-        </Badge>
+    <Card className="p-5 space-y-4 border-primary/20">
+      <div className="flex items-center gap-2">
+        <Clock className="w-4 h-4 text-primary" />
+        <h2 className="text-sm font-semibold uppercase tracking-wider">Timbratura</h2>
       </div>
 
-      {/* Ore totali calcolate */}
-      {(t_ingresso || t_uscita) && (
+      {t_ingresso && (
         <div className="grid grid-cols-3 gap-2">
           <div className="rounded-lg bg-primary/10 p-3 text-center">
             <p className="text-lg font-bold text-primary">{fmtOre(oreTotali)}</p>
@@ -218,7 +160,6 @@ export default function TimbraturaCantiere({ cantiere }) {
         </div>
       )}
 
-      {/* Pulsante principale */}
       {!isLoading && prossimoStep && (
         <div className="space-y-2">
           <Button
@@ -229,33 +170,28 @@ export default function TimbraturaCantiere({ cantiere }) {
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              (() => {
-                const Icon = STEP_CONFIG[prossimoStep].icon;
-                return <Icon className="w-5 h-5" />;
-              })()
+              (() => { const Icon = STEP_CONFIG[prossimoStep].icon; return <Icon className="w-5 h-5" />; })()
             )}
             {STEP_CONFIG[prossimoStep].label}
           </Button>
           <p className="text-[11px] text-center text-muted-foreground">
-            La timbratura registra automaticamente orario e posizione GPS
+            Registra automaticamente orario e posizione GPS
           </p>
         </div>
       )}
 
-      {/* Giornata completata */}
       {giornataCompleta && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
           <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
           <div className="text-sm">
             <p className="font-medium text-emerald-900">Giornata completata</p>
             <p className="text-xs text-emerald-700">
-              Totale: {fmtOre(oreTotali)} • Pausa: {fmtOre(durataPausa)}
+              Totale: {fmtOre(oreTotali)} • Pausa: {fmtOre(durataPausa)} • Ore squadra aggiornate automaticamente
             </p>
           </div>
         </div>
       )}
 
-      {/* Messaggi */}
       {error && (
         <div className="flex items-start gap-2 p-3 rounded-lg bg-rose-50 border border-rose-200">
           <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
@@ -269,61 +205,36 @@ export default function TimbraturaCantiere({ cantiere }) {
         </div>
       )}
 
-      {/* Storico timbrature della giornata */}
-      {timbratureOggi.length > 0 && (
+      {timbratureOrd.length > 0 && (
         <div className="space-y-2 pt-2 border-t border-border">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Storico di oggi
-          </p>
-          {timbratureOggi.map((t, i) => {
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Storico</p>
+          {timbratureOrd.map((t) => {
             const cfg = STEP_CONFIG[t.tipo_evento] || {};
             const Icon = cfg.icon || Clock;
             return (
-              <div
-                key={t.id}
-                className="flex items-center justify-between p-2 rounded-lg bg-muted/40"
-              >
+              <div key={t.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/40">
                 <div className="flex items-center gap-2">
                   <Icon className="w-4 h-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">{cfg.label || t.tipo_evento}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {format(new Date(t.data_ora), "HH:mm", { locale: it })}
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">{format(new Date(t.data_ora), "HH:mm", { locale: it })}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {t.in_cantiere === false && (
                     <Badge variant="destructive" className="text-[9px] gap-1">
-                      <AlertTriangle className="w-2.5 h-2.5" />
-                      Fuori cantiere
+                      <AlertTriangle className="w-2.5 h-2.5" /> Fuori cantiere
                     </Badge>
                   )}
                   {t.distanza_metri != null && (
-                    <a
-                      href={`https://www.google.com/maps?q=${t.latitudine},${t.longitudine}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary"
-                    >
-                      <MapPin className="w-3 h-3" />
-                      {t.distanza_metri}m
+                    <a href={`https://www.google.com/maps?q=${t.latitudine},${t.longitudine}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary">
+                      <MapPin className="w-3 h-3" /> {t.distanza_metri}m
                     </a>
                   )}
                 </div>
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Suggerimento ore totali per il rapportino */}
-      {giornataCompleta && oreTotali > 0 && (
-        <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-          <p className="text-[11px] text-blue-700">
-            💡 Suggerito <strong>{fmtOre(oreTotali)}</strong> come "Ore totali squadra"
-            nel rapportino di oggi.
-          </p>
         </div>
       )}
     </Card>

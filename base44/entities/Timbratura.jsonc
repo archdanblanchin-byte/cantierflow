@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Nome del cantiere (denormalizzato)"
     },
+    "rapportino_id": {
+      "type": "string",
+      "description": "ID del rapportino a cui \u00e8 collegata la timbratura"
+    },
     "user_email": {
       "type": "string",
       "description": "Email dell'utente che ha timbrato"
