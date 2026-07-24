@@ -13,6 +13,15 @@
     "attivo": {
       "type": "boolean",
       "default": true
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email dell'utente dell'app collegato a questo collaboratore (per associare le timbrature)"
+    },
+    "tracking_posizione": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se il collaboratore \u00e8 autorizzato al tracking GPS per le trasferte (visibile solo agli admin)"
     }
   },
   "required": [

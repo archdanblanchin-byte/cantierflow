@@ -5,60 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  LogIn, Coffee, LogOut, PlayCircle, MapPin, Loader2, Clock,
+  MapPin, Loader2, Clock,
   AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import { format } from "date-fns";
+import { distanzaM, getPosizione, STEP_CONFIG, ORDINE, arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
 import { it } from "date-fns/locale";
 
-function distanzaM(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const toRad = (d) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-}
 
-function getPosizione() {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("Geolocalizzazione non supportata dal dispositivo"));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy }),
-      (err) => reject(new Error("Impossibile ottenere la posizione: " + err.message)),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  });
-}
-
-const STEP_CONFIG = {
-  ingresso: { label: "Ingresso mattina", icon: LogIn, color: "bg-emerald-600 hover:bg-emerald-700" },
-  pausa_inizio: { label: "Inizio pausa pranzo", icon: Coffee, color: "bg-amber-500 hover:bg-amber-600" },
-  pausa_fine: { label: "Fine pausa pranzo", icon: PlayCircle, color: "bg-blue-600 hover:bg-blue-700" },
-  uscita: { label: "Fine giornata", icon: LogOut, color: "bg-rose-600 hover:bg-rose-700" },
-};
-
-const ORDINE = ["ingresso", "pausa_inizio", "pausa_fine", "uscita"];
-
-function arrotondaQuarti(ms) {
-  if (!ms || ms < 0) return 0;
-  const ore = ms / 3600000;
-  return Math.round(ore * 4) / 4;
-}
-
-function fmtOre(oreQuarti) {
-  if (!oreQuarti || oreQuarti <= 0) return "0h";
-  const h = Math.floor(oreQuarti);
-  const min = Math.round((oreQuarti - h) * 60);
-  if (min === 0) return `${h}h`;
-  return `${h}h ${min}min`;
-}
 
 export default function TimbraturaRapportino({ cantiere, rapportinoId, onEnsureDraft, onChange }) {
   const queryClient = useQueryClient();
