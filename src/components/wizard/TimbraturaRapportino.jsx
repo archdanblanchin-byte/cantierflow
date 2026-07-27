@@ -13,7 +13,6 @@ import { distanzaM, getPosizione, STEP_CONFIG, ORDINE, arrotondaQuarti, fmtOre }
 import { it } from "date-fns/locale";
 
 
-
 export default function TimbraturaRapportino({ cantiere, rapportinoId, onEnsureDraft, onChange }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
@@ -25,11 +24,43 @@ export default function TimbraturaRapportino({ cantiere, rapportinoId, onEnsureD
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  const oggi = new Date();
+  const inizio = new Date(oggi);
+  inizio.setHours(0, 0, 0, 0);
+  const fine = new Date(oggi);
+  fine.setHours(23, 59, 59, 999);
+  const giornoKey = format(inizio, "yyyy-MM-dd");
+
+  // Query unificata: tutte le timbrature della giornata per questo cantiere e utente
+  // (include i timbri "orfani" fatti dalla pagina Timbrature Rapide)
   const { data: timbrature = [], isLoading } = useQuery({
-    queryKey: ["timbrature", rapportinoId],
-    queryFn: () => base44.entities.Timbratura.filter({ rapportino_id: rapportinoId }),
-    enabled: !!rapportinoId,
+    queryKey: ["timbrature-giornata-cantiere", user?.email, cantiere?.id, giornoKey],
+    queryFn: () => base44.entities.Timbratura.filter({
+      user_email: user.email,
+      cantiere_id: cantiere.id,
+      data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() },
+    }),
+    enabled: !!user && !!cantiere?.id,
   });
+
+  // Collegamento automatico: i timbri orfani della giornata vengono associati al rapportino corrente
+  useEffect(() => {
+    if (!rapportinoId || !user || !cantiere?.id) return;
+    const orfane = timbrature.some((t) => t.rapportino_id !== rapportinoId);
+    if (!orfane) return;
+    base44.entities.Timbratura.updateMany(
+      {
+        user_email: user.email,
+        cantiere_id: cantiere.id,
+        data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() },
+        rapportino_id: { $ne: rapportinoId },
+      },
+      { $set: { rapportino_id: rapportinoId } }
+    ).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["timbrature-giornata-cantiere", user.email, cantiere.id, giornoKey] });
+      queryClient.invalidateQueries({ queryKey: ["timbrature-giornaliere"] });
+    }).catch(() => {});
+  }, [rapportinoId, timbrature.length]);
 
   const timbratureOrd = (timbrature || []).slice().sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
   const tipiFatti = new Set(timbratureOrd.map((t) => t.tipo_evento));
@@ -58,10 +89,14 @@ export default function TimbraturaRapportino({ cantiere, rapportinoId, onEnsureD
     setError(null);
     setSuccessMsg(null);
     try {
-      let rId = rapportinoId;
-      if (!rId && onEnsureDraft) rId = await onEnsureDraft();
-      if (!rId) throw new Error("Salva il rapportino prima di timbrare");
       if (!user) throw new Error("Utente non autenticato");
+
+      // Il timbro viene salvato SEMPRE, anche se il rapportino non esiste ancora.
+      // Verrà collegato automaticamente quando il rapportino viene salvato.
+      let rId = rapportinoId;
+      if (!rId && onEnsureDraft) {
+        try { rId = await onEnsureDraft(); } catch {}
+      }
 
       const pos = await getPosizione();
 
@@ -76,7 +111,7 @@ export default function TimbraturaRapportino({ cantiere, rapportinoId, onEnsureD
       await base44.entities.Timbratura.create({
         cantiere_id: cantiere.id,
         cantiere_nome: cantiere.nome,
-        rapportino_id: rId,
+        rapportino_id: rId || null,
         user_email: user.email,
         user_nome: user.full_name || "",
         tipo_evento: tipoEvento,
@@ -87,7 +122,8 @@ export default function TimbraturaRapportino({ cantiere, rapportinoId, onEnsureD
         in_cantiere: inCantiere,
       });
 
-      queryClient.invalidateQueries({ queryKey: ["timbrature", rId] });
+      queryClient.invalidateQueries({ queryKey: ["timbrature-giornata-cantiere", user.email, cantiere.id, giornoKey] });
+      queryClient.invalidateQueries({ queryKey: ["timbrature-giornaliere"] });
       setSuccessMsg(`${STEP_CONFIG[tipoEvento].label} registrata alle ${format(new Date(), "HH:mm")}`);
     } catch (e) {
       setError(e.message);
