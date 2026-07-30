@@ -28,7 +28,8 @@
         "ingresso",
         "pausa_inizio",
         "pausa_fine",
-        "uscita"
+        "uscita",
+        "spostamento"
       ],
       "description": "Tipo di timbratura"
     },
@@ -53,13 +54,29 @@
       "type": "boolean",
       "description": "Se la timbratura \u00e8 stata effettuata entro il raggio del cantiere"
     },
+    "km_spostamento": {
+      "type": "number",
+      "description": "Chilometri percorsi durante lo spostamento (calcolato all'ingresso del cantiere successivo)"
+    },
+    "cantiere_destinazione_id": {
+      "type": "string",
+      "description": "ID del cantiere di destinazione dello spostamento"
+    },
+    "cantiere_destinazione_nome": {
+      "type": "string",
+      "description": "Nome del cantiere di destinazione (denormalizzato)"
+    },
+    "mezzo_proprio": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se lo spostamento \u00e8 stato fatto con mezzo proprio"
+    },
     "note": {
       "type": "string",
       "description": "Note opzionali (es. giustificazione se fuori cantiere)"
     }
   },
   "required": [
-    "cantiere_id",
     "tipo_evento",
     "data_ora"
   ]

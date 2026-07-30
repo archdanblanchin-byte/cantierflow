@@ -6,13 +6,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, FileText, ArrowLeft, HardHat,
   ClipboardList, Building2, Camera, CalendarDays, BarChart2,
   Truck, Droplets, UtensilsCrossed, ShieldCheck, GraduationCap, BookUser,
-  Fingerprint
+  Fingerprint, Route
 } from "lucide-react";
 import ReportCard from "@/components/home/ReportCard";
 
 const MENU_ITEMS = [
   { label: "Rapportino", icon: ClipboardList, path: "/rapportini", color: "bg-blue-500" },
   { label: "Timbrature", icon: Fingerprint, path: "/timbrature", color: "bg-green-600" },
+  { label: "Trasferte", icon: Route, path: "/trasferte", color: "bg-orange-500" },
   { label: "Cantiere", icon: Building2, path: "/cantieri", color: "bg-emerald-500" },
   { label: "Foto", icon: Camera, path: "/foto", color: "bg-purple-500" },
   { label: "Programma", icon: CalendarDays, path: "/programma", color: "bg-orange-500" },

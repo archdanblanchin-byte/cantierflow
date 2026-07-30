@@ -1,4 +1,10 @@
-import { LogIn, Coffee, LogOut, PlayCircle } from "lucide-react";
+import { LogIn, Coffee, LogOut, PlayCircle, Navigation, Route } from "lucide-react";
+
+// Coordinate del capannone sede (Rivignano Teor, UD)
+export const CAPANNONE = { lat: 45.8533, lon: 12.9997, nome: "Rivignano Teor" };
+
+// Soglie fasce trasferta (in km)
+export const SOGLIE_TRASFERTA = { T0: 15, T1: 50 };
 
 export function distanzaM(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -9,6 +15,10 @@ export function distanzaM(lat1, lon1, lat2, lon2) {
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+export function distanzaKm(lat1, lon1, lat2, lon2) {
+  return Math.round((distanzaM(lat1, lon1, lat2, lon2) / 1000) * 10) / 10;
 }
 
 export function getPosizione() {
@@ -31,6 +41,7 @@ export const STEP_CONFIG = {
   pausa_inizio: { label: "Inizio pausa", icon: Coffee, color: "bg-amber-500 hover:bg-amber-600" },
   pausa_fine: { label: "Fine pausa", icon: PlayCircle, color: "bg-blue-600 hover:bg-blue-700" },
   uscita: { label: "Uscita", icon: LogOut, color: "bg-rose-600 hover:bg-rose-700" },
+  spostamento: { label: "Spostamento", icon: Navigation, color: "bg-orange-500 hover:bg-orange-600" },
 };
 
 export const ORDINE = ["ingresso", "pausa_inizio", "pausa_fine", "uscita"];
@@ -48,3 +59,17 @@ export function fmtOre(oreQuarti) {
   if (min === 0) return `${h}h`;
   return `${h}h ${min}min`;
 }
+
+// Classifica la trasferta in base alla media km (andata+ritorno)/2
+export function classificaTrasferta(kmMedia) {
+  if (kmMedia == null) return null;
+  if (kmMedia < SOGLIE_TRASFERTA.T0) return "T0";
+  if (kmMedia <= SOGLIE_TRASFERTA.T1) return "T1";
+  return "T2";
+}
+
+export const TRASFERTA_CONFIG = {
+  T0: { label: "T0", color: "bg-slate-100 text-slate-700 border-slate-300" },
+  T1: { label: "T1", color: "bg-blue-100 text-blue-700 border-blue-300" },
+  T2: { label: "T2", color: "bg-purple-100 text-purple-700 border-purple-300" },
+};

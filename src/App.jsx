@@ -16,6 +16,7 @@ import FotoPage from './pages/Foto';
 import Anagrafe from './pages/Anagrafe';
 import EditReport from './pages/EditReport';
 import TimbratureRapide from './pages/TimbratureRapide';
+import DashboardTrasferte from './pages/DashboardTrasferte';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -41,6 +42,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/timbrature" element={<TimbratureRapide />} />
+      <Route path="/trasferte" element={<DashboardTrasferte />} />
 
       {/* Rapportini */}
       <Route path="/rapportini" element={<Home showRapportini />} />

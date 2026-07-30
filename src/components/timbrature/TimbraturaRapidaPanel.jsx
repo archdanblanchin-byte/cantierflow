@@ -3,9 +3,9 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Loader2, MapPin, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, MapPin, AlertTriangle, CheckCircle2, Navigation } from "lucide-react";
 import { format } from "date-fns";
-import { STEP_CONFIG, getPosizione, distanzaM } from "@/lib/timbratureUtils";
+import { STEP_CONFIG, getPosizione, distanzaM, distanzaKm } from "@/lib/timbratureUtils";
 
 export default function TimbraturaRapidaPanel({ timbrature, cantiere, cantieri, user, onCantiereChange, onTimbrata }) {
   const [loading, setLoading] = useState(false);
@@ -16,25 +16,27 @@ export default function TimbraturaRapidaPanel({ timbrature, cantiere, cantieri, 
   const ultimoTimbro = timbratureOrd[timbratureOrd.length - 1];
 
   const ultimoIngresso = [...timbratureOrd].reverse().find(t => t.tipo_evento === "ingresso");
-  const inCicloAperto = ultimoTimbro && ultimoTimbro.tipo_evento !== "uscita";
+  const inCicloAperto = ultimoTimbro && ultimoTimbro.tipo_evento !== "uscita" && ultimoTimbro.tipo_evento !== "spostamento";
   const cantiereAttivo = inCicloAperto && ultimoIngresso
     ? (cantieri.find(c => c.id === ultimoIngresso.cantiere_id) || { id: ultimoIngresso.cantiere_id, nome: ultimoIngresso.cantiere_nome })
     : cantiere;
 
+  // Determina i prossimi eventi possibili in base all'ultimo timbro
   const prossimiEventi = [];
   if (!ultimoTimbro) {
     prossimiEventi.push("ingresso");
   } else if (ultimoTimbro.tipo_evento === "ingresso") {
-    prossimiEventi.push("pausa_inizio", "uscita");
+    prossimiEventi.push("pausa_inizio", "spostamento", "uscita");
   } else if (ultimoTimbro.tipo_evento === "pausa_inizio") {
     prossimiEventi.push("pausa_fine");
   } else if (ultimoTimbro.tipo_evento === "pausa_fine") {
-    prossimiEventi.push("pausa_inizio", "uscita");
-  } else if (ultimoTimbro.tipo_evento === "uscita") {
+    prossimiEventi.push("pausa_inizio", "spostamento", "uscita");
+  } else if (ultimoTimbro.tipo_evento === "uscita" || ultimoTimbro.tipo_evento === "spostamento") {
     prossimiEventi.push("ingresso");
   }
 
   const richiedeCantiere = prossimiEventi.includes("ingresso") && !inCicloAperto;
+  const inSpostamento = ultimoTimbro?.tipo_evento === "spostamento";
 
   const handleTimbra = async (tipoEvento) => {
     setLoading(true);
@@ -42,10 +44,93 @@ export default function TimbraturaRapidaPanel({ timbrature, cantiere, cantieri, 
     setSuccessMsg(null);
     try {
       if (!user) throw new Error("Utente non autenticato");
-      const c = inCicloAperto ? cantiereAttivo : cantiere;
-      if (!c) throw new Error("Seleziona un cantiere");
-
       const pos = await getPosizione();
+
+      if (tipoEvento === "spostamento") {
+        // Spostamento: chiude il cantiere corrente (registra uscita) + apre spostamento
+        const c = cantiereAttivo;
+        if (!c) throw new Error("Nessun cantiere attivo da chiudere");
+        const now = new Date().toISOString();
+
+        // 1. Registra uscita del cantiere corrente
+        let distanza = null;
+        let inCantiere = true;
+        if (c?.latitudine && c?.longitudine) {
+          distanza = distanzaM(pos.lat, pos.lon, c.latitudine, c.longitudine);
+          inCantiere = distanza <= (c.raggio_metri || 150);
+        }
+        await base44.entities.Timbratura.create({
+          cantiere_id: c.id,
+          cantiere_nome: c.nome,
+          user_email: user.email,
+          user_nome: user.full_name || "",
+          tipo_evento: "uscita",
+          data_ora: now,
+          latitudine: pos.lat,
+          longitudine: pos.lon,
+          distanza_metri: distanza,
+          in_cantiere: inCantiere,
+        });
+
+        // 2. Registra evento spostamento (inizio viaggio)
+        await base44.entities.Timbratura.create({
+          user_email: user.email,
+          user_nome: user.full_name || "",
+          tipo_evento: "spostamento",
+          data_ora: now,
+          latitudine: pos.lat,
+          longitudine: pos.lon,
+        });
+
+        onTimbrata();
+        setSuccessMsg(`Spostamento iniziato alle ${format(new Date(), "HH:mm")}`);
+        return;
+      }
+
+      if (tipoEvento === "ingresso") {
+        const c = inSpostamento ? cantiere : cantiereAttivo;
+        const cSel = cantiere;
+        if (!cSel) throw new Error("Seleziona un cantiere");
+        const now = new Date().toISOString();
+
+        let distanza = null;
+        let inCantiere = true;
+        if (cSel?.latitudine && cSel?.longitudine) {
+          distanza = distanzaM(pos.lat, pos.lon, cSel.latitudine, cSel.longitudine);
+          inCantiere = distanza <= (cSel.raggio_metri || 150);
+        }
+
+        // Se eravamo in spostamento, calcola i km e aggiorna l'evento spostamento
+        if (inSpostamento && ultimoTimbro) {
+          const km = distanzaKm(ultimoTimbro.latitudine, ultimoTimbro.longitudine, pos.lat, pos.lon);
+          await base44.entities.Timbratura.update(ultimoTimbro.id, {
+            km_spostamento: km,
+            cantiere_destinazione_id: cSel.id,
+            cantiere_destinazione_nome: cSel.nome,
+          });
+        }
+
+        await base44.entities.Timbratura.create({
+          cantiere_id: cSel.id,
+          cantiere_nome: cSel.nome,
+          user_email: user.email,
+          user_nome: user.full_name || "",
+          tipo_evento: "ingresso",
+          data_ora: now,
+          latitudine: pos.lat,
+          longitudine: pos.lon,
+          distanza_metri: distanza,
+          in_cantiere: inCantiere,
+        });
+
+        onTimbrata();
+        setSuccessMsg(`Ingresso registrato alle ${format(new Date(), "HH:mm")}`);
+        return;
+      }
+
+      // Eventi normali (pausa_inizio, pausa_fine, uscita)
+      const c = cantiereAttivo;
+      if (!c) throw new Error("Seleziona un cantiere");
       let distanza = null;
       let inCantiere = true;
       if (c?.latitudine && c?.longitudine) {
@@ -78,6 +163,16 @@ export default function TimbraturaRapidaPanel({ timbrature, cantiere, cantieri, 
 
   return (
     <div className="space-y-4">
+      {inSpostamento && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-orange-50 border border-orange-300">
+          <Navigation className="w-4 h-4 text-orange-600 flex-shrink-0 animate-pulse" />
+          <div className="text-sm">
+            <p className="font-medium text-orange-900">In spostamento</p>
+            <p className="text-xs text-orange-700">Seleziona il cantiere di destinazione e registra l'ingresso</p>
+          </div>
+        </div>
+      )}
+
       {richiedeCantiere && (
         <div>
           <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Cantiere</Label>
@@ -92,7 +187,7 @@ export default function TimbraturaRapidaPanel({ timbrature, cantiere, cantieri, 
         </div>
       )}
 
-      {!richiedeCantiere && cantiereAttivo && (
+      {!richiedeCantiere && cantiereAttivo && !inSpostamento && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
           <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
           <span className="text-sm font-medium">{cantiereAttivo.nome}</span>

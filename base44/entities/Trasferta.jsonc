@@ -1,0 +1,74 @@
+{
+  "name": "Trasferta",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "string",
+      "format": "date",
+      "description": "Data della trasferta"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email del collaboratore"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome del collaboratore (denormalizzato)"
+    },
+    "primo_cantiere_id": {
+      "type": "string",
+      "description": "ID del primo cantiere della giornata"
+    },
+    "primo_cantiere_nome": {
+      "type": "string",
+      "description": "Nome del primo cantiere"
+    },
+    "ultimo_cantiere_id": {
+      "type": "string",
+      "description": "ID dell'ultimo cantiere della giornata"
+    },
+    "ultimo_cantiere_nome": {
+      "type": "string",
+      "description": "Nome dell'ultimo cantiere"
+    },
+    "km_andata": {
+      "type": "number",
+      "description": "Km dal capannone al primo cantiere"
+    },
+    "km_ritorno": {
+      "type": "number",
+      "description": "Km dall'ultimo cantiere al capannone"
+    },
+    "km_totali": {
+      "type": "number",
+      "description": "Km totali (andata + ritorno)"
+    },
+    "tipo_trasferta": {
+      "type": "string",
+      "enum": [
+        "T0",
+        "T1",
+        "T2"
+      ],
+      "description": "Fascia trasferta calcolata sulla media andata+ritorno"
+    },
+    "mezzo_proprio": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se la trasferta \u00e8 stata fatta con mezzo proprio"
+    },
+    "note": {
+      "type": "string",
+      "description": "Note sulla trasferta"
+    },
+    "confermata": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se l'admin ha confermato la trasferta"
+    }
+  },
+  "required": [
+    "data",
+    "user_email"
+  ]
+}

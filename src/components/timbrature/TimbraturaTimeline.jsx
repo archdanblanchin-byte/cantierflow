@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { MapPin, Clock, AlertTriangle } from "lucide-react";
+import { MapPin, Clock, AlertTriangle, Navigation } from "lucide-react";
 import { STEP_CONFIG, arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
 
 export default function TimbraturaTimeline({ timbrature }) {
@@ -18,9 +18,14 @@ export default function TimbraturaTimeline({ timbrature }) {
   }
 
   const perCantiere = {};
+  const spostamenti = [];
   timbratureOrd.forEach(t => {
-    if (!perCantiere[t.cantiere_id]) perCantiere[t.cantiere_id] = { nome: t.cantiere_nome, timbri: [] };
-    perCantiere[t.cantiere_id].timbri.push(t);
+    if (t.tipo_evento === "spostamento") {
+      spostamenti.push(t);
+    } else if (t.cantiere_id) {
+      if (!perCantiere[t.cantiere_id]) perCantiere[t.cantiere_id] = { nome: t.cantiere_nome, timbri: [] };
+      perCantiere[t.cantiere_id].timbri.push(t);
+    }
   });
 
   const gruppi = Object.entries(perCantiere).map(([id, g]) => {
@@ -41,6 +46,7 @@ export default function TimbraturaTimeline({ timbrature }) {
   });
 
   const oreTotali = gruppi.reduce((s, g) => s + g.ore, 0);
+  const kmTotali = spostamenti.reduce((s, t) => s + (t.km_spostamento || 0), 0);
 
   return (
     <div className="space-y-4">
@@ -49,10 +55,41 @@ export default function TimbraturaTimeline({ timbrature }) {
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Totale giornata</p>
           <p className="text-2xl font-bold text-primary">{fmtOre(oreTotali)}</p>
         </div>
-        <div className="text-right">
+        <div className="text-right space-y-1">
           <p className="text-xs text-muted-foreground">{gruppi.length} cantiere/i</p>
+          {spostamenti.length > 0 && (
+            <p className="text-xs text-orange-600 font-medium flex items-center gap-1 justify-end">
+              <Navigation className="w-3 h-3" />
+              {kmTotali.toFixed(1)} km in {spostamenti.length} spost.
+            </p>
+          )}
         </div>
       </Card>
+
+      {spostamenti.length > 0 && (
+        <Card className="p-4 space-y-2 border-orange-200 bg-orange-50/30">
+          <div className="flex items-center gap-2 border-b border-orange-200 pb-2">
+            <Navigation className="w-4 h-4 text-orange-600" />
+            <span className="text-sm font-semibold text-orange-900">Spostamenti</span>
+          </div>
+          {spostamenti.map((t, i) => (
+            <div key={t.id} className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-orange-600 font-medium">#{i + 1}</span>
+                <span className="text-muted-foreground">
+                  {t.cantiere_destinazione_nome ? `→ ${t.cantiere_destinazione_nome}` : "In corso"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {t.km_spostamento != null && (
+                  <Badge variant="outline" className="text-orange-700 border-orange-300">{t.km_spostamento} km</Badge>
+                )}
+                <span className="text-muted-foreground">{format(new Date(t.data_ora), "HH:mm", { locale: it })}</span>
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
 
       {gruppi.map((g) => (
         <Card key={g.id} className="p-4 space-y-3">
