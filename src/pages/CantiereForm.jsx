@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, MapPin, Save } from "lucide-react";
+import { ArrowLeft, MapPin, Save, Crosshair, Loader2 } from "lucide-react";
+import { getPosizione } from "@/lib/timbratureUtils";
 import FotoUpload from "@/components/cantiere/FotoUpload";
 import DocumentiUpload from "@/components/cantiere/DocumentiUpload";
 
@@ -131,6 +132,72 @@ export default function CantiereForm() {
                 </a>
               )}
             </div>
+          </div>
+
+          {/* Coordinate GPS */}
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Coordinate GPS (per validazione timbrature)</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Latitudine</Label>
+                <Input
+                  type="number"
+                  step="0.000001"
+                  value={form.latitudine ?? ""}
+                  onChange={(e) => set("latitudine", parseFloat(e.target.value) || null)}
+                  className="mt-1"
+                  placeholder="Es. 45.8533"
+                />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Longitudine</Label>
+                <Input
+                  type="number"
+                  step="0.000001"
+                  value={form.longitudine ?? ""}
+                  onChange={(e) => set("longitudine", parseFloat(e.target.value) || null)}
+                  className="mt-1"
+                  placeholder="Es. 12.9997"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={async () => {
+                  try {
+                    const pos = await getPosizione();
+                    set("latitudine", pos.lat);
+                    set("longitudine", pos.lon);
+                    toast.success("Posizione rilevata");
+                  } catch (e) {
+                    toast.error("Impossibile ottenere la posizione: " + e.message);
+                  }
+                }}
+              >
+                <Crosshair className="w-4 h-4 text-primary" />
+                Rileva posizione attuale
+              </Button>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground whitespace-nowrap">Raggio (m)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={form.raggio_metri ?? 150}
+                  onChange={(e) => set("raggio_metri", parseInt(e.target.value) || 150)}
+                  className="w-24"
+                  placeholder="150"
+                />
+              </div>
+            </div>
+            {(form.latitudine != null && form.longitudine != null) && (
+              <a href={`https://www.google.com/maps?q=${form.latitudine},${form.longitudine}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                <MapPin className="w-3 h-3" /> Verifica su Maps →
+              </a>
+            )}
           </div>
 
           <div>
