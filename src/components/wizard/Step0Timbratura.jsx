@@ -67,6 +67,7 @@ export default function Step0Timbratura({ data, onChange, cantieri, onCantieriRe
       {data.cantiere_id && (
         <TimbraturaRapportino
           cantiere={cantiereSelezionato || { id: data.cantiere_id, nome: data.cantiere_nome }}
+          cantieri={cantieri}
           rapportinoId={rapportinoId}
           onEnsureDraft={onEnsureDraft}
           onChange={onChange}
