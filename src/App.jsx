@@ -18,6 +18,7 @@ import EditReport from './pages/EditReport';
 import DashboardTrasferte from './pages/DashboardTrasferte';
 import Permessi from './pages/Permessi';
 import Utenti from './pages/Utenti';
+import OreLavoratori from './pages/OreLavoratori';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -67,6 +68,7 @@ const AuthenticatedApp = () => {
       <Route path="/ristorante" element={<Placeholder title="Ristorante" />} />
       <Route path="/permessi" element={<Permessi />} />
       <Route path="/utenti" element={<Utenti />} />
+      <Route path="/ore-lavoratori" element={<OreLavoratori />} />
       <Route path="/corsi" element={<Placeholder title="Corsi" />} />
 
       <Route path="*" element={<PageNotFound />} />

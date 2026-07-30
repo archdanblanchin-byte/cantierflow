@@ -2,7 +2,7 @@ import {
   ClipboardList, Building2, Camera, BookUser, Route,
   CalendarDays, BarChart2, Truck, FileText, Droplets,
   UtensilsCrossed, GraduationCap, ShieldCheck, Users,
-  HardHat,
+  HardHat, Clock,
 } from "lucide-react";
 
 export const RUOLI = [
@@ -18,6 +18,7 @@ export const SEZIONI_APP = [
   { key: "foto", label: "Foto", path: "/foto", icon: Camera, color: "bg-purple-500" },
   { key: "anagrafe", label: "Anagrafe", path: "/anagrafe", icon: BookUser, color: "bg-slate-600" },
   { key: "trasferte", label: "Trasferte", path: "/trasferte", icon: Route, color: "bg-orange-500" },
+  { key: "ore_lavoratori", label: "Ore Lavoratori", path: "/ore-lavoratori", icon: Clock, color: "bg-amber-500" },
   { key: "programma", label: "Programma", path: "/programma", icon: CalendarDays, color: "bg-orange-500" },
   { key: "cronoprogramma", label: "Cronoprogramma", path: "/cronoprogramma", icon: BarChart2, color: "bg-cyan-500" },
   { key: "furgoni", label: "Furgoni", path: "/furgoni", icon: Truck, color: "bg-yellow-500" },
@@ -31,8 +32,8 @@ export const SEZIONI_APP = [
 
 export const PERMESSI_DEFAULT = {
   admin: SEZIONI_APP.map(s => s.key),
-  responsabile_tecnico: ["rapportini", "cantieri", "foto", "anagrafe", "trasferte", "programma", "cronoprogramma", "documenti", "corsi"],
-  capocantiere: ["rapportini", "cantieri", "foto", "anagrafe", "trasferte", "furgoni", "idropulitrice"],
+  responsabile_tecnico: ["rapportini", "cantieri", "foto", "anagrafe", "trasferte", "ore_lavoratori", "programma", "cronoprogramma", "documenti", "corsi"],
+  capocantiere: ["rapportini", "cantieri", "foto", "anagrafe", "trasferte", "ore_lavoratori", "furgoni", "idropulitrice"],
   collaboratore: ["rapportini", "cantieri", "foto"],
 };
 
