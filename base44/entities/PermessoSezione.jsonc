@@ -1,0 +1,26 @@
+{
+  "name": "PermessoSezione",
+  "type": "object",
+  "properties": {
+    "ruolo": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "responsabile_tecnico",
+        "capocantiere",
+        "collaboratore"
+      ],
+      "description": "Ruolo a cui si applicano i permessi"
+    },
+    "sezioni_permesse": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lista delle chiavi delle sezioni visibili per questo ruolo"
+    }
+  },
+  "required": [
+    "ruolo"
+  ]
+}

@@ -3,28 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, FileText, ArrowLeft, HardHat,
-  ClipboardList, Building2, Camera, CalendarDays, BarChart2,
-  Truck, Droplets, UtensilsCrossed, ShieldCheck, GraduationCap, BookUser
-} from "lucide-react";
+import { Plus, FileText, ArrowLeft, HardHat } from "lucide-react";
 import ReportCard from "@/components/home/ReportCard";
-
-const MENU_ITEMS = [
-  { label: "Rapportino", icon: ClipboardList, path: "/rapportini", color: "bg-blue-500" },
-  { label: "Cantiere", icon: Building2, path: "/cantieri", color: "bg-emerald-500" },
-  { label: "Foto", icon: Camera, path: "/foto", color: "bg-purple-500" },
-  { label: "Programma", icon: CalendarDays, path: "/programma", color: "bg-orange-500" },
-  { label: "Cronoprogramma", icon: BarChart2, path: "/cronoprogramma", color: "bg-cyan-500" },
-  { label: "Furgoni", icon: Truck, path: "/furgoni", color: "bg-yellow-500" },
-  { label: "Documenti", icon: FileText, path: "/documenti", color: "bg-indigo-500" },
-  { label: "Idropulitrice", icon: Droplets, path: "/idropulitrice", color: "bg-sky-500" },
-  { label: "Ristorante", icon: UtensilsCrossed, path: "/ristorante", color: "bg-rose-500" },
-  { label: "Permessi", icon: ShieldCheck, path: "/permessi", color: "bg-teal-500" },
-  { label: "Corsi", icon: GraduationCap, path: "/corsi", color: "bg-violet-500" },
-  { label: "Anagrafe", icon: BookUser, path: "/anagrafe", color: "bg-slate-600" },
-];
+import { SEZIONI_APP } from "@/lib/permissions";
+import { usePermessi } from "@/hooks/usePermessi";
+import BottomNav from "@/components/BottomNav";
 
 function MenuGrid() {
+  const { puoVedere } = usePermessi();
+  const items = SEZIONI_APP.filter(s => puoVedere(s.key));
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-card border-b border-border">
@@ -42,9 +29,9 @@ function MenuGrid() {
       </div>
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-          {MENU_ITEMS.map((item) => (
+          {items.map((item) => (
             <Link
-              key={item.label}
+              key={item.key}
               to={item.path}
               className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-border bg-card p-4 hover:shadow-lg hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-200 group aspect-square"
             >
@@ -58,6 +45,7 @@ function MenuGrid() {
           ))}
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 }
@@ -70,7 +58,7 @@ function RapportiniList() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       <div className="bg-card border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -115,6 +103,7 @@ function RapportiniList() {
           </div>
         )}
       </div>
+      <BottomNav />
     </div>
   );
 }

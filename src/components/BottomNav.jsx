@@ -1,16 +1,19 @@
 import { Link, useLocation } from "react-router-dom";
 import { Home, ClipboardList, Building2, BookUser } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePermessi } from "@/hooks/usePermessi";
 
-const NAV_ITEMS = [
-  { label: "Home", icon: Home, path: "/" },
-  { label: "Rapportini", icon: ClipboardList, path: "/rapportini" },
-  { label: "Cantieri", icon: Building2, path: "/cantieri" },
-  { label: "Anagrafe", icon: BookUser, path: "/anagrafe" },
+const ALL_NAV_ITEMS = [
+  { key: "home", label: "Home", icon: Home, path: "/", always: true },
+  { key: "rapportini", label: "Rapportini", icon: ClipboardList, path: "/rapportini" },
+  { key: "cantieri", label: "Cantieri", icon: Building2, path: "/cantieri" },
+  { key: "anagrafe", label: "Anagrafe", icon: BookUser, path: "/anagrafe" },
 ];
 
 export default function BottomNav() {
   const location = useLocation();
+  const { puoVedere } = usePermessi();
+  const NAV_ITEMS = ALL_NAV_ITEMS.filter(i => i.always || puoVedere(i.key));
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md">

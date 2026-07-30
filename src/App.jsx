@@ -16,6 +16,8 @@ import FotoPage from './pages/Foto';
 import Anagrafe from './pages/Anagrafe';
 import EditReport from './pages/EditReport';
 import DashboardTrasferte from './pages/DashboardTrasferte';
+import Permessi from './pages/Permessi';
+import Utenti from './pages/Utenti';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -63,7 +65,8 @@ const AuthenticatedApp = () => {
       <Route path="/documenti" element={<Placeholder title="Documenti" />} />
       <Route path="/idropulitrice" element={<Placeholder title="Idropulitrice" />} />
       <Route path="/ristorante" element={<Placeholder title="Ristorante" />} />
-      <Route path="/permessi" element={<Placeholder title="Permessi" />} />
+      <Route path="/permessi" element={<Permessi />} />
+      <Route path="/utenti" element={<Utenti />} />
       <Route path="/corsi" element={<Placeholder title="Corsi" />} />
 
       <Route path="*" element={<PageNotFound />} />
