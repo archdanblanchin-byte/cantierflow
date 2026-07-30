@@ -10,14 +10,13 @@ import { isToday } from "date-fns";
 
 import StepIndicator from "@/components/wizard/StepIndicator";
 import WizardNavigation from "@/components/wizard/WizardNavigation";
-import Step0Timbratura from "@/components/wizard/Step0Timbratura";
 import Step1DatiCantiere from "@/components/wizard/Step1DatiCantiere";
 import Step2Collaboratori from "@/components/wizard/Step2Collaboratori";
 import Step3Lavorazioni from "@/components/wizard/Step3Lavorazioni";
 import Step4Materiali from "@/components/wizard/Step5Materiali";
 import Step5Riepilogo from "@/components/wizard/Step6Riepilogo";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 
 export default function EditReport() {
   const { id } = useParams();
@@ -63,20 +62,10 @@ export default function EditReport() {
     queryKey: ["materialiBase"],
     queryFn: () => base44.entities.MaterialeBase.list(),
   });
-  const { data: timbrature = [] } = useQuery({
-    queryKey: ["timbrature", id],
-    queryFn: () => base44.entities.Timbratura.filter({ rapportino_id: id }),
-    enabled: !!id,
-  });
-  const hasIngresso = timbrature.some((t) => t.tipo_evento === "ingresso");
-
   const updateForm = (updates) => setFormData((prev) => ({ ...prev, ...updates }));
 
   const validateStep = () => {
-    if (step === 1) {
-      if (!formData.cantiere_id) { toast.error("Seleziona un cantiere"); return false; }
-      if (!hasIngresso) { toast.error("Devi fare almeno il primo timbro (ingresso) per continuare"); return false; }
-    }
+    if (step === 1 && !formData.cantiere_id) { toast.error("Seleziona un cantiere"); return false; }
     if (step === 3 && (formData.collaboratori || []).length === 0) { toast.error("Aggiungi almeno un collaboratore"); return false; }
     if (step === 4) {
       const oreLav = (formData.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0) || (formData.ore_totali_squadra || 0);
@@ -129,12 +118,11 @@ export default function EditReport() {
   })();
 
   const stepContent = {
-    1: <Step0Timbratura data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} showErrors={showErrors} rapportinoId={id} />,
-    2: <Step1DatiCantiere data={formData} onChange={updateForm} />,
-    3: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} showErrors={showErrors} />,
-    4: <Step3Lavorazioni data={formData} onChange={updateForm} tipiLavorazione={tipiLavorazione} />,
-    5: <Step4Materiali data={formData} onChange={updateForm} materialiBase={materialiBase} />,
-    6: <Step5Riepilogo data={formData} />,
+    1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} />,
+    2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} showErrors={showErrors} />,
+    3: <Step3Lavorazioni data={formData} onChange={updateForm} tipiLavorazione={tipiLavorazione} />,
+    4: <Step4Materiali data={formData} onChange={updateForm} materialiBase={materialiBase} />,
+    5: <Step5Riepilogo data={formData} />,
   };
 
   return (

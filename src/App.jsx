@@ -19,6 +19,7 @@ import DashboardTrasferte from './pages/DashboardTrasferte';
 import Permessi from './pages/Permessi';
 import Utenti from './pages/Utenti';
 import OreLavoratori from './pages/OreLavoratori';
+import Timbratura from './pages/Timbratura';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -69,6 +70,7 @@ const AuthenticatedApp = () => {
       <Route path="/permessi" element={<Permessi />} />
       <Route path="/utenti" element={<Utenti />} />
       <Route path="/ore-lavoratori" element={<OreLavoratori />} />
+      <Route path="/timbratura" element={<Timbratura />} />
       <Route path="/corsi" element={<Placeholder title="Corsi" />} />
 
       <Route path="*" element={<PageNotFound />} />

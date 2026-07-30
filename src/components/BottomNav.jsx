@@ -1,10 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, ClipboardList, Building2, BookUser } from "lucide-react";
+import { Home, ClipboardList, Building2, BookUser, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermessi } from "@/hooks/usePermessi";
 
 const ALL_NAV_ITEMS = [
   { key: "home", label: "Home", icon: Home, path: "/", always: true },
+  { key: "timbratura", label: "Timbra", icon: Clock, path: "/timbratura" },
   { key: "rapportini", label: "Rapportini", icon: ClipboardList, path: "/rapportini" },
   { key: "cantieri", label: "Cantieri", icon: Building2, path: "/cantieri" },
   { key: "anagrafe", label: "Anagrafe", icon: BookUser, path: "/anagrafe" },

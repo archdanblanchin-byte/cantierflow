@@ -15,6 +15,7 @@ export const RUOLI = [
 export const SEZIONI_APP = [
   { key: "rapportini", label: "Rapportino", path: "/rapportini", icon: ClipboardList, color: "bg-blue-500" },
   { key: "cantieri", label: "Cantiere", path: "/cantieri", icon: Building2, color: "bg-emerald-500" },
+  { key: "timbratura", label: "Timbratura", path: "/timbratura", icon: Clock, color: "bg-emerald-600" },
   { key: "foto", label: "Foto", path: "/foto", icon: Camera, color: "bg-purple-500" },
   { key: "anagrafe", label: "Anagrafe", path: "/anagrafe", icon: BookUser, color: "bg-slate-600" },
   { key: "trasferte", label: "Trasferte", path: "/trasferte", icon: Route, color: "bg-orange-500" },
@@ -32,9 +33,9 @@ export const SEZIONI_APP = [
 
 export const PERMESSI_DEFAULT = {
   admin: SEZIONI_APP.map(s => s.key),
-  responsabile_tecnico: ["rapportini", "cantieri", "foto", "anagrafe", "trasferte", "ore_lavoratori", "programma", "cronoprogramma", "documenti", "corsi"],
-  capocantiere: ["rapportini", "cantieri", "foto", "anagrafe", "trasferte", "ore_lavoratori", "furgoni", "idropulitrice"],
-  collaboratore: ["rapportini", "cantieri", "foto"],
+  responsabile_tecnico: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "trasferte", "ore_lavoratori", "programma", "cronoprogramma", "documenti", "corsi"],
+  capocantiere: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "trasferte", "ore_lavoratori", "furgoni", "idropulitrice"],
+  collaboratore: ["rapportini", "timbratura", "cantieri", "foto"],
 };
 
 export function getRuoloLabel(key) {
