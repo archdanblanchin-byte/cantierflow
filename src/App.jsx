@@ -15,7 +15,6 @@ import Placeholder from './pages/Placeholder';
 import FotoPage from './pages/Foto';
 import Anagrafe from './pages/Anagrafe';
 import EditReport from './pages/EditReport';
-import TimbratureRapide from './pages/TimbratureRapide';
 import DashboardTrasferte from './pages/DashboardTrasferte';
 
 const AuthenticatedApp = () => {
@@ -41,7 +40,6 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/timbrature" element={<TimbratureRapide />} />
       <Route path="/trasferte" element={<DashboardTrasferte />} />
 
       {/* Rapportini */}
