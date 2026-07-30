@@ -68,6 +68,24 @@ export function classificaTrasferta(kmMedia) {
   return "T2";
 }
 
+// Classifica con soglie personalizzate (da entità ConfigurazioneTrasferta)
+export function classificaTrasfertaConfig(kmMedia, config) {
+  if (kmMedia == null) return null;
+  const s0 = config?.soglia_t0 ?? SOGLIE_TRASFERTA.T0;
+  const s1 = config?.soglia_t1 ?? SOGLIE_TRASFERTA.T1;
+  if (kmMedia < s0) return "T0";
+  if (kmMedia <= s1) return "T1";
+  return "T2";
+}
+
+// Restituisce le coordinate del capannone (config o default)
+export function getCapannone(config) {
+  if (config?.sede_latitudine != null && config?.sede_longitudine != null) {
+    return { lat: config.sede_latitudine, lon: config.sede_longitudine, nome: config.sede_nome || CAPANNONE.nome };
+  }
+  return CAPANNONE;
+}
+
 export const TRASFERTA_CONFIG = {
   T0: { label: "T0", color: "bg-slate-100 text-slate-700 border-slate-300" },
   T1: { label: "T1", color: "bg-blue-100 text-blue-700 border-blue-300" },

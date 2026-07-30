@@ -12,10 +12,11 @@ import { it } from "date-fns/locale";
 import { MapPin, Navigation, Clock, Save, CheckCircle2, Car } from "lucide-react";
 import {
   STEP_CONFIG, arrotondaQuarti, fmtOre, distanzaKm,
-  CAPANNONE, classificaTrasferta, TRASFERTA_CONFIG,
+  CAPANNONE, classificaTrasfertaConfig, getCapannone, TRASFERTA_CONFIG,
 } from "@/lib/timbratureUtils";
 
-export default function CollaboratoreGiornata({ email, nome, trackingPosizione, timbrature, cantieri, data, trasfertaEsistente, onSalvata }) {
+export default function CollaboratoreGiornata({ email, nome, trackingPosizione, timbrature, cantieri, data, trasfertaEsistente, config, onSalvata }) {
+  const capannone = getCapannone(config);
   const [editKmAndata, setEditKmAndata] = useState("");
   const [editKmRitorno, setEditKmRitorno] = useState("");
   const [editTipo, setEditTipo] = useState("");
@@ -65,16 +66,16 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
   const ultimoCantiere = ultimoIngresso ? cantieri.find(c => c.id === ultimoIngresso.cantiere_id) : null;
 
   const kmAndataCalc = primoCantiere?.latitudine
-    ? distanzaKm(CAPANNONE.lat, CAPANNONE.lon, primoCantiere.latitudine, primoCantiere.longitudine)
+    ? distanzaKm(capannone.lat, capannone.lon, primoCantiere.latitudine, primoCantiere.longitudine)
     : null;
   const kmRitornoCalc = ultimoCantiere?.latitudine
-    ? distanzaKm(ultimoCantiere.latitudine, ultimoCantiere.longitudine, CAPANNONE.lat, CAPANNONE.lon)
+    ? distanzaKm(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
     : null;
 
   const kmMediaCalc = (kmAndataCalc != null && kmRitornoCalc != null)
     ? (kmAndataCalc + kmRitornoCalc) / 2
     : null;
-  const tipoCalc = classificaTrasferta(kmMediaCalc);
+  const tipoCalc = classificaTrasfertaConfig(kmMediaCalc, config);
 
   // Valori usati per il salvataggio (se l'admin modifica, usa quelli, altrimenti i calcolati)
   const kmAndata = editKmAndata !== "" ? parseFloat(editKmAndata) : kmAndataCalc;
@@ -183,7 +184,7 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
         </div>
 
         <div className="text-[11px] text-muted-foreground">
-          Sede: {CAPANNONE.nome}
+          Sede: {capannone.nome}
         </div>
 
         <div className="grid grid-cols-2 gap-2">

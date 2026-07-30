@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, Truck, Wrench, Droplets, FileText, UtensilsCrossed, BookOpen } from "lucide-react";
+import { ArrowLeft, Users, Truck, Wrench, Droplets, FileText, UtensilsCrossed, BookOpen, Route, MapPin } from "lucide-react";
 import AnagrafePage from "@/components/anagrafe/AnagrafePage";
 import LavorazioniPage from "@/components/anagrafe/LavorazioniPage";
+import ConfigurazioneTrasfertaPage from "@/components/anagrafe/ConfigurazioneTrasfertaPage";
 
 const SEZIONI = [
+  { key: "trasferte", label: "Trasferte", icon: Route, color: "bg-orange-500", link: "/trasferte" },
+  { key: "centro_operativo", label: "Centro Operativo", icon: MapPin, color: "bg-red-500" },
   { key: "collaboratori", label: "Collaboratori", icon: Users, color: "bg-blue-500", entity: "Collaboratore", fields: [
     { key: "nome", label: "Nome", required: true },
     { key: "ruolo", label: "Ruolo" },
@@ -43,6 +46,14 @@ export default function Anagrafe() {
 
   const sezione = SEZIONI.find(s => s.key === sezioneAttiva);
 
+  const handleSezioneClick = (s) => {
+    if (s.link) {
+      navigate(s.link);
+    } else {
+      setSezioneAttiva(s.key);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-card border-b border-border sticky top-0 z-10">
@@ -52,7 +63,7 @@ export default function Anagrafe() {
           </Button>
           <div>
             <h1 className="font-bold text-lg">{sezione ? sezione.label : "Anagrafe"}</h1>
-            <p className="text-xs text-muted-foreground">{sezione ? "Gestione elenco" : "Gestione anagrafiche"}</p>
+            <p className="text-xs text-muted-foreground">{sezione ? "Gestione elenco" : "Anagrafiche, trasferte e configurazione"}</p>
           </div>
         </div>
       </div>
@@ -63,7 +74,7 @@ export default function Anagrafe() {
             {SEZIONI.map((s) => (
               <button
                 key={s.key}
-                onClick={() => setSezioneAttiva(s.key)}
+                onClick={() => handleSezioneClick(s)}
                 className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-border bg-card p-5 hover:shadow-lg hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-200 group aspect-square"
               >
                 <div className={`w-12 h-12 rounded-xl ${s.color} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-200`}>
@@ -75,6 +86,8 @@ export default function Anagrafe() {
           </div>
         ) : sezioneAttiva === "lavorazioni" ? (
           <LavorazioniPage />
+        ) : sezioneAttiva === "centro_operativo" ? (
+          <ConfigurazioneTrasfertaPage />
         ) : (
           <AnagrafePage sezione={sezione} />
         )}

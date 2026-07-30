@@ -46,6 +46,12 @@ export default function DashboardTrasferte() {
     }),
   });
 
+  const { data: configRaw = [] } = useQuery({
+    queryKey: ["config-trasferta"],
+    queryFn: () => base44.entities.ConfigurazioneTrasferta.list(),
+  });
+  const config = configRaw[0] || null;
+
   // Raggruppa timbrature per user_email
   const perUtente = {};
   (timbrature || []).forEach(t => {
@@ -118,6 +124,7 @@ export default function DashboardTrasferte() {
             cantieri={cantieri}
             data={dataSelezionata}
             trasfertaEsistente={(trasferte || []).find(t => t.user_email === u.email)}
+            config={config}
             onSalvata={() => queryClient.invalidateQueries({ queryKey: ["trasferte-giorno", dataSelezionata] })}
           />
         ))}

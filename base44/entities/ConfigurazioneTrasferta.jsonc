@@ -1,0 +1,36 @@
+{
+  "name": "ConfigurazioneTrasferta",
+  "type": "object",
+  "properties": {
+    "sede_nome": {
+      "type": "string",
+      "description": "Nome della sede operativa (capannone)",
+      "default": "Rivignano Teor"
+    },
+    "sede_indirizzo": {
+      "type": "string",
+      "description": "Indirizzo completo della sede"
+    },
+    "sede_latitudine": {
+      "type": "number",
+      "description": "Latitudine GPS della sede operativa"
+    },
+    "sede_longitudine": {
+      "type": "number",
+      "description": "Longitudine GPS della sede operativa"
+    },
+    "soglia_t0": {
+      "type": "number",
+      "description": "Soglia massima km per fascia T0 (km)",
+      "default": 15
+    },
+    "soglia_t1": {
+      "type": "number",
+      "description": "Soglia massima km per fascia T1 (km). Oltre questa \u00e8 T2",
+      "default": 50
+    }
+  },
+  "required": [
+    "sede_nome"
+  ]
+}

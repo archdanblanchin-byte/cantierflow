@@ -1,12 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Fingerprint, ClipboardList, Building2 } from "lucide-react";
+import { Home, ClipboardList, Building2, BookUser } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { label: "Home", icon: Home, path: "/" },
-  { label: "Timbrature", icon: Fingerprint, path: "/timbrature" },
   { label: "Rapportini", icon: ClipboardList, path: "/rapportini" },
   { label: "Cantieri", icon: Building2, path: "/cantieri" },
+  { label: "Anagrafe", icon: BookUser, path: "/anagrafe" },
 ];
 
 export default function BottomNav() {
