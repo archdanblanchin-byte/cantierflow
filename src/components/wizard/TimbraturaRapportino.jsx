@@ -34,13 +34,12 @@ export default function TimbraturaRapportino({ cantiere, cantieri, rapportinoId,
   const giornoKey = format(inizio, "yyyy-MM-dd");
 
   const { data: timbrature = [], isLoading } = useQuery({
-    queryKey: ["timbrature-giornata-cantiere", user?.email, cantiere?.id, giornoKey],
+    queryKey: ["timbrature-rapportino", user?.email, rapportinoId],
     queryFn: () => base44.entities.Timbratura.filter({
       user_email: user.email,
-      cantiere_id: cantiere.id,
-      data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() },
+      rapportino_id: rapportinoId,
     }),
-    enabled: !!user && !!cantiere?.id,
+    enabled: !!user && !!rapportinoId,
   });
 
   // Collegamento automatico timbrature orfane al rapportino
@@ -137,7 +136,8 @@ export default function TimbraturaRapportino({ cantiere, cantieri, rapportinoId,
       if (!inCantiere && cantiereCoords) {
         setError(`Posizione fuori cantiere! Sei a ${distanza}m dal cantiere (massimo consentito: ${raggio}m). Verifica di essere sul posto.`);
       }
-      queryClient.invalidateQueries({ queryKey: ["timbrature-giornata-cantiere", user.email, cantiere.id, giornoKey] });
+      queryClient.invalidateQueries({ queryKey: ["timbrature-rapportino", user.email, rapportinoId] });
+      queryClient.invalidateQueries({ queryKey: ["timbrature", rId] });
       queryClient.invalidateQueries({ queryKey: ["timbrature-giornaliere"] });
     } catch (e) {
       setError(e.message);
