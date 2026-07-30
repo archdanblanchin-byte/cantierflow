@@ -136,32 +136,24 @@ export default function CantiereForm() {
 
           {/* Coordinate GPS */}
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Coordinate GPS (per validazione timbrature)</Label>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-[10px] text-muted-foreground">Latitudine</Label>
-                <Input
-                  type="number"
-                  step="0.000001"
-                  value={form.latitudine ?? ""}
-                  onChange={(e) => set("latitudine", parseFloat(e.target.value) || null)}
-                  className="mt-1"
-                  placeholder="Es. 45.8533"
-                />
-              </div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground">Longitudine</Label>
-                <Input
-                  type="number"
-                  step="0.000001"
-                  value={form.longitudine ?? ""}
-                  onChange={(e) => set("longitudine", parseFloat(e.target.value) || null)}
-                  className="mt-1"
-                  placeholder="Es. 12.9997"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">Coordinate GPS (incolla da Google Maps)</Label>
+            <Input
+              value={form.latitudine != null && form.longitudine != null ? `${form.latitudine}, ${form.longitudine}` : ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                const parts = val.split(",").map((s) => parseFloat(s.trim()));
+                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                  set("latitudine", parts[0]);
+                  set("longitudine", parts[1]);
+                } else if (val.trim() === "") {
+                  set("latitudine", null);
+                  set("longitudine", null);
+                }
+              }}
+              className="font-mono text-sm"
+              placeholder="Es. 45.8533, 12.9997"
+            />
+            <div className="flex items-center gap-2 flex-wrap">
               <Button
                 type="button"
                 variant="outline"
