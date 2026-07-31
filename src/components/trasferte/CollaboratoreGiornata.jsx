@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { MapPin, Navigation, Clock, Save, CheckCircle2, Car } from "lucide-react";
+import { MapPin, Navigation, Clock, Save, CheckCircle2, Car, AlertTriangle } from "lucide-react";
 import {
   STEP_CONFIG, arrotondaQuarti, fmtOre, distanzaKm,
   CAPANNONE, classificaTrasfertaConfig, getCapannone, TRASFERTA_CONFIG,
@@ -148,6 +148,9 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
             <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
             <span className="flex-1 font-medium truncate">{g.nome}</span>
             <span className="text-muted-foreground">{fmtOre(g.ore)}</span>
+            {g.timbri.some((t) => t.in_cantiere === false) && (
+              <Badge variant="destructive" className="text-[9px] gap-0.5"><AlertTriangle className="w-2.5 h-2.5" /> Fuori</Badge>
+            )}
             {g.ingresso && !g.uscita && <Badge variant="secondary" className="text-[9px]">In corso</Badge>}
           </div>
         ))}

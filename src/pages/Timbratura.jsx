@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,20 +10,23 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   MapPin, Loader2, Clock, LogIn, Coffee, PlayCircle, LogOut, Navigation,
-  AlertTriangle, CheckCircle2, Plus,
+  AlertTriangle, CheckCircle2, Plus, FileText,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { distanzaM, getPosizione, STEP_CONFIG, arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
+import { calcolaOrePerCantiere, generaRapportiniDaGiornata } from "@/lib/rapportiniFromTimbrature";
 import { getRuoloLabel } from "@/lib/permissions";
 import NewCantiereModal from "@/components/wizard/NewCantiereModal";
 import BottomNav from "@/components/BottomNav";
 
 export default function Timbratura() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loadingTipo, setLoadingTipo] = useState(null);
   const [error, setError] = useState(null);
+  const [generando, setGenerando] = useState(false);
   const [lastTimbro, setLastTimbro] = useState(null);
   const [selectedCantiereId, setSelectedCantiereId] = useState("");
   const [showNewCantiere, setShowNewCantiere] = useState(false);
@@ -80,6 +85,7 @@ export default function Timbratura() {
     return arrotondaQuarti((new Date() - tIn) - pausaMs);
   };
   const oreInCorso = calcolaOre();
+  const orePerCantiere = calcolaOrePerCantiere(timbratureOrd).filter((c) => c.ore > 0);
 
   const canIngresso = !activeSession;
   const canPausa = !!activeSession;
@@ -130,8 +136,34 @@ export default function Timbratura() {
     }
   };
 
+  const handleGeneraRapportini = async () => {
+    if (!user) return;
+    setGenerando(true);
+    try {
+      const esistenti = await base44.entities.Rapportino.filter({ user_email: user.email });
+      const creati = await generaRapportiniDaGiornata({
+        user,
+        giorno: inizio,
+        timbrature: timbratureOrd,
+        rapportiniEsistenti: esistenti,
+      });
+      queryClient.invalidateQueries({ queryKey: ["rapportini"] });
+      if (creati.length === 0) {
+        toast.info("Nessun nuovo rapportino: esistono già bozze per questi cantieri");
+      } else {
+        toast.success(
+          `Creat${creati.length === 1 ? "o" : "i"} ${creati.length} rapportin${creati.length === 1 ? "o" : "i"} in bozza`
+        );
+      }
+    } catch (e) {
+      toast.error("Errore: " + e.message);
+    } finally {
+      setGenerando(false);
+    }
+  };
+
   const pausaTipo = inPausa ? "pausa_fine" : "pausa_inizio";
-  const pausaLabel = inPausa ? "Fine Pausa" : "Inizio Pausa";
+  const pausaLabel = inPausa ? "Riprendi lavoro" : "Pausa pranzo";
   const PausaIcon = inPausa ? PlayCircle : Coffee;
 
   return (
@@ -217,7 +249,7 @@ export default function Timbratura() {
             className="h-14 text-sm font-semibold gap-1.5 bg-emerald-600 hover:bg-emerald-700"
           >
             {loadingTipo === "ingresso" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-            Inizio
+            Inizia lavoro
           </Button>
           <Button
             onClick={() => handleTimbra(pausaTipo)}
@@ -241,7 +273,7 @@ export default function Timbratura() {
             className="h-14 text-sm font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700"
           >
             {loadingTipo === "uscita" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}
-            Fine
+            Chiudi giornata
           </Button>
         </div>
 
@@ -314,6 +346,33 @@ export default function Timbratura() {
               );
             })}
           </div>
+        )}
+
+        {/* Genera rapportini dalla giornata */}
+        {orePerCantiere.length > 0 && (
+          <Card className="p-4 space-y-3 border-primary/30 bg-primary/5">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              <p className="text-sm font-semibold">Genera rapportini dalla giornata</p>
+            </div>
+            <div className="space-y-1.5">
+              {orePerCantiere.map((c) => (
+                <div key={c.cantiere_id} className="flex items-center justify-between text-xs">
+                  <span className="font-medium truncate flex-1">{c.cantiere_nome}</span>
+                  <span className="text-muted-foreground ml-2">{fmtOre(c.ore)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleGeneraRapportini} disabled={generando} className="flex-1 gap-2">
+                {generando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                {generando ? "Generazione..." : "Genera rapportini"}
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/rapportini")}>
+                Vai a rapportini
+              </Button>
+            </div>
+          </Card>
         )}
       </div>
 
