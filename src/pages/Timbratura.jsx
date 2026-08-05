@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   MapPin, Loader2, Clock, LogIn, Coffee, PlayCircle, LogOut, Navigation,
-  AlertTriangle, CheckCircle2, Plus, FileText, Trash2,
+  AlertTriangle, CheckCircle2, Plus, FileText, Trash2, Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -29,6 +31,8 @@ export default function Timbratura() {
   const [error, setError] = useState(null);
   const [generando, setGenerando] = useState(false);
   const [eliminando, setEliminando] = useState(null);
+  const [editando, setEditando] = useState(null);
+  const [editForm, setEditForm] = useState({ cantiere_id: "", tipo_evento: "ingresso", data_ora: "" });
   const isAdmin = user?.role === "admin";
   const [lastTimbro, setLastTimbro] = useState(null);
   const [selectedCantiereId, setSelectedCantiereId] = useState("");
@@ -162,6 +166,30 @@ export default function Timbratura() {
       toast.error("Errore: " + e.message);
     } finally {
       setGenerando(false);
+    }
+  };
+
+  const apriEdit = (t) => {
+    const d = new Date(t.data_ora);
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    setEditForm({ cantiere_id: t.cantiere_id || "", tipo_evento: t.tipo_evento, data_ora: local });
+    setEditando(t);
+  };
+  const handleSalvaEdit = async () => {
+    try {
+      if (!editForm.cantiere_id || !editForm.data_ora) { toast.error("Cantiere e orario obbligatori"); return; }
+      const cantiere = cantieri.find((c) => c.id === editForm.cantiere_id);
+      await base44.entities.Timbratura.update(editando.id, {
+        tipo_evento: editForm.tipo_evento,
+        data_ora: new Date(editForm.data_ora).toISOString(),
+        cantiere_id: editForm.cantiere_id,
+        cantiere_nome: cantiere?.nome || editando.cantiere_nome,
+      });
+      queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
+      toast.success("Timbratura aggiornata");
+      setEditando(null);
+    } catch (e) {
+      toast.error("Errore: " + e.message);
     }
   };
 
@@ -360,9 +388,14 @@ export default function Timbratura() {
                       <Badge className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-300">OK</Badge>
                     )}
                     {isAdmin && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setEliminando(t)} title="Elimina timbratura">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+                      <>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => apriEdit(t)} title="Modifica timbratura">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setEliminando(t)} title="Elimina timbratura">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -404,6 +437,45 @@ export default function Timbratura() {
         onClose={() => setShowNewCantiere(false)}
         onCreated={(c) => { refetchCantieri(); setSelectedCantiereId(c.id); }}
       />
+      <Dialog open={!!editando} onOpenChange={(o) => !o && setEditando(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica timbratura</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Cantiere</Label>
+              <Select value={editForm.cantiere_id} onValueChange={(v) => setEditForm((f) => ({ ...f, cantiere_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Seleziona cantiere" /></SelectTrigger>
+                <SelectContent>
+                  {cantieri.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Tipo evento</Label>
+              <Select value={editForm.tipo_evento} onValueChange={(v) => setEditForm((f) => ({ ...f, tipo_evento: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ingresso">Ingresso</SelectItem>
+                  <SelectItem value="pausa_inizio">Pausa inizio</SelectItem>
+                  <SelectItem value="pausa_fine">Pausa fine</SelectItem>
+                  <SelectItem value="spostamento">Spostamento</SelectItem>
+                  <SelectItem value="uscita">Uscita</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Data e ora</Label>
+              <Input type="datetime-local" value={editForm.data_ora} onChange={(e) => setEditForm((f) => ({ ...f, data_ora: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditando(null)}>Annulla</Button>
+            <Button onClick={handleSalvaEdit}>Salva</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <AlertDialog open={!!eliminando} onOpenChange={(o) => !o && setEliminando(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
