@@ -341,7 +341,9 @@ export default function Timbratura() {
               <p className="flex items-center gap-1.5"><MapPin className="w-3 h-3" /> {lastTimbro.latitudine?.toFixed(5)}, {lastTimbro.longitudine?.toFixed(5)}</p>
               {lastTimbro.distanza_metri != null &&
             <p>Distanza:{" "}
-                  <span className={lastTimbro.in_cantiere ? "text-emerald-600 font-medium" : "text-rose-600 font-medium"}>{lastTimbro.distanza_metri}m</span>
+                  <span className={lastTimbro.distanza_metri > 5000 ? "text-orange-600 font-medium" : lastTimbro.in_cantiere ? "text-emerald-600 font-medium" : "text-rose-600 font-medium"}>
+                    {(lastTimbro.distanza_metri / 1000).toFixed(lastTimbro.distanza_metri < 1000 ? 2 : 1)} km dal cantiere
+                  </span>
                 </p>
             }
             </div>
