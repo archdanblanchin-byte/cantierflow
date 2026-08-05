@@ -353,6 +353,9 @@ export default function Timbratura() {
                     {t.in_cantiere === false && (
                       <Badge variant="destructive" className="text-[9px] gap-0.5"><AlertTriangle className="w-2.5 h-2.5" /> Fuori</Badge>
                     )}
+                    {t.distanza_metri != null && t.distanza_metri > 5000 && (
+                      <Badge variant="destructive" className="text-[9px] gap-0.5 bg-orange-100 text-orange-800 border-orange-300"><MapPin className="w-2.5 h-2.5" /> &gt;5km</Badge>
+                    )}
                     {t.in_cantiere === true && (
                       <Badge className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-300">OK</Badge>
                     )}
