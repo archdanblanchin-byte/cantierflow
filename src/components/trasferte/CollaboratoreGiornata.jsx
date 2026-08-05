@@ -6,16 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import AdminTimbraturaList from "@/components/timbrature/AdminTimbraturaList";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { MapPin, Navigation, Clock, Save, CheckCircle2, Car, AlertTriangle } from "lucide-react";
+import { MapPin, Navigation, Clock, Save, CheckCircle2, Car, AlertTriangle, Settings, ChevronDown } from "lucide-react";
 import {
   STEP_CONFIG, arrotondaQuarti, fmtOre, distanzaKm,
   CAPANNONE, classificaTrasfertaConfig, getCapannone, TRASFERTA_CONFIG,
 } from "@/lib/timbratureUtils";
 
-export default function CollaboratoreGiornata({ email, nome, trackingPosizione, timbrature, cantieri, data, trasfertaEsistente, config, onSalvata }) {
+export default function CollaboratoreGiornata({ email, nome, trackingPosizione, timbrature, cantieri, data, trasfertaEsistente, config, onSalvata, editable, onTimbraturaCambiata }) {
   const capannone = getCapannone(config);
   const [editKmAndata, setEditKmAndata] = useState("");
   const [editKmRitorno, setEditKmRitorno] = useState("");
@@ -263,6 +265,18 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
           {salvando ? "Salvataggio..." : "Conferma trasferta"}
         </Button>
       </div>
+
+      {editable && (
+        <Collapsible className="rounded-lg border">
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-2 text-xs font-semibold">
+            <span className="flex items-center gap-1.5"><Settings className="w-3.5 h-3.5" /> Gestione timbrature (admin)</span>
+            <ChevronDown className="w-3.5 h-3.5" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="p-2 pt-0">
+            <AdminTimbraturaList timbrature={tOrd} cantieri={cantieri} onCambiata={onTimbraturaCambiata} />
+          </CollapsibleContent>
+        </Collapsible>
+      )}
     </Card>
   );
 }

@@ -13,6 +13,7 @@ import BottomNav from "@/components/BottomNav";
 export default function DashboardTrasferte() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
+  const isAdmin = user?.role === "admin";
   const [dataSelezionata, setDataSelezionata] = useState(format(new Date(), "yyyy-MM-dd"));
 
   useEffect(() => {
@@ -126,6 +127,8 @@ export default function DashboardTrasferte() {
             trasfertaEsistente={(trasferte || []).find(t => t.user_email === u.email)}
             config={config}
             onSalvata={() => queryClient.invalidateQueries({ queryKey: ["trasferte-giorno", dataSelezionata] })}
+            editable={isAdmin}
+            onTimbraturaCambiata={() => queryClient.invalidateQueries({ queryKey: ["timbrature-giorno-all", dataSelezionata] })}
           />
         ))}
       </div>
