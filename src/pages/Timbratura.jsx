@@ -374,6 +374,10 @@ export default function Timbratura() {
                       <p className="text-sm font-medium">{cfg.label || t.tipo_evento}</p>
                       <p className="text-[11px] text-muted-foreground truncate">
                         {format(new Date(t.data_ora), "HH:mm", { locale: it })} · {t.cantiere_nome}
+                        {t.distanza_metri != null && (
+                          <span className={t.distanza_metri > 5000 ? "text-orange-600 font-medium" : ""}>
+                            {" · "}{(t.distanza_metri / 1000).toFixed(t.distanza_metri < 1000 ? 2 : 1)} km dal cantiere</span>
+                        )}
                       </p>
                     </div>
                   </div>
