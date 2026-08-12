@@ -9,20 +9,20 @@ import { Lightbulb, ChevronDown, ChevronUp } from "lucide-react";
 const GUIDE = {
   extra: {
     title: "Come dettare le lavorazioni extra",
-    intro: "Descrivi ogni lavorazione NON prevista dal preventivo dicendo COSA hai fatto e DOVE, in frasi brevi e chiare. Le ore le inserirai manualmente dopo.",
+    intro: "Descrivi ogni lavorazione NON prevista dal preventivo dicendo COSA hai fatto, DOVE e QUANTE ORE. L'IA compila le ore che dici; puoi sempre rivederle e modificarle dopo. IMPORTANTE: se parli di raschiatura, tinteggiatura o pittura su pareti/muri, citale esplicitamente (es. 'parete') così l'IA non le scambia per interventi su travi in legno.",
     examples: [
-      "Oggi abbiamo rifatto l'intonaco della parete sud in cucina perché era danneggiato dall'umidità.",
-      "Montato un corrimano nuovo sulle scale esterne, lato cortile.",
-      "Ripulito il marciapiede di fronte al cantiere a fine giornata, Cliente Neri.",
+      "Rifatto l'intonaco della parete sud in cucina per l'umidità, eravamo in due e ci abbiamo messo 3 ore.",
+      "Montato un corrimano nuovo sulle scale esterne, lato cortile, mezz'ora di lavoro.",
+      "Ripulito il marciapiede davanti al cantiere a fine giornata, Cliente Neri, un'ora in tutto.",
     ],
   },
   normali: {
     title: "Come dettare le lavorazioni preventivate",
-    intro: "Nomina ogni lavorazione prevista dicendo COSA e DOVE, con i dettagli che aiuteranno a ricostruire la giornata. L'IA la abbina al catalogo; le ore le inserirai dopo. IMPORTANTE: se parli di tinteggiatura, pitturazione, raschiatura o fondo su pareti/muri/soffitti, citale esplicitamente (es. 'parete', 'muro', 'soffitto') così l'IA non le scambia per interventi su travi in legno.",
+    intro: "Nomina ogni lavorazione prevista dicendo COSA, DOVE e QUANTE ORE. L'IA la abbina al catalogo e compila le ore: puoi dirle totali (es. '5 ore') oppure quante persone e ore a testa (es. 'eravamo in due, mezz'ora ciascuno'). Puoi sempre rivederle e modificarle dopo. IMPORTANTE: se parli di tinteggiatura, pitturazione, raschiatura o fondo su pareti/muri/soffitti, citale esplicitamente (es. 'parete', 'muro', 'soffitto') così l'IA non le scambia per interventi su travi in legno.",
     examples: [
-      "Demolizione: tolto il vecchio pavimento della stanza a nord e del bagno.",
-      "Posato il nuovo gres porcellanato nella zona giorno, circa 40 metri quadri, oltre la soglia della cucina.",
-      "Raschiato la vecchia tinta della parete sud, dato fondo uniformante e poi pitturato con due mani di bianco opaco.",
+      "Demolizione: tolto il vecchio pavimento della stanza a nord e del bagno, 4 ore in due.",
+      "Posato il nuovo gres porcellanato nella zona giorno, circa 40 metri quadri, eravamo in tre per 5 ore a testa.",
+      "Raschiato la vecchia tinta della parete sud, dato fondo uniformante e poi pitturato con due mani di bianco, 6 ore in tutto.",
     ],
   },
   materiali: {

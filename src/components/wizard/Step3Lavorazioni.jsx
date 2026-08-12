@@ -320,7 +320,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
     onChange({
       lavorazioni_extra: [
         ...(data.lavorazioni_extra || []),
-        ...items.map((e) => ({ descrizione: e.descrizione, ore: 0 })),
+        ...items.map((e) => ({ descrizione: e.descrizione, ore: e.ore || 0 })),
       ],
     });
   };
@@ -328,8 +328,14 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
   const handleNormaliResult = (items) => {
     const availableCats = [...new Set(tipiLavorazione.map((t) => t.categoria).filter(Boolean))];
     const matched = items.map((n) => {
-      const base = { ore_totali: 0, modalita_calcolo: "manuale", numero_persone: 0, ore_per_persona: 0 };
       const descrizione = n.descrizione || "";
+      const modalita_calcolo = n.modalita_calcolo === "per_persone" ? "per_persone" : "manuale";
+      const numero_persone = n.numero_persone || 0;
+      const ore_per_persona = n.ore_per_persona || 0;
+      const ore_totali = modalita_calcolo === "per_persone"
+        ? Math.round((numero_persone * ore_per_persona) * 100) / 100
+        : (n.ore_totali || 0);
+      const base = { ore_totali, modalita_calcolo, numero_persone, ore_per_persona };
       const catMatch = availableCats.find((c) => c.toLowerCase() === String(n.categoria).toLowerCase());
       if (catMatch) {
         const tipoMatch = tipiLavorazione.find(
@@ -370,7 +376,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
         {hasExtra && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <AudioLavorazioniRecorder mode="extra" tipiLavorazione={tipiLavorazione} onResult={handleExtraResult} />
-            <span className="text-xs text-muted-foreground">Parla: l'IA aggiunge le voci extra. Inserirai solo le ore.</span>
+            <span className="text-xs text-muted-foreground">Parla: l'IA aggiunge le voci extra e compila le ore che dici. Puoi rivederle e modificarle dopo.</span>
           </div>
         )}
       </div>
@@ -384,7 +390,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
         </div>
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <AudioLavorazioniRecorder mode="normali" tipiLavorazione={tipiLavorazione} onResult={handleNormaliResult} />
-          <span className="text-xs text-muted-foreground">Parla: l'IA aggiunge le voci e le mappa al catalogo. Inserirai solo le ore.</span>
+          <span className="text-xs text-muted-foreground">Parla: l'IA aggiunge le voci, le mappa al catalogo e compila le ore che dici. Puoi rivederle e modificarle dopo.</span>
         </div>
         <LavorazioniNormali data={data} onChange={onChange} tipiLavorazione={tipiLavorazione} />
       </div>

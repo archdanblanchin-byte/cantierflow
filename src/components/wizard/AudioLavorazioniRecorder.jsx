@@ -103,13 +103,13 @@ export default function AudioLavorazioniRecorder({ tipiLavorazione = [], mode = 
     const catalog = buildCatalog();
     const examplesBlock = buildExamplesBlock(examples);
     const regole = [
-      "NON inserire ore: le inserirà manualmente l'utente.",
+      "Estrai anche le ORE quando l'utente le dice nel resoconto (es. '5 ore', 'mezz'ora', 'eravamo in due, abbiamo fatto mezz'ora'). Se non le dice, metti ore 0. L'utente potrà comunque rivederle e modificarle.",
       "Ogni voce deve comparire una sola volta, anche se nel resoconto viene citata più volte.",
       "Se il resoconto è vuoto o incomprensibile, restituisci un array vuoto.",
     ];
 
     if (mode === "extra") {
-      return `Sei un assistente per cantieri edili. Dal seguente resoconto vocale del capocantiere, estrai SOLO le lavorazioni EXTRA o concordate NON previste dal preventivo. Per ciascuna scrivi una "descrizione" concreta e precisa che includa COSA è stato fatto e DOVE (es. stanze, facciata, zona), attingendo alle parole dell'utente.
+      return `Sei un assistente per cantieri edili. Dal seguente resoconto vocale del capocantiere, estrai SOLO le lavorazioni EXTRA o concordate NON previste dal preventivo. Per ciascuna scrivi una "descrizione" concreta e precisa che includa COSA è stato fatto e DOVE (es. stanze, facciata, zona), attingendo alle parole dell'utente. Compila anche le "ore" se l'utente le ha dette nel resoconto.
 
 REGOLE:
 ${regole.join("\n")}${examplesBlock}
@@ -131,6 +131,12 @@ ATTENZIONE AL SUPPORTO/SUPERFICIE (molto importante):
 - Collega tra loro le lavorazioni coerenti: se l'utente dice "fondo uniformante" e poi "pitturato la parete", tratta tutto come pittura su PARETE (stessa categoria/tipo delle pitture murali), non come intervento su travi in legno.
 - Se l'utente parla di "tinte", "vecchia tinta", "vecchia vernice", "vecchia tinteggiatura" da rimuovere, è pittura su pareti/muri, non legno.
 
+ORE E MODALITÀ (compila anche le ore):
+- Se l'utente dice le ore totali della lavorazione (es. "abbiamo fatto 5 ore", "ci sono volute 3 ore"), usa modalita_calcolo "manuale" e metti ore_totali = 5 (numero).
+- Se l'utente dice quante persone e le ore per persona (es. "eravamo in due e abbiamo fatto mezz'ora ciascuno", "in tre per un'ora a testa"), usa modalita_calcolo "per_persone", metti numero_persone = 2 e ore_per_persona = 0.5, e calcola ore_totali = numero_persone * ore_per_persona (es. 1.0).
+- Se l'utente non specifica le ore, metti ore_totali = 0 e modalita_calcolo "manuale".
+- Converti in ore decimali: mezz'ora = 0.5, un quarto d'ora = 0.25, tre quarti = 0.75, un'ora e mezza = 1.5.
+
 Categorie e tipi disponibili:
 ${catalog}${examplesBlock}
 
@@ -147,7 +153,10 @@ Resoconto vocale:
             type: "array",
             items: {
               type: "object",
-              properties: { descrizione: { type: "string" } },
+              properties: {
+                descrizione: { type: "string" },
+                ore: { type: "number" },
+              },
               required: ["descrizione"],
             },
           },
@@ -166,6 +175,10 @@ Resoconto vocale:
               categoria: { type: "string" },
               tipo: { type: "string" },
               descrizione: { type: "string" },
+              modalita_calcolo: { type: "string", enum: ["manuale", "per_persone"] },
+              ore_totali: { type: "number" },
+              numero_persone: { type: "number" },
+              ore_per_persona: { type: "number" },
             },
             required: ["categoria", "tipo", "descrizione"],
           },
@@ -202,7 +215,7 @@ Resoconto vocale:
 
   const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-  const label = mode === "extra" ? "Registra lavorazioni extra con IA" : "Registra lavorazioni preventivate con IA";
+  const label = mode === "extra" ? "Registra e compila lavorazioni extra con IA" : "Registra e compila lavorazioni preventivate con IA";
 
   if (status === "processing") {
     return (
