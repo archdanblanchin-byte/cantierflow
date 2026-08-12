@@ -101,9 +101,14 @@ export default function Step6Riepilogo({ data }) {
         <div className="p-4">
           <Section icon={Wrench} title={`Lavorazioni Normali (${sommaOreNormali.toFixed(1)}h)`}>
             {(data.lavorazioni_normali || []).map((l, i) => (
-              <div key={i} className="flex justify-between text-sm py-1">
-                <span>{l.tipo_lavorazione_nome || l.descrizione_custom || "—"}</span>
-                <Badge variant="secondary" className="text-xs">{l.ore_totali}h</Badge>
+              <div key={i} className="py-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="font-medium">{l.tipo_lavorazione_nome || l.descrizione_custom || "—"}</span>
+                  <Badge variant="secondary" className="text-xs">{l.ore_totali}h</Badge>
+                </div>
+                {l.descrizione && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{l.descrizione}</p>
+                )}
               </div>
             ))}
           </Section>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -204,6 +205,17 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
               </Button>
             </div>
 
+            {/* Descrizione (cosa/dove) */}
+            <div>
+              <Label className="text-xs text-muted-foreground">Descrizione (cosa / dove)</Label>
+              <Textarea
+                value={lav.descrizione || ""}
+                onChange={(e) => updateLav(i, { descrizione: e.target.value })}
+                className="mt-1 min-h-[44px] resize-y"
+                placeholder="Es. nelle prime due stanze, facciata nord..."
+              />
+            </div>
+
             {/* Modalità ore */}
             <div>
               <Label className="text-xs text-muted-foreground mb-2 block">Modalità ore</Label>
@@ -318,17 +330,18 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
     const availableCats = [...new Set(tipiLavorazione.map((t) => t.categoria).filter(Boolean))];
     const matched = items.map((n) => {
       const base = { ore_totali: 0, modalita_calcolo: "manuale", numero_persone: 0, ore_per_persona: 0 };
+      const descrizione = n.descrizione || "";
       const catMatch = availableCats.find((c) => c.toLowerCase() === String(n.categoria).toLowerCase());
       if (catMatch) {
         const tipoMatch = tipiLavorazione.find(
           (t) => t.categoria === catMatch && t.nome.toLowerCase() === String(n.tipo).toLowerCase()
         );
-        if (tipoMatch) {
-          return { ...base, categoria: catMatch, tipo_lavorazione_id: tipoMatch.id, tipo_lavorazione_nome: tipoMatch.nome, descrizione_custom: "" };
+      if (tipoMatch) {
+          return { ...base, categoria: catMatch, tipo_lavorazione_id: tipoMatch.id, tipo_lavorazione_nome: tipoMatch.nome, descrizione_custom: "", descrizione };
         }
-        return { ...base, categoria: catMatch, tipo_lavorazione_id: "", tipo_lavorazione_nome: n.tipo, descrizione_custom: n.tipo };
+        return { ...base, categoria: catMatch, tipo_lavorazione_id: "", tipo_lavorazione_nome: n.tipo, descrizione_custom: n.tipo, descrizione };
       }
-      return { ...base, categoria: "__custom__", tipo_lavorazione_id: "", tipo_lavorazione_nome: n.tipo, descrizione_custom: `${n.categoria} - ${n.tipo}` };
+      return { ...base, categoria: "__custom__", tipo_lavorazione_id: "", tipo_lavorazione_nome: n.tipo, descrizione_custom: `${n.categoria} - ${n.tipo}`, descrizione };
     });
     onChange({ lavorazioni_normali: [...(data.lavorazioni_normali || []), ...matched] });
   };

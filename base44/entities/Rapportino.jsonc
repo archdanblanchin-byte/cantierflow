@@ -145,6 +145,10 @@
           "descrizione_custom": {
             "type": "string"
           },
+          "descrizione": {
+            "type": "string",
+            "description": "Descrizione dettagliata della lavorazione (cosa/dove) estratta dal resoconto vocale"
+          },
           "ore_totali": {
             "type": "number"
           },

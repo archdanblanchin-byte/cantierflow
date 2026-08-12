@@ -71,7 +71,7 @@ export function ReportPDFContent({ cantiere, rapportini = [], foto = [] }) {
     (r.lavorazioni_normali || []).forEach(l => {
       const key = l.tipo_lavorazione_nome || l.descrizione_custom || "—";
       if (!lavorazioniMap[key]) lavorazioniMap[key] = [];
-      lavorazioniMap[key].push({ data: r.data, ore: l.ore_totali || 0, descrizione: l.descrizione_custom });
+      lavorazioniMap[key].push({ data: r.data, ore: l.ore_totali || 0, descrizione: l.descrizione || l.descrizione_custom });
     });
   });
 
