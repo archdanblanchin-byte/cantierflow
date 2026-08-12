@@ -305,18 +305,20 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
 // ─── STEP UNIFICATO ───────────────────────────────────────────────────────────
 
 export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
-  const handleAudioResult = ({ extra, normali }) => {
+  const handleExtraResult = (items) => {
+    onChange({
+      lavorazioni_extra: [
+        ...(data.lavorazioni_extra || []),
+        ...items.map((e) => ({ descrizione: e.descrizione, ore: 0 })),
+      ],
+    });
+  };
+
+  const handleNormaliResult = (items) => {
     const availableCats = [...new Set(tipiLavorazione.map((t) => t.categoria).filter(Boolean))];
-    const matchedNormali = normali.map((n) => {
-      const base = {
-        ore_totali: 0,
-        modalita_calcolo: "manuale",
-        numero_persone: 0,
-        ore_per_persona: 0,
-      };
-      const catMatch = availableCats.find(
-        (c) => c.toLowerCase() === String(n.categoria).toLowerCase()
-      );
+    const matched = items.map((n) => {
+      const base = { ore_totali: 0, modalita_calcolo: "manuale", numero_persone: 0, ore_per_persona: 0 };
+      const catMatch = availableCats.find((c) => c.toLowerCase() === String(n.categoria).toLowerCase());
       if (catMatch) {
         const tipoMatch = tipiLavorazione.find(
           (t) => t.categoria === catMatch && t.nome.toLowerCase() === String(n.tipo).toLowerCase()
@@ -328,16 +330,10 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
       }
       return { ...base, categoria: "__custom__", tipo_lavorazione_id: "", tipo_lavorazione_nome: n.tipo, descrizione_custom: `${n.categoria} - ${n.tipo}` };
     });
-
-    onChange({
-      has_lavorazioni_extra: extra.length > 0 ? true : data.has_lavorazioni_extra || false,
-      lavorazioni_extra: [
-        ...(data.lavorazioni_extra || []),
-        ...extra.map((e) => ({ descrizione: e.descrizione, ore: 0 })),
-      ],
-      lavorazioni_normali: [...(data.lavorazioni_normali || []), ...matchedNormali],
-    });
+    onChange({ lavorazioni_normali: [...(data.lavorazioni_normali || []), ...matched] });
   };
+
+  const hasExtra = data.has_lavorazioni_extra || false;
 
   return (
     <div className="space-y-8">
@@ -351,14 +347,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
-        <p className="text-xs text-muted-foreground">
-          Parla liberamente descrivendo le lavorazioni della giornata: l'IA dividerà le voci tra extra e preventivate. Dovrai solo inserire le ore.
-        </p>
-        <AudioLavorazioniRecorder tipiLavorazione={tipiLavorazione} onResult={handleAudioResult} />
-      </div>
-
-      {/* Sezione 1 */}
+      {/* Sezione 1 — Lavorazioni Extra */}
       <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
         <div className="flex items-center gap-2 mb-3 pb-3 border-b border-amber-200">
           <Zap className="w-4 h-4 text-amber-600" />
@@ -366,14 +355,24 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
           <span className="text-xs text-amber-700 ml-1">(concordate, non in preventivo)</span>
         </div>
         <LavorazioniExtra data={data} onChange={onChange} />
+        {hasExtra && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <AudioLavorazioniRecorder mode="extra" tipiLavorazione={tipiLavorazione} onResult={handleExtraResult} />
+            <span className="text-xs text-muted-foreground">Parla: l'IA aggiunge le voci extra. Inserirai solo le ore.</span>
+          </div>
+        )}
       </div>
 
-      {/* Sezione 2 */}
+      {/* Sezione 2 — Lavorazioni Preventivate */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
         <div className="flex items-center gap-2 mb-3 pb-3 border-b border-primary/20">
           <Wrench className="w-4 h-4 text-primary" />
           <h3 className="font-semibold text-primary">Lavorazioni Preventivate</h3>
           <span className="text-xs text-primary/70 ml-1">(da preventivo)</span>
+        </div>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <AudioLavorazioniRecorder mode="normali" tipiLavorazione={tipiLavorazione} onResult={handleNormaliResult} />
+          <span className="text-xs text-muted-foreground">Parla: l'IA aggiunge le voci e le mappa al catalogo. Inserirai solo le ore.</span>
         </div>
         <LavorazioniNormali data={data} onChange={onChange} tipiLavorazione={tipiLavorazione} />
       </div>
