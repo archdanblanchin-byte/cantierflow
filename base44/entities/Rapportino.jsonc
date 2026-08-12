@@ -178,6 +178,10 @@
           "descrizione_custom": {
             "type": "string"
           },
+          "descrizione": {
+            "type": "string",
+            "description": "Note/specifica del materiale (es. dove e stato preso, dettagli prodotto) estratta dal resoconto vocale"
+          },
           "unita_misura": {
             "type": "string"
           },

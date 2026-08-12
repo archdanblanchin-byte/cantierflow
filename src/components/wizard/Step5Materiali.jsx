@@ -1,8 +1,10 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Package } from "lucide-react";
+import AudioMaterialiRecorder from "@/components/wizard/AudioMaterialiRecorder";
 
 export default function Step5Materiali({ data, onChange, materialiBase }) {
   const materiali = data.materiali || [];
@@ -11,7 +13,7 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
     onChange({
       materiali: [
         ...materiali,
-        { materiale_id: "", nome: "", descrizione_custom: "", unita_misura: "", quantita: 0 },
+        { materiale_id: "", nome: "", descrizione_custom: "", descrizione: "", unita_misura: "", quantita: 0 },
       ],
     });
   };
@@ -26,16 +28,44 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
     onChange({ materiali: materiali.filter((_, i) => i !== index) });
   };
 
+  const handleAudioResult = (items) => {
+    const mapped = items.map((m) => {
+      const match = materialiBase.find(
+        (b) => b.nome.toLowerCase() === String(m.nome).toLowerCase()
+      );
+      if (match) {
+        return {
+          materiale_id: match.id,
+          nome: match.nome,
+          unita_misura: m.unita_misura || match.unita_misura || "",
+          quantita: m.quantita || 0,
+          descrizione_custom: "",
+          descrizione: m.descrizione || "",
+        };
+      }
+      return {
+        materiale_id: "",
+        nome: m.nome,
+        unita_misura: m.unita_misura || "",
+        quantita: m.quantita || 0,
+        descrizione_custom: m.nome,
+        descrizione: m.descrizione || "",
+      };
+    });
+    onChange({ materiali: [...materiali, ...mapped] });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
           <Package className="w-5 h-5 text-primary" />
         </div>
-        <div>
+        <div className="flex-1">
           <h2 className="text-lg font-semibold">Materiali</h2>
           <p className="text-sm text-muted-foreground">Materiali utilizzati durante la giornata</p>
         </div>
+        <AudioMaterialiRecorder materialiBase={materialiBase} onResult={handleAudioResult} />
       </div>
 
       {materiali.map((mat, i) => (
@@ -104,11 +134,22 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
                 type="number"
                 min="0"
                 step="0.1"
+                inputMode="decimal"
                 value={mat.quantita ?? ""}
                 onChange={(e) => updateMateriale(i, { quantita: parseFloat(e.target.value) || 0 })}
                 className="mt-1"
               />
             </div>
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Note / specifica (dove preso, dettagli)</Label>
+            <Textarea
+              value={mat.descrizione || ""}
+              onChange={(e) => updateMateriale(i, { descrizione: e.target.value })}
+              className="mt-1"
+              placeholder="Es. ritirati al capannone, pittura bianca opaca..."
+              rows={2}
+            />
           </div>
         </div>
       ))}

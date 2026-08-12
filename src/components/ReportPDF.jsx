@@ -102,7 +102,7 @@ export function ReportPDFContent({ cantiere, rapportini = [], foto = [] }) {
     (r.materiali || []).forEach(m => {
       const key = m.nome || m.descrizione_custom || "—";
       if (!materialiMap[key]) materialiMap[key] = [];
-      materialiMap[key].push({ data: r.data, quantita: m.quantita || 0, unita: m.unita_misura || "" });
+      materialiMap[key].push({ data: r.data, quantita: m.quantita || 0, unita: m.unita_misura || "", descrizione: m.descrizione || "" });
     });
   });
 
@@ -306,9 +306,14 @@ export function ReportPDFContent({ cantiere, rapportini = [], foto = [] }) {
                   <strong style={{ fontSize: 13, color: "#0e7490" }}>{totale} {unita} totali</strong>
                 </div>
                 {voci.map((v, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "3px 12px", fontSize: 12, color: "#6b7280", borderBottom: "1px solid #f3f4f6" }}>
-                    <span><DateBadge data={v.data} /></span>
-                    <span>{v.quantita} {v.unita}</span>
+                  <div key={i} style={{ padding: "3px 12px", fontSize: 12, color: "#6b7280", borderBottom: "1px solid #f3f4f6" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span><DateBadge data={v.data} /></span>
+                      <span>{v.quantita} {v.unita}</span>
+                    </div>
+                    {v.descrizione && (
+                      <em style={{ fontSize: 11, color: "#9ca3af", display: "block", marginTop: 2 }}>{v.descrizione}</em>
+                    )}
                   </div>
                 ))}
               </div>

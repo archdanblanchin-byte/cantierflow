@@ -118,9 +118,14 @@ export default function Step6Riepilogo({ data }) {
           <div className="p-4">
             <Section icon={Package} title={`Materiali (${data.materiali.length})`}>
               {(data.materiali || []).map((m, i) => (
-                <div key={i} className="flex justify-between text-sm py-1">
-                  <span>{m.nome || m.descrizione_custom || "—"}</span>
-                  <span className="font-medium">{m.quantita} {m.unita_misura}</span>
+                <div key={i} className="py-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>{m.nome || m.descrizione_custom || "—"}</span>
+                    <span className="font-medium">{m.quantita} {m.unita_misura}</span>
+                  </div>
+                  {m.descrizione && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{m.descrizione}</p>
+                  )}
                 </div>
               ))}
             </Section>

@@ -190,9 +190,14 @@ export default function ReportDetail() {
           {(d.materiali || []).length > 0 && (
             <DetailSection icon={Package} title={`Materiali (${d.materiali.length})`}>
               {d.materiali.map((m, i) => (
-                <div key={i} className="flex justify-between text-sm py-0.5">
-                  <span>{m.nome || m.descrizione_custom || "—"}</span>
-                  <span className="font-medium">{m.quantita} {m.unita_misura}</span>
+                <div key={i} className="py-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>{m.nome || m.descrizione_custom || "—"}</span>
+                    <span className="font-medium">{m.quantita} {m.unita_misura}</span>
+                  </div>
+                  {m.descrizione && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{m.descrizione}</p>
+                  )}
                 </div>
               ))}
             </DetailSection>
