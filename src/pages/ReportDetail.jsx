@@ -23,9 +23,11 @@ export default function ReportDetail() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [usersList, setUsersList] = useState([]);
 
   useEffect(() => {
     base44.auth.me().then((u) => setCurrentUser(u));
+    base44.entities.User.list().then(setUsersList).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export default function ReportDetail() {
 
   const d = report;
   const sommaOreNormali = (d.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
+  const compilatoreNome = usersList.find((u) => u.email === d.user_email)?.full_name || d.user_email;
 
   return (
     <div className="min-h-screen bg-background">
@@ -87,7 +90,12 @@ export default function ReportDetail() {
               <Badge variant={d.stato === "inviato" ? "default" : "secondary"} className="text-xs uppercase">
                 {d.stato === "inviato" ? "Inviato" : "Bozza"}
               </Badge>
-              {canEdit && (
+              {canEdit && d.stato === "bozza" && (
+                <Button size="sm" onClick={() => navigate(`/modifica-report/${id}`)} className="gap-1.5">
+                  <Pencil className="w-4 h-4" /> Compila
+                </Button>
+              )}
+              {canEdit && d.stato !== "bozza" && (
                 <Button variant="ghost" size="icon" onClick={() => navigate(`/modifica-report/${id}`)}>
                   <Pencil className="w-4 h-4" />
                 </Button>
@@ -120,7 +128,7 @@ export default function ReportDetail() {
         <div className="rounded-xl border border-border bg-card divide-y divide-border">
           <DetailSection icon={MapPin} title="Cantiere">
             <DetailRow label="Cantiere" value={d.cantiere_nome} />
-            <DetailRow label="Compilatore" value={d.user_email} />
+            <DetailRow label="Compilatore" value={compilatoreNome} />
             {d.note_generali && <DetailRow label="Note" value={d.note_generali} />}
             {(d.foto || []).length > 0 && (
               <div className="flex gap-2 mt-2 flex-wrap">
