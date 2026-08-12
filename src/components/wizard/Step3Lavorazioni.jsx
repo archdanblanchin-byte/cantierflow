@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Trash2, Zap, Wrench, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AudioLavorazioniRecorder from "@/components/wizard/AudioLavorazioniRecorder";
 
 // ─── LAVORAZIONI EXTRA ────────────────────────────────────────────────────────
 
@@ -304,6 +305,40 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
 // ─── STEP UNIFICATO ───────────────────────────────────────────────────────────
 
 export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
+  const handleAudioResult = ({ extra, normali }) => {
+    const availableCats = [...new Set(tipiLavorazione.map((t) => t.categoria).filter(Boolean))];
+    const matchedNormali = normali.map((n) => {
+      const base = {
+        ore_totali: 0,
+        modalita_calcolo: "manuale",
+        numero_persone: 0,
+        ore_per_persona: 0,
+      };
+      const catMatch = availableCats.find(
+        (c) => c.toLowerCase() === String(n.categoria).toLowerCase()
+      );
+      if (catMatch) {
+        const tipoMatch = tipiLavorazione.find(
+          (t) => t.categoria === catMatch && t.nome.toLowerCase() === String(n.tipo).toLowerCase()
+        );
+        if (tipoMatch) {
+          return { ...base, categoria: catMatch, tipo_lavorazione_id: tipoMatch.id, tipo_lavorazione_nome: tipoMatch.nome, descrizione_custom: "" };
+        }
+        return { ...base, categoria: catMatch, tipo_lavorazione_id: "", tipo_lavorazione_nome: n.tipo, descrizione_custom: n.tipo };
+      }
+      return { ...base, categoria: "__custom__", tipo_lavorazione_id: "", tipo_lavorazione_nome: n.tipo, descrizione_custom: `${n.categoria} - ${n.tipo}` };
+    });
+
+    onChange({
+      has_lavorazioni_extra: extra.length > 0 ? true : data.has_lavorazioni_extra || false,
+      lavorazioni_extra: [
+        ...(data.lavorazioni_extra || []),
+        ...extra.map((e) => ({ descrizione: e.descrizione, ore: 0 })),
+      ],
+      lavorazioni_normali: [...(data.lavorazioni_normali || []), ...matchedNormali],
+    });
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3 mb-4">
@@ -314,6 +349,13 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
           <h2 className="text-lg font-semibold">Lavorazioni</h2>
           <p className="text-sm text-muted-foreground">Inserisci le lavorazioni extra e quelle preventivate</p>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+        <p className="text-xs text-muted-foreground">
+          Parla liberamente descrivendo le lavorazioni della giornata: l'IA dividerà le voci tra extra e preventivate. Dovrai solo inserire le ore.
+        </p>
+        <AudioLavorazioniRecorder tipiLavorazione={tipiLavorazione} onResult={handleAudioResult} />
       </div>
 
       {/* Sezione 1 */}
