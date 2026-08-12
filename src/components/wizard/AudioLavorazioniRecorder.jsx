@@ -96,7 +96,7 @@ export default function AudioLavorazioniRecorder({ tipiLavorazione = [], mode = 
       return `\n\nEsempi di descrizioni extra già usate in passato (segui lo stesso stile concreto, con cosa e dove):\n${list}\n`;
     }
     const list = examples.map((e) => `- Tipo "${e.tipo}" -> descrizione "${e.descrizione}"`).join("\n");
-    return `\n\nEsempi di come l'utente descrive le lavorazioni (segui lo stesso stile concreto, con cosa e dove):\n${list}\n`;
+    return `\n\nEsempi di come l'utente descrive le lavorazioni (segui lo stesso stile concreto, con cosa e dove; questi esempi confermano che tinteggiatura/pitturazione/raschiatura sono su PARETI, non su travi in legno):\n${list}\n`;
   };
 
   const buildPrompt = (transcript, examples) => {
@@ -125,6 +125,11 @@ Per ciascuna:
 
 REGOLE:
 ${regole.join("\n")}
+
+ATTENZIONE AL SUPPORTO/SUPERFICIE (molto importante):
+- Termini come "raschiatura", "verniciatura", "tinteggiatura", "pitturazione", "fondo uniformante", "imprimatura" si riferiscono di norma a PARETI, MURI, SOFFITTI o FACCIATE (pittura murali). NON associarli a "travi in legno", "legno", "capriate" o a lavorazioni del legno A MENO CHE l'utente citi esplicitamente travi, legno, capriate, strutture lignee.
+- Collega tra loro le lavorazioni coerenti: se l'utente dice "fondo uniformante" e poi "pitturato la parete", tratta tutto come pittura su PARETE (stessa categoria/tipo delle pitture murali), non come intervento su travi in legno.
+- Se l'utente parla di "tinte", "vecchia tinta", "vecchia vernice", "vecchia tinteggiatura" da rimuovere, è pittura su pareti/muri, non legno.
 
 Categorie e tipi disponibili:
 ${catalog}${examplesBlock}

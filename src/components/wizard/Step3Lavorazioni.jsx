@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Trash2, Zap, Wrench, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AudioLavorazioniRecorder from "@/components/wizard/AudioLavorazioniRecorder";
+import OreInput from "@/components/wizard/OreInput";
 
 // ─── LAVORAZIONI EXTRA ────────────────────────────────────────────────────────
 
@@ -62,14 +63,9 @@ function LavorazioniExtra({ data, onChange }) {
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Ore</Label>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="0.25"
-                      value={extra.ore ?? ""}
-                      onChange={(e) => updateExtra(i, "ore", parseFloat(e.target.value) || 0)}
-                      className="mt-1"
+                    <OreInput
+                      value={extra.ore ?? 0}
+                      onChange={(v) => updateExtra(i, "ore", v)}
                     />
                   </div>
                 </div>
@@ -239,27 +235,30 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <Label className="text-xs text-muted-foreground">N° persone</Label>
-                  <Input type="number" min="0" value={lav.numero_persone ?? ""} onChange={(e) => updateLav(i, { numero_persone: parseInt(e.target.value) || 0 })} className="mt-1" />
+                  <OreInput
+                    value={lav.numero_persone ?? 0}
+                    step={1}
+                    onChange={(v) => updateLav(i, { numero_persone: v })}
+                  />
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Ore/persona</Label>
-                  <Input type="number" min="0" step="0.25" value={lav.ore_per_persona ?? ""} onChange={(e) => updateLav(i, { ore_per_persona: parseFloat(e.target.value) || 0 })} className="mt-1" />
+                  <OreInput
+                    value={lav.ore_per_persona ?? 0}
+                    onChange={(v) => updateLav(i, { ore_per_persona: v })}
+                  />
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Totale</Label>
-                  <Input type="number" value={lav.ore_totali ?? 0} disabled className="mt-1 bg-muted font-semibold" />
+                  <Input type="text" inputMode="decimal" value={lav.ore_totali ?? 0} disabled className="mt-1 bg-muted font-semibold text-center font-semibold" />
                 </div>
               </div>
             ) : (
-              <div className="w-36">
+              <div className="w-44">
                 <Label className="text-xs text-muted-foreground">Ore totali</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.25"
-                  value={lav.ore_totali ?? ""}
-                  onChange={(e) => updateLav(i, { ore_totali: parseFloat(e.target.value) || 0 })}
-                  className="mt-1"
+                <OreInput
+                  value={lav.ore_totali ?? 0}
+                  onChange={(v) => updateLav(i, { ore_totali: v })}
                 />
               </div>
             )}

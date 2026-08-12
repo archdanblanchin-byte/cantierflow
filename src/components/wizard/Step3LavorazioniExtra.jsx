@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, Zap } from "lucide-react";
+import OreInput from "@/components/wizard/OreInput";
 
 export default function Step3LavorazioniExtra({ data, onChange }) {
   const extras = data.lavorazioni_extra || [];
@@ -66,13 +67,9 @@ export default function Step3LavorazioniExtra({ data, onChange }) {
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Ore</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.25"
-                      value={extra.ore ?? ""}
-                      onChange={(e) => updateExtra(i, "ore", parseFloat(e.target.value) || 0)}
-                      className="mt-1"
+                    <OreInput
+                      value={extra.ore ?? 0}
+                      onChange={(v) => updateExtra(i, "ore", v)}
                     />
                   </div>
                 </div>

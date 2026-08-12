@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Trash2, Wrench, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import OreInput from "@/components/wizard/OreInput";
 
 export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazione }) {
   const lavorazioni = data.lavorazioni_normali || [];
@@ -172,40 +173,30 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">N° persone</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={lav.numero_persone ?? ""}
-                  onChange={(e) => updateLavorazione(i, { numero_persone: parseInt(e.target.value) || 0 })}
-                  className="mt-1"
+                <OreInput
+                  value={lav.numero_persone ?? 0}
+                  step={1}
+                  onChange={(v) => updateLavorazione(i, { numero_persone: v })}
                 />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Ore/persona</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.25"
-                  value={lav.ore_per_persona ?? ""}
-                  onChange={(e) => updateLavorazione(i, { ore_per_persona: parseFloat(e.target.value) || 0 })}
-                  className="mt-1"
+                <OreInput
+                  value={lav.ore_per_persona ?? 0}
+                  onChange={(v) => updateLavorazione(i, { ore_per_persona: v })}
                 />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Ore totali</Label>
-                <Input type="number" value={lav.ore_totali ?? 0} disabled className="mt-1 bg-muted font-semibold" />
+                <Input type="text" inputMode="decimal" value={lav.ore_totali ?? 0} disabled className="mt-1 bg-muted font-semibold text-center font-semibold" />
               </div>
             </div>
           ) : (
-            <div className="w-40">
+            <div className="w-44">
               <Label className="text-xs text-muted-foreground">Ore totali</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.25"
-                value={lav.ore_totali ?? ""}
-                onChange={(e) => updateLavorazione(i, { ore_totali: parseFloat(e.target.value) || 0 })}
-                className="mt-1"
+              <OreInput
+                value={lav.ore_totali ?? 0}
+                onChange={(v) => updateLavorazione(i, { ore_totali: v })}
               />
             </div>
           )}

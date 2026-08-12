@@ -18,11 +18,11 @@ const GUIDE = {
   },
   normali: {
     title: "Come dettare le lavorazioni preventivate",
-    intro: "Nomina ogni lavorazione prevista dicendo COSA e DOVE, con i dettagli che aiuteranno a ricostruire la giornata. L'IA la abbina al catalogo; le ore le inserirai dopo.",
+    intro: "Nomina ogni lavorazione prevista dicendo COSA e DOVE, con i dettagli che aiuteranno a ricostruire la giornata. L'IA la abbina al catalogo; le ore le inserirai dopo. IMPORTANTE: se parli di tinteggiatura, pitturazione, raschiatura o fondo su pareti/muri/soffitti, citale esplicitamente (es. 'parete', 'muro', 'soffitto') così l'IA non le scambia per interventi su travi in legno.",
     examples: [
       "Demolizione: tolto il vecchio pavimento della stanza a nord e del bagno.",
-      "Posato il nuovo gres porcellanato nella zona giorno, circa 40 metri quadri,oltre la soglia della cucina.",
-      "Pitturato il soffitto del corridoio con due mani di bianco opaco.",
+      "Posato il nuovo gres porcellanato nella zona giorno, circa 40 metri quadri, oltre la soglia della cucina.",
+      "Raschiato la vecchia tinta della parete sud, dato fondo uniformante e poi pitturato con due mani di bianco opaco.",
     ],
   },
   materiali: {
