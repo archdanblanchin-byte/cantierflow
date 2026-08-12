@@ -103,3 +103,27 @@ export async function generaRapportiniDaGiornata({ user, giorno, timbrature, rap
   }
   return creati;
 }
+
+// Sincronizza l'ore_totali_squadra del rapportino di un cantiere/giorno/utente
+// con le ore reali calcolate dalle timbrature. Se non esiste rapportino, non fa nulla.
+export async function syncRapportinoOreDaTimbratura({ user_email, cantiere_id, giorno }) {
+  if (!user_email || !cantiere_id || !giorno) return null;
+  const g = new Date(giorno);
+  if (isNaN(g.getTime())) return null;
+  const inizio = new Date(g); inizio.setHours(0, 0, 0, 0);
+  const fine = new Date(g); fine.setHours(23, 59, 59, 999);
+
+  const timb = await base44.entities.Timbratura.filter({
+    user_email,
+    cantiere_id,
+    data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() },
+  });
+  const ore = calcolaOrePerCantiere(timb).find((c) => c.cantiere_id === cantiere_id)?.ore ?? 0;
+
+  const rapportini = await base44.entities.Rapportino.filter({ user_email, cantiere_id });
+  const r = rapportini.find((rr) => rr.data && new Date(rr.data).toDateString() === g.toDateString());
+  if (!r) return null;
+  if (Math.abs((r.ore_totali_squadra ?? 0) - ore) < 0.001) return r;
+  await base44.entities.Rapportino.update(r.id, { ore_totali_squadra: ore });
+  return { ...r, ore_totali_squadra: ore };
+}

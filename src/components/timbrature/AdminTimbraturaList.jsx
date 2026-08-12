@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Pencil, Trash2, Clock } from "lucide-react";
 import { STEP_CONFIG } from "@/lib/timbratureUtils";
+import { syncRapportinoOreDaTimbratura } from "@/lib/rapportiniFromTimbrature";
 
 const TIPI = ["ingresso", "pausa_inizio", "pausa_fine", "uscita", "spostamento"];
 
@@ -53,6 +54,11 @@ export default function AdminTimbraturaList({ timbrature, cantieri = [], onCambi
         note: form.note,
       };
       await base44.entities.Timbratura.update(editing.id, payload);
+      // Ricalcola le ore del rapportino per cantiere di origine e destinazione
+      const cantieriDaSync = new Set([editing.cantiere_id, form.cantiere_id].filter(Boolean));
+      await Promise.all([...cantieriDaSync].map((cid) =>
+        syncRapportinoOreDaTimbratura({ user_email: editing.user_email, cantiere_id: cid, giorno: editing.data_ora })
+      ));
       setEditing(null);
       onCambiata?.();
     } finally {
@@ -63,6 +69,14 @@ export default function AdminTimbraturaList({ timbrature, cantieri = [], onCambi
   const elimina = async () => {
     if (!deleting) return;
     await base44.entities.Timbratura.delete(deleting.id);
+    // Ricalcola le ore del rapportino del cantiere/giorno del timbro eliminato
+    if (deleting.cantiere_id) {
+      await syncRapportinoOreDaTimbratura({
+        user_email: deleting.user_email,
+        cantiere_id: deleting.cantiere_id,
+        giorno: deleting.data_ora,
+      });
+    }
     setDeleting(null);
     onCambiata?.();
   };

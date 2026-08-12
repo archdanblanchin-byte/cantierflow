@@ -91,7 +91,7 @@ function OreInput({ value, onChange }) {
   );
 }
 
-export default function Step2Collaboratori({ data, onChange, collaboratoriList, showErrors }) {
+export default function Step2Collaboratori({ data, onChange, collaboratoriList, showErrors, canEditOre = true }) {
   const [showPicker, setShowPicker] = useState(false);
   const [selected, setSelected] = useState([]);
   const collaboratori = data.collaboratori || [];
@@ -146,9 +146,19 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
         <div className="flex items-center gap-3 mt-1">
           <Clock className="w-5 h-5 text-primary flex-shrink-0" />
           <div className="flex-1 max-w-xs">
-            <OreInput value={oreTotali} onChange={(v) => onChange({ ore_totali_squadra: v })} />
+            {canEditOre ? (
+              <OreInput value={oreTotali} onChange={(v) => onChange({ ore_totali_squadra: v })} />
+            ) : (
+              <div className="flex items-center gap-2 h-9 px-3 rounded-md bg-muted border border-border">
+                <span className="font-semibold">{oreTotali.toFixed(2).replace(".", ",")}h</span>
+                <span className="text-[11px] text-muted-foreground ml-auto">calcolate dalle timbrature</span>
+              </div>
+            )}
           </div>
         </div>
+        {!canEditOre && (
+          <p className="text-[11px] text-muted-foreground mt-2">Le ore sono determinate dalle timbrature: solo un amministratore può modificarle manualmente.</p>
+        )}
       </div>
 
       {/* Lista collaboratori */}

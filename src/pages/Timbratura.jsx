@@ -18,7 +18,7 @@ import {
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { distanzaM, getPosizione, STEP_CONFIG, arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
-import { calcolaOrePerCantiere, generaRapportiniDaGiornata } from "@/lib/rapportiniFromTimbrature";
+import { calcolaOrePerCantiere, generaRapportiniDaGiornata, syncRapportinoOreDaTimbratura } from "@/lib/rapportiniFromTimbrature";
 import { getRuoloLabel } from "@/lib/permissions";
 import NewCantiereModal from "@/components/wizard/NewCantiereModal";
 import BottomNav from "@/components/BottomNav";
@@ -136,6 +136,13 @@ export default function Timbratura() {
       if (tipoEvento === "ingresso") setSelectedCantiereId("");
       queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
       queryClient.invalidateQueries({ queryKey: ["timbrature-giornaliere"] });
+      // Aggiorna in automatico le ore del rapportino collegato a questo cantiere/giorno
+      syncRapportinoOreDaTimbratura({
+        user_email: user.email,
+        cantiere_id: cantiere.id,
+        giorno: inizio,
+      }).then(() => queryClient.invalidateQueries({ queryKey: ["rapportini"] }))
+        .catch(() => {});
     } catch (e) {
       setError(e.message);
     } finally {
@@ -186,6 +193,12 @@ export default function Timbratura() {
         cantiere_nome: cantiere?.nome || editando.cantiere_nome
       });
       queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
+      // Ricalcola le ore del rapportino per il cantiere di origine e quello di destinazione
+      const cantieriDaSync = new Set([editando.cantiere_id, editForm.cantiere_id].filter(Boolean));
+      await Promise.all([...cantieriDaSync].map((cid) =>
+        syncRapportinoOreDaTimbratura({ user_email: editando.user_email || user.email, cantiere_id: cid, giorno: editando.data_ora })
+      ));
+      queryClient.invalidateQueries({ queryKey: ["rapportini"] });
       toast.success("Timbratura aggiornata");
       setEditando(null);
     } catch (e) {
@@ -197,6 +210,13 @@ export default function Timbratura() {
     try {
       await base44.entities.Timbratura.delete(t.id);
       queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
+      // Ricalcola le ore del rapportino del cantiere/giorno del timbro eliminato
+      syncRapportinoOreDaTimbratura({
+        user_email: t.user_email || user.email,
+        cantiere_id: t.cantiere_id,
+        giorno: t.data_ora,
+      }).then(() => queryClient.invalidateQueries({ queryKey: ["rapportini"] }))
+        .catch(() => {});
       toast.success("Timbratura eliminata");
     } catch (e) {
       toast.error("Errore: " + e.message);

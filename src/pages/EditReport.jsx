@@ -27,10 +27,12 @@ export default function EditReport() {
   const [showErrors, setShowErrors] = useState(false);
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     async function load() {
       const user = await base44.auth.me();
+      setIsAdmin(user?.role === "admin");
       const results = await base44.entities.Rapportino.filter({ id });
       const report = results[0];
       if (!report) { navigate("/"); return; }
@@ -119,7 +121,7 @@ export default function EditReport() {
 
   const stepContent = {
     1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} />,
-    2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} showErrors={showErrors} />,
+    2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} showErrors={showErrors} canEditOre={isAdmin} />,
     3: <Step3Lavorazioni data={formData} onChange={updateForm} tipiLavorazione={tipiLavorazione} />,
     4: <Step4Materiali data={formData} onChange={updateForm} materialiBase={materialiBase} />,
     5: <Step5Riepilogo data={formData} />,
