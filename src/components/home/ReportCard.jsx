@@ -21,7 +21,7 @@ export default function ReportCard({ report }) {
             {isBozza ? (
               <Badge
                 variant="default"
-                className="text-[10px] uppercase tracking-wider cursor-pointer"
+                className="text-[10px] uppercase tracking-wider cursor-pointer bg-orange-500 hover:bg-orange-500 border-orange-500"
               >
                 Compila
               </Badge>
