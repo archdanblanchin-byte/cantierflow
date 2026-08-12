@@ -7,21 +7,32 @@ import { Link } from "react-router-dom";
 export default function ReportCard({ report }) {
   const collCount = (report.collaboratori || []).length;
   const lavCount = (report.lavorazioni_normali || []).length;
+  const isBozza = report.stato !== "inviato";
+  const to = isBozza ? `/modifica-report/${report.id}` : `/report/${report.id}`;
 
   return (
     <Link
-      to={`/report/${report.id}`}
+      to={to}
       className="block rounded-xl border border-border bg-card p-4 hover:shadow-lg hover:border-primary/20 transition-all duration-200 group"
     >
       <div className="flex items-start justify-between">
         <div className="space-y-2 flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <Badge
-              variant={report.stato === "inviato" ? "default" : "secondary"}
-              className="text-[10px] uppercase tracking-wider"
-            >
-              {report.stato === "inviato" ? "Inviato" : "Bozza"}
-            </Badge>
+            {isBozza ? (
+              <Badge
+                variant="default"
+                className="text-[10px] uppercase tracking-wider cursor-pointer"
+              >
+                Compila
+              </Badge>
+            ) : (
+              <Badge
+                variant="default"
+                className="text-[10px] uppercase tracking-wider"
+              >
+                Inviato
+              </Badge>
+            )}
             <span className="text-xs text-muted-foreground">
               {report.data ? format(new Date(report.data), "d MMM yyyy", { locale: it }) : ""}
             </span>
