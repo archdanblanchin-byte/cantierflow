@@ -1,8 +1,10 @@
 import { useState, useRef } from "react";
-import { Mic, Square, Loader2 } from "lucide-react";
+import { Mic, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import RecordingIndicator from "./RecordingIndicator";
+import DictationGuide from "./DictationGuide";
 
 /**
  * Registra audio, lo trascrive ed estrae lavorazioni con l'IA.
@@ -208,17 +210,19 @@ Resoconto vocale:
 
   if (status === "recording") {
     return (
-      <Button variant="destructive" size="sm" className="gap-2" onClick={stopRecording}>
-        <Square className="w-3.5 h-3.5 fill-current" />
-        Registrazione {fmt(seconds)} — ferma
+      <Button variant="destructive" size="sm" className="gap-2 w-full justify-center" onClick={stopRecording}>
+        <RecordingIndicator seconds={seconds} fmt={fmt} />
       </Button>
     );
   }
 
   return (
-    <Button variant="outline" size="sm" className="gap-2" onClick={startRecording}>
-      <Mic className="w-4 h-4" />
-      {label}
-    </Button>
+    <div className="w-full">
+      <Button variant="outline" size="sm" className="gap-2 w-full" onClick={startRecording}>
+        <Mic className="w-4 h-4" />
+        {label}
+      </Button>
+      <DictationGuide mode={mode} />
+    </div>
   );
 }
