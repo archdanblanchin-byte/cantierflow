@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -20,6 +20,9 @@ export default function OreLavoratori() {
   const [selectedCollab, setSelectedCollab] = useState(null);
   const [mese, setMese] = useState(startOfMonth(new Date()));
   const [giornoKey, setGiornoKey] = useState(null);
+  const [me, setMe] = useState(null);
+
+  useEffect(() => { base44.auth.me().then(setMe).catch(() => {}); }, []);
 
   const { data: collaboratori = [], isLoading: loadingCollab } = useQuery({
     queryKey: ["collaboratori-all"],
@@ -63,11 +66,24 @@ export default function OreLavoratori() {
     enabled: !!selectedCollab,
   });
 
-  // Match collaboratore <-> timbratura/trasferta (per email O per nome denormalizzato)
+  // Match collaboratore <-> timbratura/trasferta
+  // 1) per user_email del collaboratore
+  // 2) per nome denormalizzato (user_nome === collaboratore.nome)
+  // 3) se il collaboratore sono io (nome == mio full_name) ma non ha user_email,
+  //    abbino tramite la mia email di login (le mie timbrature)
+  const norm = (s) => (s || "").toLowerCase().trim().replace(/\s+/g, " ");
   const matchCollab = (record) => {
     if (!selectedCollab) return false;
+    const nomeCollab = norm(selectedCollab.nome);
+    // 1) email del collaboratore
     if (email && record.user_email === email) return true;
-    if (record.user_nome && selectedCollab.nome && record.user_nome === selectedCollab.nome) return true;
+    // 2) nome denormalizzato uguale
+    if (record.user_nome && nomeCollab && norm(record.user_nome) === nomeCollab) return true;
+    // 3) sono io: timbratura con la mia email di login e questo collaboratore sono io (per nome)
+    if (me?.email && record.user_email === me.email && me.full_name && nomeCollab && email !== me.email) {
+      const f = norm(me.full_name);
+      if (f === nomeCollab || (nomeCollab.length >= 3 && (f.includes(nomeCollab) || nomeCollab.includes(f)))) return true;
+    }
     return false;
   };
 
