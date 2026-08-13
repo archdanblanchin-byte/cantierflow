@@ -12,6 +12,7 @@ import { getPosizione } from "@/lib/timbratureUtils";
 import FotoUpload from "@/components/cantiere/FotoUpload";
 import DocumentiUpload from "@/components/cantiere/DocumentiUpload";
 import CantiereMappa from "@/components/cantiere/CantiereMappa";
+import AddressAutocomplete from "@/components/cantiere/AddressAutocomplete";
 
 function generateCodice() {
   return "C-" + Date.now().toString(36).toUpperCase().slice(-6);
@@ -119,11 +120,18 @@ export default function CantiereForm() {
           <div>
             <Label className="text-xs text-muted-foreground">Indirizzo</Label>
             <div className="flex gap-2 mt-1">
-              <Input
+              <AddressAutocomplete
                 value={form.indirizzo}
-                onChange={(e) => set("indirizzo", e.target.value)}
-                className="flex-1"
-                placeholder="Es. Via Roma 15"
+                placeholder="Cerca via, numero, città..."
+                onSelect={(p) => {
+                  if (p.indirizzo) set("indirizzo", p.indirizzo);
+                  if (p.citta) set("citta", p.citta);
+                  if (p.lat != null && p.lon != null) {
+                    set("latitudine", p.lat);
+                    set("longitudine", p.lon);
+                    toast.success("Coordinate geolocalizzate dall'indirizzo");
+                  }
+                }}
               />
               {(form.indirizzo || form.citta) && (
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
