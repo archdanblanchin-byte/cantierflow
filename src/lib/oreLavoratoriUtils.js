@@ -57,9 +57,16 @@ export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
   const oreCantieri = cantieri.reduce((s, c) => s + c.ore, 0);
   const oreSpostamenti = spostamenti.reduce((s, sp) => s + sp.durata, 0);
 
+  // Note / anomalie (es. uscito prima, permesso) dal campo note_imprevisti del rapportino
+  const note = [];
+  (vociRapportini || []).forEach((v) => {
+    if (v.note_imprevisti) note.push({ cantiere: v.cantiere, testo: v.note_imprevisti });
+  });
+
   return {
     cantieri,
     spostamenti,
+    note,
     oreCantieri,
     oreSpostamenti,
     oreTotali: oreCantieri + oreSpostamenti,

@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Navigation, Route, Clock, Truck } from "lucide-react";
+import { MapPin, Navigation, Route, Clock, Truck, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
@@ -13,7 +13,8 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
   const oreTotali = dettaglio?.oreTotali || 0;
   const oreCantieri = dettaglio?.oreCantieri || 0;
   const oreSpostamenti = dettaglio?.oreSpostamenti || 0;
-  const cfg = trasferta?.tipo_trasferta ? TRASFERTA_CONFIG[trasferta.tipo_trasferta] : null;
+  const note = dettaglio?.note || [];
+  const cfg = trasferta?.fascia ? TRASFERTA_CONFIG[trasferta.fascia] : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -138,7 +139,22 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
           </div>
         )}
 
-        {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && (
+        {/* Note / Anomalie */}
+        {note.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> Note / Anomalie
+            </p>
+            {note.map((n, i) => (
+              <Card key={i} className="p-3 border-amber-200 bg-amber-50/40">
+                {n.cantiere && <p className="text-[11px] text-muted-foreground mb-0.5">{n.cantiere}</p>}
+                <p className="text-sm text-amber-900">{n.testo}</p>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && note.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-6">Nessun dato per questa giornata</p>
         )}
       </DialogContent>
