@@ -3,93 +3,187 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Clock, ChevronDown, ChevronUp, Users, CalendarDays, FileText } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Users, Route, CalendarDays } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
-import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import { it } from "date-fns/locale";
+import { fmtOre } from "@/lib/timbratureUtils";
+import { calcolaGiornata } from "@/lib/oreLavoratoriUtils";
+import CalendarioMese from "@/components/orelavoratori/CalendarioMese";
+import GiornoDetailDialog from "@/components/orelavoratori/GiornoDetailDialog";
 
 export default function OreLavoratori() {
   const navigate = useNavigate();
-  const now = new Date();
-  const [dataDa, setDataDa] = useState(format(startOfMonth(now), "yyyy-MM-dd"));
-  const [dataA, setDataA] = useState(format(endOfMonth(now), "yyyy-MM-dd"));
-  const [expanded, setExpanded] = useState(null);
-
-  const { data: rapportini = [], isLoading: loadingRapportini } = useQuery({
-    queryKey: ["rapportini-all"],
-    queryFn: () => base44.entities.Rapportino.list("-data", 500),
-  });
+  const [selectedCollab, setSelectedCollab] = useState(null);
+  const [mese, setMese] = useState(startOfMonth(new Date()));
+  const [giornoKey, setGiornoKey] = useState(null);
 
   const { data: collaboratori = [], isLoading: loadingCollab } = useQuery({
     queryKey: ["collaboratori-all"],
     queryFn: () => base44.entities.Collaboratore.list(),
   });
 
-  const isLoading = loadingRapportini || loadingCollab;
+  const email = selectedCollab?.user_email;
 
-  const rapportiniFiltrati = useMemo(() => {
-    if (!rapportini.length) return [];
-    const da = new Date(dataDa + "T00:00:00");
-    const a = new Date(dataA + "T23:59:59");
-    return rapportini.filter(r => {
-      const d = new Date(r.data);
-      return d >= da && d <= a;
-    });
-  }, [rapportini, dataDa, dataA]);
+  const { data: timbrature = [], isLoading: loadingTimb } = useQuery({
+    queryKey: ["timbrature-collab", email],
+    queryFn: () => base44.entities.Timbratura.filter({ user_email: email }, "-data_ora", 5000),
+    enabled: !!email,
+  });
 
-  const { orePerCollaboratore, totaleOre, totaleRapportini } = useMemo(() => {
+  const { data: trasferte = [], isLoading: loadingTras } = useQuery({
+    queryKey: ["trasferte-collab", email],
+    queryFn: () => base44.entities.Trasferta.filter({ user_email: email }, "-data", 5000),
+    enabled: !!email,
+  });
+
+  // Mappa timbrature per giorno del mese corrente
+  const giorniMap = useMemo(() => {
+    if (!email) return {};
     const map = {};
-    rapportiniFiltrati.forEach(r => {
-      const dataFormatted = format(new Date(r.data), "yyyy-MM-dd");
-      (r.collaboratori || []).forEach(c => {
-        const id = c.collaboratore_id || `nome:${c.nome}`;
-        if (!map[id]) map[id] = { totaleOre: 0, giorni: [] };
-        map[id].totaleOre += (c.ore_lavorate || 0);
-        map[id].giorni.push({
-          data: dataFormatted,
-          cantiere: r.cantiere_nome || "—",
-          ore: c.ore_lavorate || 0,
-          stato: r.stato,
-          rapportino_id: r.id,
-        });
-      });
+    const inizio = startOfMonth(mese);
+    const fine = endOfMonth(mese);
+    timbrature.forEach((t) => {
+      const d = new Date(t.data_ora);
+      if (d >= inizio && d <= fine) {
+        const key = format(d, "yyyy-MM-dd");
+        (map[key] = map[key] || []).push(t);
+      }
     });
-    const totaleOre = Object.values(map).reduce((s, v) => s + v.totaleOre, 0);
-    return { orePerCollaboratore: map, totaleOre, totaleRapportini: rapportiniFiltrati.length };
-  }, [rapportiniFiltrati]);
+    return map;
+  }, [timbrature, mese, email]);
 
-  const listaLavoratori = useMemo(() => {
-    return collaboratori.map(c => {
-      const dati = orePerCollaboratore[c.id] || orePerCollaboratore[`nome:${c.nome}`] || { totaleOre: 0, giorni: [] };
-      const giorni = [...dati.giorni].sort((a, b) => b.data.localeCompare(a.data));
-      return {
-        id: c.id,
-        nome: c.nome,
-        ruolo: c.ruolo,
-        totaleOre: dati.totaleOre,
-        giorni,
-        giorniLavorati: new Set(giorni.map(g => g.data)).size,
-      };
-    }).sort((a, b) => b.totaleOre - a.totaleOre);
-  }, [collaboratori, orePerCollaboratore]);
+  const trasferteMap = useMemo(() => {
+    if (!email) return {};
+    const map = {};
+    const inizio = startOfMonth(mese);
+    const fine = endOfMonth(mese);
+    trasferte.forEach((t) => {
+      if (!t.data) return;
+      const d = new Date(t.data + "T00:00:00");
+      if (d >= inizio && d <= fine) map[format(d, "yyyy-MM-dd")] = t;
+    });
+    return map;
+  }, [trasferte, mese, email]);
 
-  const setThisMonth = () => {
-    setDataDa(format(startOfMonth(now), "yyyy-MM-dd"));
-    setDataA(format(endOfMonth(now), "yyyy-MM-dd"));
-  };
-  const setThisYear = () => {
-    setDataDa(`${now.getFullYear()}-01-01`);
-    setDataA(`${now.getFullYear()}-12-31`);
-  };
-  const setAll = () => {
-    setDataDa("2000-01-01");
-    setDataA("2099-12-31");
-  };
+  // Totali mese
+  const { totaleOreMese, totaleKmMese, giorniLavoratiMese } = useMemo(() => {
+    let ore = 0;
+    let km = 0;
+    const lavorati = new Set();
+    Object.entries(giorniMap).forEach(([key, tims]) => {
+      const det = calcolaGiornata(tims);
+      if (det.oreTotali > 0) {
+        ore += det.oreTotali;
+        lavorati.add(key);
+      }
+    });
+    Object.values(trasferteMap).forEach((tr) => {
+      km += tr.km_totali || 0;
+    });
+    return { totaleOreMese: ore, totaleKmMese: km, giorniLavoratiMese: lavorati.size };
+  }, [giorniMap, trasferteMap]);
 
+  const giornoSelezionato = giornoKey ? new Date(giornoKey + "T00:00:00") : null;
+  const dettaglioGiorno = giornoKey ? calcolaGiornata(giorniMap[giornoKey] || []) : null;
+  const trasfertaGiorno = giornoKey ? trasferteMap[giornoKey] : null;
+
+  const prevMese = () => setMese((m) => startOfMonth(addMonths(m, -1)));
+  const nextMese = () => setMese((m) => startOfMonth(addMonths(m, 1)));
+
+  // VISTA COLLABORATORE selezionato → calendario
+  if (selectedCollab) {
+    const loadingDetail = loadingTimb || loadingTras;
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="bg-card border-b border-border sticky top-0 z-10">
+          <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => setSelectedCollab(null)}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <h1 className="font-bold text-lg truncate">{selectedCollab.nome}</h1>
+              <p className="text-xs text-muted-foreground">
+                {selectedCollab.ruolo ? `${selectedCollab.ruolo} · ` : ""}
+                {selectedCollab.user_email || "Nessuna email associata"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+          {!email ? (
+            <Card className="p-6 text-center text-sm text-muted-foreground">
+              Questo collaboratore non ha un'email associata: impossibile caricare timbrature e trasferte.
+            </Card>
+          ) : loadingDetail ? (
+            <Skeleton className="h-96 rounded-xl" />
+          ) : (
+            <>
+              {/* Navigatore mese */}
+              <div className="flex items-center justify-between">
+                <Button variant="outline" size="icon" onClick={prevMese}>
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <p className="font-semibold capitalize">{format(mese, "MMMM yyyy", { locale: it })}</p>
+                <Button variant="outline" size="icon" onClick={nextMese}>
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
+
+              {/* Totali mese */}
+              <div className="grid grid-cols-3 gap-3">
+                <Card className="p-3 text-center">
+                  <Clock className="w-4 h-4 text-primary mx-auto mb-1" />
+                  <p className="text-xl font-bold text-primary">{fmtOre(totaleOreMese)}</p>
+                  <p className="text-[10px] text-muted-foreground">Ore mese</p>
+                </Card>
+                <Card className="p-3 text-center">
+                  <CalendarDays className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
+                  <p className="text-xl font-bold">{giorniLavoratiMese}</p>
+                  <p className="text-[10px] text-muted-foreground">Giorni lavorati</p>
+                </Card>
+                <Card className="p-3 text-center">
+                  <Route className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
+                  <p className="text-xl font-bold">{totaleKmMese.toFixed(0)} km</p>
+                  <p className="text-[10px] text-muted-foreground">Km trasferte</p>
+                </Card>
+              </div>
+
+              {/* Calendario */}
+              <Card className="p-3">
+                <CalendarioMese
+                  mese={mese}
+                  giorniMap={giorniMap}
+                  trasferteMap={trasferteMap}
+                  onGiornoClick={(d, key) => setGiornoKey(key)}
+                />
+              </Card>
+              <p className="text-[11px] text-muted-foreground text-center">
+                Tocca un giorno con dati per vedere cantieri, spostamenti e trasferta
+              </p>
+            </>
+          )}
+        </div>
+
+        <GiornoDetailDialog
+          open={!!giornoKey}
+          onOpenChange={(v) => !v && setGiornoKey(null)}
+          data={giornoSelezionato}
+          dettaglio={dettaglioGiorno}
+          trasferta={trasfertaGiorno}
+          collaboratoreNome={selectedCollab.nome}
+        />
+
+        <BottomNav />
+      </div>
+    );
+  }
+
+  // VISTA LISTA COLLABORATORI
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="bg-card border-b border-border sticky top-0 z-10">
@@ -99,110 +193,56 @@ export default function OreLavoratori() {
           </Button>
           <div>
             <h1 className="font-bold text-lg">Ore Lavoratori</h1>
-            <p className="text-xs text-muted-foreground">Riepilogo ore per operaio</p>
+            <p className="text-xs text-muted-foreground">Tocca un collaboratore per il calendario ore e trasferte</p>
           </div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        {/* Filtro date */}
-        <Card className="p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Da</label>
-              <Input type="date" value={dataDa} onChange={e => setDataDa(e.target.value)} className="h-9 text-sm" />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">A</label>
-              <Input type="date" value={dataA} onChange={e => setDataA(e.target.value)} className="h-9 text-sm" />
-            </div>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={setThisMonth}>Questo mese</Button>
-            <Button variant="outline" size="sm" onClick={setThisYear}>Quest'anno</Button>
-            <Button variant="outline" size="sm" onClick={setAll}>Tutto</Button>
-          </div>
-        </Card>
-
-        {/* Riepilogo generale */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Card className="p-3 text-center">
             <Users className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
             <p className="text-2xl font-bold">{collaboratori.length}</p>
-            <p className="text-[10px] text-muted-foreground">Operai</p>
+            <p className="text-[10px] text-muted-foreground">Collaboratori</p>
           </Card>
           <Card className="p-3 text-center">
-            <Clock className="w-5 h-5 text-primary mx-auto mb-1" />
-            <p className="text-2xl font-bold text-primary">{totaleOre.toFixed(1)}</p>
-            <p className="text-[10px] text-muted-foreground">Ore totali</p>
-          </Card>
-          <Card className="p-3 text-center">
-            <FileText className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-            <p className="text-2xl font-bold">{totaleRapportini}</p>
-            <p className="text-[10px] text-muted-foreground">Rapportini</p>
+            <CalendarDays className="w-5 h-5 text-primary mx-auto mb-1" />
+            <p className="text-2xl font-bold capitalize">{format(new Date(), "MMM", { locale: it })}</p>
+            <p className="text-[10px] text-muted-foreground">Mese corrente</p>
           </Card>
         </div>
 
-        {/* Lista lavoratori */}
         <div className="space-y-2">
-          {isLoading ? (
-            [1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)
-          ) : listaLavoratori.length === 0 ? (
+          {loadingCollab ? (
+            [1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)
+          ) : collaboratori.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">Nessun collaboratore in anagrafe</p>
           ) : (
-            listaLavoratori.map(l => {
-              const isOpen = expanded === l.id;
-              return (
-                <Card key={l.id} className="overflow-hidden">
-                  <button
-                    className="w-full p-3 flex items-center gap-3 text-left"
-                    onClick={() => setExpanded(isOpen ? null : l.id)}
-                  >
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold shrink-0">
-                      {l.nome?.[0]?.toUpperCase() || "?"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{l.nome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {l.giorniLavorati} giornate {l.ruolo ? `· ${l.ruolo}` : ""}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-lg font-bold text-primary">{l.totaleOre.toFixed(1)}<span className="text-xs font-normal">h</span></p>
-                    </div>
-                    {isOpen
-                      ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
-                      : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
-                  </button>
-                  {isOpen && (
-                    <div className="border-t bg-muted/30 divide-y">
-                      {l.giorni.length === 0 ? (
-                        <p className="px-4 py-3 text-xs text-muted-foreground text-center">
-                          Nessuna ora registrata nel periodo selezionato
-                        </p>
-                      ) : (
-                        l.giorni.map((g, i) => (
-                          <div key={i} className="px-4 py-2.5 flex items-center justify-between">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-medium capitalize">
-                                {format(parseISO(g.data), "EEE dd MMM yyyy", { locale: it })}
-                              </p>
-                              <p className="text-[11px] text-muted-foreground truncate">{g.cantiere}</p>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0 ml-2">
-                              {g.stato === "bozza" && (
-                                <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">bozza</Badge>
-                              )}
-                              <span className="text-sm font-semibold">{g.ore.toFixed(1)}h</span>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </Card>
-              );
-            })
+            collaboratori.map((c) => (
+              <Card key={c.id} className="overflow-hidden">
+                <button
+                  className="w-full p-3 flex items-center gap-3 text-left hover:bg-accent/40 transition-colors"
+                  onClick={() => {
+                    setSelectedCollab(c);
+                    setMese(startOfMonth(new Date()));
+                    setGiornoKey(null);
+                  }}
+                >
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold shrink-0">
+                    {c.nome?.[0]?.toUpperCase() || "?"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{c.nome}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {c.ruolo ? `${c.ruolo} · ` : ""}
+                      {c.user_email || "Nessuna email"}
+                    </p>
+                  </div>
+                  {!c.attivo && <Badge variant="outline" className="text-[10px]">inattivo</Badge>}
+                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                </button>
+              </Card>
+            ))
           )}
         </div>
       </div>
