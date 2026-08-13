@@ -11,6 +11,7 @@ import { ArrowLeft, MapPin, Save, Crosshair, Loader2 } from "lucide-react";
 import { getPosizione } from "@/lib/timbratureUtils";
 import FotoUpload from "@/components/cantiere/FotoUpload";
 import DocumentiUpload from "@/components/cantiere/DocumentiUpload";
+import CantiereMappa from "@/components/cantiere/CantiereMappa";
 
 function generateCodice() {
   return "C-" + Date.now().toString(36).toUpperCase().slice(-6);
@@ -154,6 +155,20 @@ export default function CantiereForm() {
               placeholder="Es. 45.8533, 12.9997"
             />
             <div className="flex items-center gap-2 flex-wrap">
+              <CantiereMappa
+                latitudine={form.latitudine}
+                longitudine={form.longitudine}
+                indirizzo={form.indirizzo}
+                citta={form.citta}
+                onPick={(lat, lon) => {
+                  set("latitudine", lat);
+                  set("longitudine", lon);
+                  toast.success("Coordinate impostate dalla mappa");
+                }}
+                onReverseAddress={(label) => {
+                  if (!form.indirizzo) set("indirizzo", label);
+                }}
+              />
               <Button
                 type="button"
                 variant="outline"
