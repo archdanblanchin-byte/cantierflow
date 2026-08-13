@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { arrotondaQuarti } from "@/lib/timbratureUtils";
+import { arrotondaQuarti, distanzaKm, getCapannone, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
 
 export function arrotondaOreQuarti(ore) {
   if (!ore || ore < 0) return 0;
@@ -30,6 +30,42 @@ export function calcolaSpostamenti(timbratureGiorno) {
       mezzo_proprio: s.mezzo_proprio,
     };
   });
+}
+
+/**
+ * Calcola la trasferta giornaliera da una giornata di timbrature.
+ *  - Andata: capannone -> primo cantiere (primo ingresso)
+ *  - Ritorno: ultimo cantiere (ultimo ingresso) -> capannone
+ *  - fasce separate + combinazione "metà andata + metà ritorno"
+ */
+export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config) {
+  const tims = (timbratureGiorno || [])
+    .slice()
+    .sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
+  const ingressi = tims.filter((t) => t.tipo_evento === "ingresso");
+  if (ingressi.length === 0) return null;
+
+  const primo = ingressi[0];
+  const ultimo = ingressi[ingressi.length - 1];
+  const capannone = getCapannone(config);
+  const primoCantiere = cantieri.find((c) => c.id === primo.cantiere_id);
+  const ultimoCantiere = cantieri.find((c) => c.id === ultimo.cantiere_id);
+
+  const kmAndata = primoCantiere?.latitudine != null
+    ? distanzaKm(capannone.lat, capannone.lon, primoCantiere.latitudine, primoCantiere.longitudine)
+    : null;
+  const kmRitorno = ultimoCantiere?.latitudine != null
+    ? distanzaKm(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
+    : null;
+  if (kmAndata == null && kmRitorno == null) return null;
+
+  const split = classificaTrasfertaSplit(kmAndata, kmRitorno, config);
+  return {
+    ...split,
+    primo_cantiere_nome: primo.cantiere_nome || primoCantiere?.nome || null,
+    ultimo_cantiere_nome: ultimo.cantiere_nome || ultimoCantiere?.nome || null,
+    mezzo_proprio: tims.some((t) => t.mezzo_proprio),
+  };
 }
 
 /**

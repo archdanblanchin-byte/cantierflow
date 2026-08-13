@@ -14,7 +14,10 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
   const oreCantieri = dettaglio?.oreCantieri || 0;
   const oreSpostamenti = dettaglio?.oreSpostamenti || 0;
   const note = dettaglio?.note || [];
-  const cfg = trasferta?.fascia ? TRASFERTA_CONFIG[trasferta.fascia] : null;
+  const cfg = trasferta?.tipo_trasferta ? TRASFERTA_CONFIG[trasferta.tipo_trasferta] : null;
+  const cfgAndata = trasferta?.fascia_andata ? TRASFERTA_CONFIG[trasferta.fascia_andata] : null;
+  const cfgRitorno = trasferta?.fascia_ritorno ? TRASFERTA_CONFIG[trasferta.fascia_ritorno] : null;
+  const split = trasferta?.fascia_andata && trasferta?.fascia_ritorno && trasferta.fascia_andata !== trasferta.fascia_ritorno;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,25 +112,40 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
             </p>
             <Card className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Fascia</span>
+                <span className="text-xs text-muted-foreground">Giornata (media andata+ritorno)</span>
                 {cfg ? (
                   <Badge variant="outline" className={cfg.color}>{cfg.label}</Badge>
                 ) : <span className="text-xs text-muted-foreground">—</span>}
               </div>
+              {split && (
+                <div className="rounded-md bg-primary/10 px-2 py-1.5 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase">Combinazione</p>
+                  <p className="text-sm font-bold text-primary">{trasferta.label || `½ ${trasferta.fascia_andata} + ½ ${trasferta.fascia_ritorno}`}</p>
+                </div>
+              )}
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-md bg-muted/50 p-2">
                   <p className="text-[9px] text-muted-foreground uppercase">Andata</p>
                   <p className="text-sm font-bold">{trasferta.km_andata ?? 0} km</p>
-                  <p className="text-[9px] text-muted-foreground truncate">{trasferta.primo_cantiere_nome || "—"}</p>
+                  {cfgAndata ? (
+                    <Badge variant="outline" className={`mt-1 text-[9px] ${cfgAndata.color}`}>{cfgAndata.label}</Badge>
+                  ) : <p className="text-[9px] text-muted-foreground mt-1">—</p>}
+                  <p className="text-[9px] text-muted-foreground truncate mt-1">{trasferta.primo_cantiere_nome || "—"}</p>
                 </div>
                 <div className="rounded-md bg-muted/50 p-2">
                   <p className="text-[9px] text-muted-foreground uppercase">Ritorno</p>
                   <p className="text-sm font-bold">{trasferta.km_ritorno ?? 0} km</p>
-                  <p className="text-[9px] text-muted-foreground truncate">{trasferta.ultimo_cantiere_nome || "—"}</p>
+                  {cfgRitorno ? (
+                    <Badge variant="outline" className={`mt-1 text-[9px] ${cfgRitorno.color}`}>{cfgRitorno.label}</Badge>
+                  ) : <p className="text-[9px] text-muted-foreground mt-1">—</p>}
+                  <p className="text-[9px] text-muted-foreground truncate mt-1">{trasferta.ultimo_cantiere_nome || "—"}</p>
                 </div>
-                <div className="rounded-md bg-primary/10 p-2">
+                <div className="rounded-md bg-primary/10 p-2 flex flex-col">
                   <p className="text-[9px] text-muted-foreground uppercase">Totali</p>
-                  <p className="text-sm font-bold text-primary">{trasferta.km_totali ?? 0} km</p>
+                  <p className="text-sm font-bold text-primary flex-1 flex items-center">{trasferta.km_totali ?? 0} km</p>
+                  {trasferta.confermata && (
+                    <Badge className="mt-1 text-[9px] bg-emerald-600">confermata</Badge>
+                  )}
                 </div>
               </div>
               {trasferta.mezzo_proprio && (

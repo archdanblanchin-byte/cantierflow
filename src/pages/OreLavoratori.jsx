@@ -10,8 +10,8 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Users, Route, CalendarDays
 import BottomNav from "@/components/BottomNav";
 import { format, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import { it } from "date-fns/locale";
-import { fmtOre } from "@/lib/timbratureUtils";
-import { buildDettaglioGiorno, calcolaSpostamenti } from "@/lib/oreLavoratoriUtils";
+import { fmtOre, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
+import { buildDettaglioGiorno, calcolaSpostamenti, calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
 import CalendarioMese from "@/components/orelavoratori/CalendarioMese";
 import GiornoDetailDialog from "@/components/orelavoratori/GiornoDetailDialog";
 
@@ -33,6 +33,17 @@ export default function OreLavoratori() {
     queryKey: ["rapportini-all"],
     queryFn: () => base44.entities.Rapportino.list("-data", 2000),
   });
+
+  const { data: cantieri = [] } = useQuery({
+    queryKey: ["cantieri-all"],
+    queryFn: () => base44.entities.Cantiere.list(),
+  });
+
+  const { data: configTrasferta = [] } = useQuery({
+    queryKey: ["config-trasferta"],
+    queryFn: () => base44.entities.ConfigurazioneTrasferta.list(),
+  });
+  const config = configTrasferta[0] || null;
 
   const email = selectedCollab?.user_email || null;
 
@@ -126,41 +137,61 @@ export default function OreLavoratori() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timbrature, selectedCollab, email, mese]);
 
-  // Trasferte per giorno del collaboratore (match email O nome)
+  // Trasferte confermate dal DB per giorno del collaboratore (match email O nome)
   const trasferteMap = useMemo(() => {
     const map = {};
     trasferte.forEach((t) => {
       if (!matchCollab(t)) return;
       if (!t.data) return;
       const key = format(new Date(t.data + "T00:00:00"), "yyyy-MM-dd");
+      const split = classificaTrasfertaSplit(t.km_andata, t.km_ritorno, config);
+      let label = split.label;
+      if (t.fascia_andata && t.fascia_ritorno && t.fascia_andata !== t.fascia_ritorno) {
+        label = `½ ${t.fascia_andata} + ½ ${t.fascia_ritorno}`;
+      }
       map[key] = {
-        fascia: t.tipo_trasferta,
-        km: t.km_totali,
-        km_andata: t.km_andata,
-        km_ritorno: t.km_ritorno,
+        tipo_trasferta: t.tipo_trasferta || split.tipo_trasferta,
+        fascia_andata: t.fascia_andata || split.fascia_andata,
+        fascia_ritorno: t.fascia_ritorno || split.fascia_ritorno,
+        km_totali: t.km_totali ?? split.km_totali,
+        km_andata: t.km_andata ?? split.km_andata,
+        km_ritorno: t.km_ritorno ?? split.km_ritorno,
         primo_cantiere_nome: t.primo_cantiere_nome,
         ultimo_cantiere_nome: t.ultimo_cantiere_nome,
         mezzo_proprio: t.mezzo_proprio,
+        confermata: t.confermata,
+        label,
       };
     });
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trasferte, selectedCollab, email, mese]);
+  }, [trasferte, selectedCollab, email, mese, config]);
 
   // Sintesi calendario: { [key]: { ore, oreSpost, trasferta } }
+  // La trasferta è calcolata automaticamente dalle timbrature del giorno
+  // (andata/ritorno dal capannone); se esiste una trasferta confermata dal DB
+  // ha la precedenza (l'admin può aver editato km/fasce).
   const giorniSintesi = useMemo(() => {
     const sintesi = {};
     const keys = new Set([...Object.keys(vociGiornoMap), ...Object.keys(timbGiornoMap), ...Object.keys(trasferteMap)]);
     keys.forEach((key) => {
       const voci = vociGiornoMap[key] || [];
       const oreCantieri = voci.reduce((s, v) => s + (v.ore || 0), 0);
-      const spost = timbGiornoMap[key] ? calcolaSpostamenti(timbGiornoMap[key]) : [];
+      const timsGiorno = timbGiornoMap[key] || [];
+      const spost = timsGiorno.length ? calcolaSpostamenti(timsGiorno) : [];
       const oreSpost = spost.reduce((s, sp) => s + sp.durata, 0);
       const ore = Math.round((oreCantieri + oreSpost) * 4) / 4;
-      sintesi[key] = { ore, oreSpost: Math.round(oreSpost * 4) / 4, trasferta: trasferteMap[key] || null };
+      const trasfertaConfermata = trasferteMap[key];
+      const trasfertaAuto = timsGiorno.length ? calcolaTrasfertaGiorno(timsGiorno, cantieri, config) : null;
+      sintesi[key] = {
+        ore,
+        oreSpost: Math.round(oreSpost * 4) / 4,
+        trasferta: trasfertaConfermata || trasfertaAuto || null,
+      };
     });
     return sintesi;
-  }, [vociGiornoMap, timbGiornoMap, trasferteMap]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vociGiornoMap, timbGiornoMap, trasferteMap, cantieri, config]);
 
   // Totali mese
   const { totaleOreCantieri, totaleOreSpost, totaleKmMese, giorniLavoratiMese } = useMemo(() => {
@@ -169,7 +200,7 @@ export default function OreLavoratori() {
       if (s.ore > 0) lavorati++;
       cantieri += s.ore - (s.oreSpost || 0);
       spost += s.oreSpost || 0;
-      if (s.trasferta?.km != null) km += s.trasferta.km;
+      if (s.trasferta?.km_totali != null) km += s.trasferta.km_totali;
     });
     return {
       totaleOreCantieri: Math.round(cantieri * 4) / 4,
@@ -183,7 +214,7 @@ export default function OreLavoratori() {
   const dettaglioGiorno = giornoKey
     ? buildDettaglioGiorno(vociGiornoMap[giornoKey] || [], timbGiornoMap[giornoKey] || [])
     : null;
-  const trasfertaGiorno = giornoKey ? trasferteMap[giornoKey] : null;
+  const trasfertaGiorno = giornoKey ? (giorniSintesi[giornoKey]?.trasferta || null) : null;
 
   const prevMese = () => setMese((m) => startOfMonth(addMonths(m, -1)));
   const nextMese = () => setMese((m) => startOfMonth(addMonths(m, 1)));

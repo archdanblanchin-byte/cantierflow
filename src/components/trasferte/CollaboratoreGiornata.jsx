@@ -14,7 +14,7 @@ import { it } from "date-fns/locale";
 import { MapPin, Navigation, Clock, Save, CheckCircle2, Car, AlertTriangle, Settings, ChevronDown } from "lucide-react";
 import {
   STEP_CONFIG, arrotondaQuarti, fmtOre, distanzaKm,
-  CAPANNONE, classificaTrasfertaConfig, getCapannone, TRASFERTA_CONFIG,
+  CAPANNONE, classificaTrasfertaSplit, getCapannone, TRASFERTA_CONFIG,
 } from "@/lib/timbratureUtils";
 
 export default function CollaboratoreGiornata({ email, nome, trackingPosizione, timbrature, cantieri, data, trasfertaEsistente, config, onSalvata, editable, onTimbraturaCambiata }) {
@@ -74,10 +74,10 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
     ? distanzaKm(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
     : null;
 
-  const kmMediaCalc = (kmAndataCalc != null && kmRitornoCalc != null)
-    ? (kmAndataCalc + kmRitornoCalc) / 2
-    : null;
-  const tipoCalc = classificaTrasfertaConfig(kmMediaCalc, config);
+  const splitCalc = classificaTrasfertaSplit(kmAndataCalc, kmRitornoCalc, config);
+  const tipoCalc = splitCalc.tipo_trasferta;
+  const fasciaAndataCalc = splitCalc.fascia_andata;
+  const fasciaRitornoCalc = splitCalc.fascia_ritorno;
 
   // Valori usati per il salvataggio (se l'admin modifica, usa quelli, altrimenti i calcolati)
   const kmAndata = editKmAndata !== "" ? parseFloat(editKmAndata) : kmAndataCalc;
@@ -99,6 +99,8 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
         km_andata: kmAndata != null ? kmAndata : null,
         km_ritorno: kmRitorno != null ? kmRitorno : null,
         km_totali: kmTotali || null,
+        fascia_andata: fasciaAndataCalc,
+        fascia_ritorno: fasciaRitornoCalc,
         tipo_trasferta: tipoFinale || null,
         mezzo_proprio: mezzoProprio,
         note,
@@ -229,6 +231,7 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
               <SelectItem value="T0">T0 - Locale</SelectItem>
               <SelectItem value="T1">T1 - Media</SelectItem>
               <SelectItem value="T2">T2 - Lunga</SelectItem>
+              <SelectItem value="T3">T3 - Molto lunga</SelectItem>
             </SelectContent>
           </Select>
           {tipoFinale && (
@@ -238,9 +241,9 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
           )}
         </div>
 
-        {kmMediaCalc != null && (
+        {splitCalc.km_media != null && (
           <p className="text-[10px] text-muted-foreground">
-            Media km: {kmMediaCalc.toFixed(1)} → proposta: <strong>{tipoCalc}</strong>
+            Andata {splitCalc.fascia_andata} · Ritorno {splitCalc.fascia_ritorno} · Media {splitCalc.km_media.toFixed(1)} km → proposta: <strong>{tipoCalc}</strong>
           </p>
         )}
 

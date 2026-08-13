@@ -43,14 +43,35 @@
       "type": "number",
       "description": "Km totali (andata + ritorno)"
     },
+    "fascia_andata": {
+      "type": "string",
+      "enum": [
+        "T0",
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "description": "Fascia calcolata sulla tratta di andata (capannone -> primo cantiere)"
+    },
+    "fascia_ritorno": {
+      "type": "string",
+      "enum": [
+        "T0",
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "description": "Fascia calcolata sulla tratta di ritorno (ultimo cantiere -> capannone)"
+    },
     "tipo_trasferta": {
       "type": "string",
       "enum": [
         "T0",
         "T1",
-        "T2"
+        "T2",
+        "T3"
       ],
-      "description": "Fascia trasferta calcolata sulla media andata+ritorno"
+      "description": "Fascia trasferta giornaliera (sulla media andata+ritorno)"
     },
     "mezzo_proprio": {
       "type": "boolean",

@@ -21,13 +21,18 @@
     },
     "soglia_t0": {
       "type": "number",
-      "description": "Soglia massima km per fascia T0 (km)",
+      "description": "Soglia massima km per fascia T0 (km). Sotto questa -> T0",
       "default": 15
     },
     "soglia_t1": {
       "type": "number",
-      "description": "Soglia massima km per fascia T1 (km). Oltre questa \u00e8 T2",
+      "description": "Soglia massima km per fascia T1 (km). Tra T0 e T1 -> T1",
       "default": 50
+    },
+    "soglia_t2": {
+      "type": "number",
+      "description": "Soglia massima km per fascia T2 (km). Tra T1 e T2 -> T2, oltre -> T3",
+      "default": 100
     }
   },
   "required": [

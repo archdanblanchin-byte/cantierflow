@@ -6,7 +6,7 @@ import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
 const GIORNI_SETT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 
 /**
- * giorniSintesi: { [yyyy-MM-dd]: { ore: number, trasferta: { fascia, km } | null } }
+ * giorniSintesi: { [yyyy-MM-dd]: { ore: number, trasferta: { tipo_trasferta, km_totali, label } | null } }
  */
 export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
   const primo = startOfMonth(mese);
@@ -32,7 +32,8 @@ export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
           const s = giorniSintesi[key];
           const ore = s?.ore || 0;
           const trasferta = s?.trasferta;
-          const cfg = trasferta?.fascia ? TRASFERTA_CONFIG[trasferta.fascia] : null;
+          const fascia = trasferta?.tipo_trasferta;
+          const cfg = fascia ? TRASFERTA_CONFIG[fascia] : null;
           const haDati = ore > 0 || !!trasferta;
           const oggi = isToday(d);
 
@@ -58,7 +59,7 @@ export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
               )}
               {cfg && (
                 <Badge variant="outline" className={`text-[8px] px-1 py-0 mt-0.5 leading-none ${cfg.color}`}>
-                  {cfg.label} {trasferta.km != null ? `${trasferta.km}km` : ""}
+                  {cfg.label} {trasferta.km_totali != null ? `${trasferta.km_totali}km` : ""}
                 </Badge>
               )}
             </button>
