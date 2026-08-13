@@ -44,19 +44,25 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5" /> Cantieri
             </p>
-            {cantieri.map((c) => (
-              <Card key={c.id} className="p-3">
+            {cantieri.map((c, i) => (
+              <Card key={c.id || c.nome || i} className="p-3">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate">{c.nome}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {c.ingresso ? format(new Date(c.ingresso.data_ora), "HH:mm", { locale: it }) : "--:--"}
-                      {" → "}
-                      {c.uscita ? format(new Date(c.uscita.data_ora), "HH:mm", { locale: it }) : "in corso"}
-                    </p>
+                    {c.ingresso && c.uscita ? (
+                      <p className="text-[11px] text-muted-foreground">
+                        {format(new Date(c.ingresso.data_ora), "HH:mm", { locale: it })}
+                        {" → "}
+                        {format(new Date(c.uscita.data_ora), "HH:mm", { locale: it })}
+                      </p>
+                    ) : c.stato === "bozza" ? (
+                      <p className="text-[11px] text-amber-600">rapportino in bozza</p>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground">da rapportino</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {!c.completo && <Badge variant="secondary" className="text-[9px]">in corso</Badge>}
+                    {c.stato === "bozza" && <Badge variant="outline" className="text-[9px] text-amber-600 border-amber-300">bozza</Badge>}
                     <span className="text-sm font-bold text-primary">{fmtOre(c.ore)}</span>
                   </div>
                 </div>

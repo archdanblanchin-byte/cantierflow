@@ -2,46 +2,21 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { arrotondaQuarti } from "@/lib/timbratureUtils";
 
+export function arrotondaOreQuarti(ore) {
+  if (!ore || ore < 0) return 0;
+  return Math.round(ore * 4) / 4;
+}
+
 /**
- * Calcola la giornata di un collaboratore a partire dalle timbrature del giorno.
- * Restituisce:
- *  - cantieri: [{ id, nome, ore, completo, ingresso, uscita }]
- *  - spostamenti: [{ id, destinazione, km, ora, durata }]
- *  - oreCantieri, oreSpostamenti, oreTotali
+ * Spostamenti di una giornata (timbrature di tipo "spostamento").
+ * Durata = dal timbro di spostamento al timbro successivo.
  */
-export function calcolaGiornata(timbratureGiorno) {
+export function calcolaSpostamenti(timbratureGiorno) {
   const tims = (timbratureGiorno || [])
     .slice()
     .sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
-
-  const cantieriMap = {};
-  const spostamentiRaw = [];
-  tims.forEach((t) => {
-    if (t.tipo_evento === "spostamento") {
-      spostamentiRaw.push(t);
-    } else if (t.cantiere_id) {
-      if (!cantieriMap[t.cantiere_id]) cantieriMap[t.cantiere_id] = { nome: t.cantiere_nome, timbri: [] };
-      cantieriMap[t.cantiere_id].timbri.push(t);
-    }
-  });
-
-  const cantieri = Object.entries(cantieriMap).map(([id, g]) => {
-    const tIng = g.timbri.find((t) => t.tipo_evento === "ingresso");
-    const tUsc = g.timbri.find((t) => t.tipo_evento === "uscita");
-    let ore = 0;
-    if (tIng && tUsc) {
-      let totale = new Date(tUsc.data_ora) - new Date(tIng.data_ora);
-      const pi = g.timbri.filter((t) => t.tipo_evento === "pausa_inizio").sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
-      const pf = g.timbri.filter((t) => t.tipo_evento === "pausa_fine").sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
-      const n = Math.min(pi.length, pf.length);
-      for (let i = 0; i < n; i++) totale -= new Date(pf[i].data_ora) - new Date(pi[i].data_ora);
-      ore = arrotondaQuarti(totale);
-    }
-    return { id, nome: g.nome, ore, completo: !!tUsc, ingresso: tIng, uscita: tUsc };
-  });
-
-  // Durata spostamento: dal timbro di spostamento al timbro successivo
-  const spostamenti = spostamentiRaw.map((s) => {
+  const raw = tims.filter((t) => t.tipo_evento === "spostamento");
+  return raw.map((s) => {
     const idx = tims.indexOf(s);
     const next = tims[idx + 1];
     let durata = 0;
@@ -55,6 +30,29 @@ export function calcolaGiornata(timbratureGiorno) {
       mezzo_proprio: s.mezzo_proprio,
     };
   });
+}
+
+/**
+ * Costruisce il dettaglio di una giornata per un collaboratore.
+ *  - vociRapportini: [{ cantiere, ore, stato }] dai rapportini (sempre disponibile)
+ *  - timbratureGiorno: timbrature del giorno (per spostamenti; solo se collaboratore con email)
+ */
+export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
+  const cantieriMap = {};
+  (vociRapportini || []).forEach((v) => {
+    const nome = v.cantiere || "—";
+    if (!cantieriMap[nome]) cantieriMap[nome] = { nome, ore: 0, stato: null };
+    cantieriMap[nome].ore += v.ore || 0;
+    if (v.stato) cantieriMap[nome].stato = v.stato;
+  });
+  const cantieri = Object.values(cantieriMap).map((c) => ({
+    ...c,
+    ore: arrotondaOreQuarti(c.ore),
+  }));
+
+  const spostamenti = timbratureGiorno && timbratureGiorno.length
+    ? calcolaSpostamenti(timbratureGiorno)
+    : [];
 
   const oreCantieri = cantieri.reduce((s, c) => s + c.ore, 0);
   const oreSpostamenti = spostamenti.reduce((s, sp) => s + sp.durata, 0);

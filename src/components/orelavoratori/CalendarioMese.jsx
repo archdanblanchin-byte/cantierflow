@@ -1,16 +1,17 @@
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, format, isToday } from "date-fns";
-import { it } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
-import { calcolaGiornata } from "@/lib/oreLavoratoriUtils";
 
 const GIORNI_SETT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 
-export default function CalendarioMese({ mese, giorniMap, trasferteMap, onGiornoClick }) {
+/**
+ * giorniSintesi: { [yyyy-MM-dd]: { ore: number, trasferta: { fascia, km } | null } }
+ */
+export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
   const primo = startOfMonth(mese);
   const ultimo = endOfMonth(mese);
-  const offset = (getDay(primo) + 6) % 7; // lunedì = 0
+  const offset = (getDay(primo) + 6) % 7;
   const giorni = eachDayOfInterval({ start: primo, end: ultimo });
 
   return (
@@ -28,14 +29,11 @@ export default function CalendarioMese({ mese, giorniMap, trasferteMap, onGiorno
         ))}
         {giorni.map((d) => {
           const key = format(d, "yyyy-MM-dd");
-          const tims = giorniMap[key] || [];
-          const trasferta = trasferteMap[key];
-          const dettaglio = tims.length > 0 ? calcolaGiornata(tims) : null;
-          const ore = dettaglio?.oreTotali || 0;
-          const km = trasferta?.km_totali;
-          const fascia = trasferta?.tipo_trasferta;
-          const cfg = fascia ? TRASFERTA_CONFIG[fascia] : null;
-          const haDati = ore > 0 || trasferta;
+          const s = giorniSintesi[key];
+          const ore = s?.ore || 0;
+          const trasferta = s?.trasferta;
+          const cfg = trasferta?.fascia ? TRASFERTA_CONFIG[trasferta.fascia] : null;
+          const haDati = ore > 0 || !!trasferta;
           const oggi = isToday(d);
 
           return (
@@ -43,7 +41,7 @@ export default function CalendarioMese({ mese, giorniMap, trasferteMap, onGiorno
               key={key}
               type="button"
               disabled={!haDati}
-              onClick={() => haDati && onGiornoClick(d, key)}
+              onClick={() => haDati && onGiornoClick(key)}
               className={`aspect-square rounded-lg border p-1 flex flex-col items-center justify-start text-center transition-colors ${
                 haDati
                   ? "border-border bg-card hover:border-primary hover:bg-primary/5 cursor-pointer"
@@ -60,7 +58,7 @@ export default function CalendarioMese({ mese, giorniMap, trasferteMap, onGiorno
               )}
               {cfg && (
                 <Badge variant="outline" className={`text-[8px] px-1 py-0 mt-0.5 leading-none ${cfg.color}`}>
-                  {cfg.label} {km != null ? `${km}km` : ""}
+                  {cfg.label} {trasferta.km != null ? `${trasferta.km}km` : ""}
                 </Badge>
               )}
             </button>
