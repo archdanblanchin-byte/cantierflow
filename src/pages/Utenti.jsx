@@ -50,7 +50,29 @@ export default function Utenti() {
     if (!inviteEmail) return;
     setInviting(true);
     try {
-      await base44.users.inviteUser(inviteEmail, inviteRole);
+      // La piattaforma accetta solo "admin"/"user" in fase di invito:
+      // invitiamo con il ruolo base compatibile, poi aggiorniamo al ruolo personalizzato.
+      const baseRole = inviteRole === "admin" ? "admin" : "user";
+      const res = await base44.users.inviteUser(inviteEmail, baseRole);
+
+      if (inviteRole !== baseRole) {
+        // Aggiorna il ruolo al valore personalizzato (collaboratore/capocantiere/responsabile_tecnico)
+        let userId = res?.id || res?.user?.id || res?._id;
+        if (!userId) {
+          const list = await base44.entities.User.list();
+          const found = list.find((u) => u.email?.toLowerCase() === inviteEmail.toLowerCase());
+          userId = found?.id;
+        }
+        if (userId) {
+          try {
+            await base44.entities.User.update(userId, { role: inviteRole });
+          } catch (err) {
+            // L'utente appare comunque come "user": l'admin potrà cambiarlo dopo la registrazione
+            console.warn("Aggiornamento ruolo post-invito non riuscito:", err.message);
+          }
+        }
+      }
+
       toast({ title: "Invito inviato", description: `${inviteEmail} invitato come ${getRuoloLabel(inviteRole)}` });
       setInviteEmail("");
       queryClient.invalidateQueries({ queryKey: ["users"] });
