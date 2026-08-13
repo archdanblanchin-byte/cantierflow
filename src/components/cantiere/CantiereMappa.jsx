@@ -28,11 +28,23 @@ function geocodeAddress(query) {
 
 function reverseGeocode(lat, lon) {
   return fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
+    `https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lon}`,
     { headers: { "Accept-Language": "it" } }
   )
     .then((r) => r.json())
-    .then((res) => res?.display_name || null)
+    .then((res) => {
+      if (!res) return null;
+      const a = res.address || {};
+      const via = [a.road, a.pedestrian, a.path, a.square, a.place].find(Boolean) || "";
+      const numero = a.house_number || "";
+      const citta = a.city || a.town || a.village || a.hamlet || a.municipality || a.county || "";
+      const indirizzo = [via, numero].filter(Boolean).join(" ").trim();
+      return {
+        display: res.display_name,
+        indirizzo,
+        citta,
+      };
+    })
     .catch(() => null);
 }
 
@@ -68,6 +80,7 @@ export default function CantiereMappa({ latitudine, longitudine, indirizzo, citt
     latitudine != null && longitudine != null ? { lat: latitudine, lon: longitudine } : null
   );
   const [reverseLabel, setReverseLabel] = useState("");
+  const [reverseInfo, setReverseInfo] = useState(null);
 
   useEffect(() => {
     if (open) {
@@ -91,14 +104,15 @@ export default function CantiereMappa({ latitudine, longitudine, indirizzo, citt
 
   const handleMapClick = async (latlng) => {
     setPicked({ lat: latlng.lat, lon: latlng.lng });
-    const label = await reverseGeocode(latlng.lat, latlng.lng);
-    setReverseLabel(label || "");
+    const info = await reverseGeocode(latlng.lat, latlng.lng);
+    setReverseInfo(info);
+    setReverseLabel(info?.display || "");
   };
 
   const handleConfirm = () => {
     if (picked) {
       onPick(picked.lat, picked.lon);
-      if (reverseLabel && onReverseAddress) onReverseAddress(reverseLabel);
+      if (reverseInfo && onReverseAddress) onReverseAddress(reverseInfo);
     }
     setOpen(false);
   };

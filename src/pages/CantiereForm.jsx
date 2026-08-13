@@ -173,8 +173,9 @@ export default function CantiereForm() {
                   set("longitudine", lon);
                   toast.success("Coordinate impostate dalla mappa");
                 }}
-                onReverseAddress={(label) => {
-                  if (!form.indirizzo) set("indirizzo", label);
+                onReverseAddress={(info) => {
+                  if (info.indirizzo) set("indirizzo", info.indirizzo);
+                  if (info.citta) set("citta", info.citta);
                 }}
               />
               <Button
