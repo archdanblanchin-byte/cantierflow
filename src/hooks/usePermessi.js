@@ -5,7 +5,9 @@ import { PERMESSI_DEFAULT, SEZIONI_APP } from "@/lib/permissions";
 
 export function usePermessi() {
   const { user } = useAuth();
-  const ruolo = user?.role || "collaboratore";
+  // La piattaforma assegna il ruolo base "user" agli inviti; l'app lo mappa su "collaboratore"
+  const ruoloRaw = user?.role || "collaboratore";
+  const ruolo = ruoloRaw === "user" ? "collaboratore" : ruoloRaw;
   const isAdmin = ruolo === "admin";
 
   const { data: permessiRaw = [], isLoading } = useQuery({
