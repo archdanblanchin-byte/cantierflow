@@ -1,136 +1,136 @@
 import { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
-import { CalendarDays, Users, Route } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import CollaboratoreGiornata from "@/components/trasferte/CollaboratoreGiornata";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Save, Loader2, Route } from "lucide-react";
+import { CAPANNONE, SOGLIE_TRASFERTA } from "@/lib/timbratureUtils";
 import BottomNav from "@/components/BottomNav";
 
 export default function DashboardTrasferte() {
   const queryClient = useQueryClient();
-  const [user, setUser] = useState(null);
-  const isAdmin = user?.role === "admin";
-  const [dataSelezionata, setDataSelezionata] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [form, setForm] = useState(null);
+  const [salvando, setSalvando] = useState(false);
+  const [msg, setMsg] = useState(null);
 
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
-  }, []);
-
-  const inizio = new Date(dataSelezionata + "T00:00:00");
-  const fine = new Date(dataSelezionata + "T23:59:59");
-
-  const { data: cantieri = [] } = useQuery({
-    queryKey: ["cantieri"],
-    queryFn: () => base44.entities.Cantiere.filter({}),
-  });
-
-  const { data: collaboratori = [] } = useQuery({
-    queryKey: ["collaboratori"],
-    queryFn: () => base44.entities.Collaboratore.filter({}),
-  });
-
-  const { data: timbrature = [], isLoading } = useQuery({
-    queryKey: ["timbrature-giorno-all", dataSelezionata],
-    queryFn: () => base44.entities.Timbratura.filter({
-      data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() },
-    }),
-  });
-
-  const { data: trasferte = [] } = useQuery({
-    queryKey: ["trasferte-giorno", dataSelezionata],
-    queryFn: () => base44.entities.Trasferta.filter({
-      data: dataSelezionata,
-    }),
-  });
-
-  const { data: configRaw = [] } = useQuery({
+  const { data: configs = [], isLoading } = useQuery({
     queryKey: ["config-trasferta"],
     queryFn: () => base44.entities.ConfigurazioneTrasferta.list(),
   });
-  const config = configRaw[0] || null;
 
-  // Raggruppa timbrature per user_email
-  const perUtente = {};
-  (timbrature || []).forEach(t => {
-    if (!t.user_email) return;
-    if (!perUtente[t.user_email]) perUtente[t.user_email] = [];
-    perUtente[t.user_email].push(t);
-  });
+  useEffect(() => {
+    if (!isLoading && !form) {
+      const c = configs[0];
+      setForm({
+        id: c?.id || null,
+        sede_nome: c?.sede_nome || CAPANNONE.nome,
+        sede_indirizzo: c?.sede_indirizzo || "",
+        sede_latitudine: c?.sede_latitudine ?? CAPANNONE.lat,
+        sede_longitudine: c?.sede_longitudine ?? CAPANNONE.lon,
+        soglia_t0: c?.soglia_t0 ?? SOGLIE_TRASFERTA.T0,
+        soglia_t1: c?.soglia_t1 ?? SOGLIE_TRASFERTA.T1,
+        soglia_t2: c?.soglia_t2 ?? SOGLIE_TRASFERTA.T2,
+      });
+    }
+  }, [isLoading, configs, form]);
 
-  const utentiList = Object.entries(perUtente).map(([email, timbs]) => {
-    const collab = (collaboratori || []).find(c => c.user_email === email);
-    const nome = collab?.nome || timbs[0]?.user_nome || email;
-    return { email, nome, timbrature: timbs, tracking_posizione: collab?.tracking_posizione };
-  }).sort((a, b) => a.nome.localeCompare(b.nome, "it"));
-
-  const cambiaData = (offset) => {
-    const d = new Date(dataSelezionata + "T00:00:00");
-    d.setDate(d.getDate() + offset);
-    setDataSelezionata(format(d, "yyyy-MM-dd"));
+  const salva = async () => {
+    setSalvando(true);
+    setMsg(null);
+    try {
+      if (form.id) {
+        await base44.entities.ConfigurazioneTrasferta.update(form.id, form);
+      } else {
+        await base44.entities.ConfigurazioneTrasferta.create(form);
+      }
+      queryClient.invalidateQueries({ queryKey: ["config-trasferta"] });
+      setMsg("Soglie trasferta salvate");
+    } catch (e) {
+      setMsg("Errore: " + e.message);
+    } finally {
+      setSalvando(false);
+    }
   };
+
+  if (isLoading || !form) {
+    return (
+      <div className="min-h-screen flex justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="max-w-3xl mx-auto p-4 space-y-4">
-        <header className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-2">
-            <Route className="w-6 h-6 text-primary" />
-            <div>
-              <h1 className="text-xl font-bold">Dashboard Trasferte</h1>
-              <p className="text-sm text-muted-foreground">Riepilogo giornaliero collaboratori</p>
-            </div>
+      <div className="max-w-2xl mx-auto p-4 space-y-4">
+        <header className="flex items-center gap-2 pt-2">
+          <Route className="w-6 h-6 text-primary" />
+          <div>
+            <h1 className="text-xl font-bold">Trasferte</h1>
+            <p className="text-sm text-muted-foreground">Soglie chilometriche delle fasce</p>
           </div>
         </header>
 
-        <Card className="p-3 flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => cambiaData(-1)}>
-            <CalendarDays className="w-4 h-4" />
-          </Button>
-          <Input
-            type="date"
-            value={dataSelezionata}
-            onChange={(e) => setDataSelezionata(e.target.value)}
-            className="flex-1 text-center"
-          />
-          <Button variant="outline" size="icon" onClick={() => cambiaData(1)}>
-            <CalendarDays className="w-4 h-4" />
-          </Button>
+        <Card className="p-4 space-y-4">
+          <p className="text-xs text-muted-foreground">
+            Imposta i chilometri che definiscono ogni fascia di trasferta. Le fasce si calcolano sulla
+            media delle tratte di andata e ritorno (sede ↔ cantiere).
+          </p>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Soglia T0 (fino a)</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={form.soglia_t0}
+                  onChange={e => setForm({ ...form, soglia_t0: parseFloat(e.target.value) })}
+                  className="mt-1 h-9 text-sm"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">Sotto questa km → T0</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Soglia T1 (fino a)</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={form.soglia_t1}
+                  onChange={e => setForm({ ...form, soglia_t1: parseFloat(e.target.value) })}
+                  className="mt-1 h-9 text-sm"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">Tra T0 e T1 → T1</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Soglia T2 (fino a)</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={form.soglia_t2}
+                  onChange={e => setForm({ ...form, soglia_t2: parseFloat(e.target.value) })}
+                  className="mt-1 h-9 text-sm"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">Tra T1 e T2 → T2, oltre → T3</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Badge className="bg-slate-200 text-slate-700">T0: 0–{form.soglia_t0} km</Badge>
+            <Badge className="bg-blue-100 text-blue-700">T1: {form.soglia_t0}–{form.soglia_t1} km</Badge>
+            <Badge className="bg-purple-100 text-purple-700">T2: {form.soglia_t1}–{form.soglia_t2} km</Badge>
+            <Badge className="bg-rose-100 text-rose-700">T3: oltre {form.soglia_t2} km</Badge>
+          </div>
         </Card>
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Users className="w-4 h-4" />
-          <span>{utentiList.length} collaboratori attivi il {format(inizio, "d MMMM yyyy", { locale: it })}</span>
-        </div>
-
-        {isLoading && <Card className="p-8 text-center text-muted-foreground">Caricamento...</Card>}
-
-        {!isLoading && utentiList.length === 0 && (
-          <Card className="p-8 text-center text-muted-foreground">
-            <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">Nessuna timbratura per questa data</p>
-          </Card>
-        )}
-
-        {!isLoading && utentiList.map(u => (
-          <CollaboratoreGiornata
-            key={u.email}
-            email={u.email}
-            nome={u.nome}
-            trackingPosizione={u.tracking_posizione}
-            timbrature={u.timbrature}
-            cantieri={cantieri}
-            data={dataSelezionata}
-            trasfertaEsistente={(trasferte || []).find(t => t.user_email === u.email)}
-            config={config}
-            onSalvata={() => queryClient.invalidateQueries({ queryKey: ["trasferte-giorno", dataSelezionata] })}
-            editable={isAdmin}
-            onTimbraturaCambiata={() => queryClient.invalidateQueries({ queryKey: ["timbrature-giorno-all", dataSelezionata] })}
-          />
-        ))}
+        <Button onClick={salva} disabled={salvando} className="w-full gap-2">
+          {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Salva soglie
+        </Button>
+        {msg && <p className="text-center text-sm text-muted-foreground">{msg}</p>}
       </div>
       <BottomNav />
     </div>
