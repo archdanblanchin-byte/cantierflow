@@ -149,6 +149,11 @@ export default function Utenti() {
             {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
             Invia invito
           </Button>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            L'invitato riceverà un'email: dovrà cliccare <strong>"Accept Invitation"</strong> e
+            completare la registrazione con la stessa email prima di poter aprire l'app.
+            Finché non accetta, vedrà una schermata di accesso bloccato.
+          </p>
         </Card>
 
         {/* Lista utenti */}
