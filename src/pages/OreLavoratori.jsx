@@ -176,6 +176,7 @@ export default function OreLavoratori() {
     const keys = new Set([...Object.keys(vociGiornoMap), ...Object.keys(timbGiornoMap), ...Object.keys(trasferteMap)]);
     keys.forEach((key) => {
       const voci = vociGiornoMap[key] || [];
+      const hasNote = voci.some((v) => v.note_imprevisti);
       const oreCantieri = voci.reduce((s, v) => s + (v.ore || 0), 0);
       const timsGiorno = timbGiornoMap[key] || [];
       const spost = timsGiorno.length ? calcolaSpostamenti(timsGiorno) : [];
@@ -187,6 +188,7 @@ export default function OreLavoratori() {
         ore,
         oreSpost: Math.round(oreSpost * 4) / 4,
         trasferta: trasfertaConfermata || trasfertaAuto || null,
+        hasNote,
       };
     });
     return sintesi;

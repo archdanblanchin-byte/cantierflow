@@ -1,6 +1,7 @@
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, format, isToday } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AlertTriangle } from "lucide-react";
 import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
 
 const GIORNI_SETT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
@@ -35,6 +36,7 @@ export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
           const fascia = trasferta?.tipo_trasferta;
           const cfg = fascia ? TRASFERTA_CONFIG[fascia] : null;
           const haDati = ore > 0 || !!trasferta;
+          const hasNote = !!s?.hasNote;
           const oggi = isToday(d);
 
           return (
@@ -43,12 +45,15 @@ export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
               type="button"
               disabled={!haDati}
               onClick={() => haDati && onGiornoClick(key)}
-              className={`aspect-square rounded-lg border p-1 flex flex-col items-center justify-start text-center transition-colors ${
+              className={`relative aspect-square rounded-lg border p-1 flex flex-col items-center justify-start text-center transition-colors ${
                 haDati
                   ? "border-border bg-card hover:border-primary hover:bg-primary/5 cursor-pointer"
                   : "border-transparent"
               } ${oggi ? "ring-1 ring-primary/40" : ""}`}
             >
+              {hasNote && (
+                <AlertTriangle className="absolute top-0.5 right-0.5 w-2.5 h-2.5 text-amber-500" />
+              )}
               <span className={`text-xs ${oggi ? "font-bold text-primary" : "text-muted-foreground"}`}>
                 {format(d, "d")}
               </span>
