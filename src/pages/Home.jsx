@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, FileText, ArrowLeft, HardHat } from "lucide-react";
+import { Plus, FileText, ArrowLeft, HardHat, UserCircle } from "lucide-react";
 import ReportCard from "@/components/home/ReportCard";
 import { SEZIONI_APP } from "@/lib/permissions";
 import { usePermessi } from "@/hooks/usePermessi";
@@ -24,6 +24,11 @@ function MenuGrid() {
               <h1 className="text-xl font-bold tracking-tight">Gestione Cantiere</h1>
               <p className="text-xs text-muted-foreground">Seleziona una sezione</p>
             </div>
+            <Link to="/account" className="ml-auto">
+              <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent transition-colors">
+                <UserCircle className="w-6 h-6 text-muted-foreground" />
+              </div>
+            </Link>
           </div>
         </div>
       </div>
