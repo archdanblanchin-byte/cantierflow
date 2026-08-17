@@ -1,0 +1,66 @@
+{
+  "name": "Cronoprogramma",
+  "type": "object",
+  "properties": {
+    "sync_id": {
+      "type": "string",
+      "description": "Identificativo condiviso con l'app Workflow per la sincronizzazione bidirezionale"
+    },
+    "titolo": {
+      "type": "string",
+      "description": "Titolo della fase/attivit\u00e0 del cronoprogramma"
+    },
+    "descrizione": {
+      "type": "string",
+      "description": "Descrizione dettagliata della fase"
+    },
+    "data_inizio": {
+      "type": "string",
+      "format": "date",
+      "description": "Data di inizio prevista"
+    },
+    "data_fine": {
+      "type": "string",
+      "format": "date",
+      "description": "Data di fine prevista"
+    },
+    "stato": {
+      "type": "string",
+      "enum": [
+        "da_iniziare",
+        "in_corso",
+        "completato"
+      ],
+      "default": "da_iniziare",
+      "description": "Stato della fase"
+    },
+    "progresso": {
+      "type": "number",
+      "default": 0,
+      "description": "Percentuale di completamento (0-100)"
+    },
+    "ordine": {
+      "type": "number",
+      "default": 0,
+      "description": "Ordine di visualizzazione"
+    },
+    "sync_version": {
+      "type": "number",
+      "default": 0,
+      "description": "Versione incrementata a ogni modifica, usata per la risoluzione dei conflitti in sincronizzazione"
+    },
+    "origine": {
+      "type": "string",
+      "enum": [
+        "locale",
+        "workflow"
+      ],
+      "default": "locale",
+      "description": "Origine del record (creato localmente o importato dall'app Workflow)"
+    }
+  },
+  "required": [
+    "sync_id",
+    "titolo"
+  ]
+}

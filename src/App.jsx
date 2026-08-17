@@ -21,6 +21,7 @@ import Utenti from './pages/Utenti';
 import OreLavoratori from './pages/OreLavoratori';
 import Timbratura from './pages/Timbratura';
 import Account from './pages/Account';
+import Cronoprogramma from './pages/Cronoprogramma';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -63,7 +64,7 @@ const AuthenticatedApp = () => {
       <Route path="/foto" element={<FotoPage />} />
       <Route path="/anagrafe" element={<Anagrafe />} />
       <Route path="/programma" element={<Placeholder title="Programma" />} />
-      <Route path="/cronoprogramma" element={<Placeholder title="Cronoprogramma" />} />
+      <Route path="/cronoprogramma" element={<Cronoprogramma />} />
       <Route path="/furgoni" element={<Placeholder title="Furgoni" />} />
       <Route path="/documenti" element={<Placeholder title="Documenti" />} />
       <Route path="/idropulitrice" element={<Placeholder title="Idropulitrice" />} />
