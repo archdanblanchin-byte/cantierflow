@@ -49,7 +49,8 @@
         "T0",
         "T1",
         "T2",
-        "T3"
+        "T3",
+        "T4"
       ],
       "description": "Fascia calcolata sulla tratta di andata (capannone -> primo cantiere)"
     },
@@ -59,7 +60,8 @@
         "T0",
         "T1",
         "T2",
-        "T3"
+        "T3",
+        "T4"
       ],
       "description": "Fascia calcolata sulla tratta di ritorno (ultimo cantiere -> capannone)"
     },
@@ -69,7 +71,8 @@
         "T0",
         "T1",
         "T2",
-        "T3"
+        "T3",
+        "T4"
       ],
       "description": "Fascia trasferta giornaliera (sulla media andata+ritorno)"
     },

@@ -33,6 +33,7 @@ export default function ConfigurazioneTrasfertaPage() {
           soglia_t0: c.soglia_t0 ?? SOGLIE_TRASFERTA.T0,
           soglia_t1: c.soglia_t1 ?? SOGLIE_TRASFERTA.T1,
           soglia_t2: c.soglia_t2 ?? SOGLIE_TRASFERTA.T2,
+          soglia_t3: c.soglia_t3 ?? SOGLIE_TRASFERTA.T3,
         });
       } else {
         setForm({
@@ -43,6 +44,7 @@ export default function ConfigurazioneTrasfertaPage() {
           soglia_t0: SOGLIE_TRASFERTA.T0,
           soglia_t1: SOGLIE_TRASFERTA.T1,
           soglia_t2: SOGLIE_TRASFERTA.T2,
+          soglia_t3: SOGLIE_TRASFERTA.T3,
         });
       }
     }
@@ -114,7 +116,7 @@ export default function ConfigurazioneTrasfertaPage() {
         <div className="flex items-center gap-2 border-b pb-2">
           <span className="font-semibold text-sm">Fasce Trasferta (km)</span>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <div>
             <Label className="text-xs text-muted-foreground">Soglia T0 (fino a)</Label>
             <Input type="number" inputMode="decimal" value={form.soglia_t0} onChange={e => setForm({ ...form, soglia_t0: parseFloat(e.target.value) })} className="mt-1 h-9 text-sm" />
@@ -128,14 +130,20 @@ export default function ConfigurazioneTrasfertaPage() {
           <div>
             <Label className="text-xs text-muted-foreground">Soglia T2 (fino a)</Label>
             <Input type="number" inputMode="decimal" value={form.soglia_t2} onChange={e => setForm({ ...form, soglia_t2: parseFloat(e.target.value) })} className="mt-1 h-9 text-sm" />
-            <p className="text-[10px] text-muted-foreground mt-1">Tra T1 e T2 → T2, oltre → T3</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Tra T1 e T2 → T2</p>
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Soglia T3 (fino a)</Label>
+            <Input type="number" inputMode="decimal" value={form.soglia_t3} onChange={e => setForm({ ...form, soglia_t3: parseFloat(e.target.value) })} className="mt-1 h-9 text-sm" />
+            <p className="text-[10px] text-muted-foreground mt-1">Tra T2 e T3 → T3, oltre → T4</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 pt-1">
           <Badge className="bg-slate-200 text-slate-700">T0: 0–{form.soglia_t0} km</Badge>
           <Badge className="bg-blue-100 text-blue-700">T1: {form.soglia_t0}–{form.soglia_t1} km</Badge>
           <Badge className="bg-purple-100 text-purple-700">T2: {form.soglia_t1}–{form.soglia_t2} km</Badge>
-          <Badge className="bg-rose-100 text-rose-700">T3: oltre {form.soglia_t2} km</Badge>
+          <Badge className="bg-rose-100 text-rose-700">T3: {form.soglia_t2}–{form.soglia_t3} km</Badge>
+          <Badge className="bg-amber-100 text-amber-700">T4: oltre {form.soglia_t3} km</Badge>
         </div>
       </Card>
 

@@ -3,8 +3,8 @@ import { LogIn, Coffee, LogOut, PlayCircle, Navigation, Route } from "lucide-rea
 // Coordinate del capannone sede (Rivignano Teor, UD)
 export const CAPANNONE = { lat: 45.8533, lon: 12.9997, nome: "Rivignano Teor" };
 
-// Soglie fasce trasferta (in km): T0 < soglia_t0, T1 < soglia_t1, T2 < soglia_t2, oltre = T3
-export const SOGLIE_TRASFERTA = { T0: 15, T1: 50, T2: 100 };
+// Soglie fasce trasferta (in km): T0 < soglia_t0, T1 < soglia_t1, T2 < soglia_t2, T3 < soglia_t3, oltre = T4
+export const SOGLIE_TRASFERTA = { T0: 10, T1: 27, T2: 40, T3: 70 };
 
 export function distanzaM(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -60,16 +60,18 @@ export function fmtOre(oreQuarti) {
   return `${h}h ${min}min`;
 }
 
-// Classifica una singola tratta (km) in fascia T0/T1/T2/T3 in base alle soglie configurate
+// Classifica una singola tratta (km) in fascia T0/T1/T2/T3/T4 in base alle soglie configurate
 export function classificaFascia(km, config) {
   if (km == null) return null;
   const s0 = config?.soglia_t0 ?? SOGLIE_TRASFERTA.T0;
   const s1 = config?.soglia_t1 ?? SOGLIE_TRASFERTA.T1;
   const s2 = config?.soglia_t2 ?? SOGLIE_TRASFERTA.T2;
+  const s3 = config?.soglia_t3 ?? SOGLIE_TRASFERTA.T3;
   if (km < s0) return "T0";
   if (km <= s1) return "T1";
   if (km <= s2) return "T2";
-  return "T3";
+  if (km <= s3) return "T3";
+  return "T4";
 }
 
 // Classifica la trasferta giornaliera sulla media km (andata+ritorno)/2
@@ -108,4 +110,5 @@ export const TRASFERTA_CONFIG = {
   T1: { label: "T1", color: "bg-blue-100 text-blue-700 border-blue-300" },
   T2: { label: "T2", color: "bg-purple-100 text-purple-700 border-purple-300" },
   T3: { label: "T3", color: "bg-rose-100 text-rose-700 border-rose-300" },
+  T4: { label: "T4", color: "bg-amber-100 text-amber-700 border-amber-300" },
 };
