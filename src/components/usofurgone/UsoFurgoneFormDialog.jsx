@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Car } from "lucide-react";
+import { Loader2, Car, UserCog } from "lucide-react";
 
 function todayRome() {
   return new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
@@ -25,6 +25,9 @@ export default function UsoFurgoneFormDialog({ open, onOpenChange }) {
   const [oraFine, setOraFine] = useState("");
   const [nota, setNota] = useState("");
   const [salvando, setSalvando] = useState(false);
+  // conducente: modalità "anagrafe" (select) oppure "manuale" (nome libero)
+  const [modalitaConducente, setModalitaConducente] = useState("anagrafe");
+  const [conducenteManuale, setConducenteManuale] = useState("");
 
   const { data: furgoni = [] } = useQuery({
     queryKey: ["anagrafe", "Furgone"],
@@ -34,6 +37,27 @@ export default function UsoFurgoneFormDialog({ open, onOpenChange }) {
     queryKey: ["anagrafe", "Collaboratore"],
     queryFn: () => base44.entities.Collaboratore.list(),
   });
+  const { data: currentUser } = useQuery({
+    queryKey: ["auth", "me"],
+    queryFn: () => base44.auth.me(),
+  });
+
+  // Precompila il conducente con il collaboratore collegato all'utente corrente
+  useEffect(() => {
+    if (!collaboratori.length || !currentUser) return;
+    if (collaboratoreId) return; // già impostato
+    const match = collaboratori.find(
+      c => c.user_email && c.user_email.toLowerCase() === (currentUser.email || "").toLowerCase()
+    );
+    if (match) {
+      setCollaboratoreId(match.id);
+      setModalitaConducente("anagrafe");
+    } else if (currentUser.full_name) {
+      // Nessun collaboratore collegato: passa in modalità manuale col nome utente
+      setConducenteManuale(currentUser.full_name);
+      setModalitaConducente("manuale");
+    }
+  }, [collaboratori, currentUser]);
 
   const furgone = furgoni.find(f => f.id === furgoneId);
   const collaboratore = collaboratori.find(c => c.id === collaboratoreId);
@@ -42,13 +66,19 @@ export default function UsoFurgoneFormDialog({ open, onOpenChange }) {
     setData(todayRome());
     setFurgoneId("");
     setCollaboratoreId("");
+    setConducenteManuale("");
     setTipoOrario("tutta_giornata");
     setOraInizio("");
     setOraFine("");
     setNota("");
   };
 
-  const canSave = !!data && !!furgoneId && !!collaboratoreId &&
+  const conducenteNome =
+    modalitaConducente === "manuale"
+      ? conducenteManuale.trim()
+      : collaboratore?.nome || "";
+
+  const canSave = !!data && !!furgoneId && !!conducenteNome &&
     (tipoOrario === "tutta_giornata" || (!!oraInizio && !!oraFine));
 
   const handleSubmit = async () => {
@@ -59,8 +89,8 @@ export default function UsoFurgoneFormDialog({ open, onOpenChange }) {
         data,
         furgone_id: furgoneId,
         furgone_nome: furgone?.nome || "",
-        collaboratore_id: collaboratoreId,
-        collaboratore_nome: collaboratore?.nome || "",
+        collaboratore_id: modalitaConducente === "anagrafe" ? collaboratoreId : "",
+        collaboratore_nome: conducenteNome,
         tipo_orario: tipoOrario,
         ora_inizio: oraInizio,
         ora_fine: oraFine,
@@ -103,14 +133,47 @@ export default function UsoFurgoneFormDialog({ open, onOpenChange }) {
           </div>
           <div>
             <Label>Conducente</Label>
-            <Select value={collaboratoreId} onValueChange={setCollaboratoreId}>
-              <SelectTrigger className="mt-1"><SelectValue placeholder="Seleziona collaboratore" /></SelectTrigger>
-              <SelectContent>
-                {collaboratori.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2 mt-1">
+              <Button
+                type="button"
+                variant={modalitaConducente === "anagrafe" ? "default" : "outline"}
+                className="flex-1 gap-2"
+                onClick={() => setModalitaConducente("anagrafe")}
+              >
+                <UserCog className="w-4 h-4" /> Dall'anagrafe
+              </Button>
+              <Button
+                type="button"
+                variant={modalitaConducente === "manuale" ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => setModalitaConducente("manuale")}
+              >
+                Nome manuale
+              </Button>
+            </div>
+            {modalitaConducente === "anagrafe" ? (
+              <Select value={collaboratoreId} onValueChange={setCollaboratoreId} className="mt-2">
+                <SelectTrigger><SelectValue placeholder="Seleziona collaboratore" /></SelectTrigger>
+                <SelectContent>
+                  {collaboratori.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                value={conducenteManuale}
+                onChange={e => setConducenteManuale(e.target.value)}
+                placeholder="Scrivi il nome del conducente"
+                className="mt-2"
+              />
+            )}
+            {modalitaConducente === "anagrafe" && collaboratore && currentUser &&
+             collaboratore.user_email?.toLowerCase() === currentUser.email?.toLowerCase() && (
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Precompilato con il tuo profilo. Puoi cambiarlo se necessario.
+              </p>
+            )}
           </div>
           <div>
             <Label>Orario</Label>

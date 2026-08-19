@@ -11,7 +11,7 @@ export default async function(req) {
     const { data, furgone_id, furgone_nome, collaboratore_id, collaboratore_nome,
       tipo_orario, ora_inizio, ora_fine, nota } = body;
 
-    if (!data || !furgone_id || !collaboratore_id) {
+    if (!data || !furgone_id || (!collaboratore_id && !collaboratore_nome)) {
       return Response.json({ error: 'Dati mancanti: data, furgone e conducente sono obbligatori' }, { status: 400 });
     }
 

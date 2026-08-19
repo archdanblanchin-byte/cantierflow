@@ -17,11 +17,11 @@
     },
     "collaboratore_id": {
       "type": "string",
-      "description": "ID del conducente (collaboratore)"
+      "description": "ID del conducente (collaboratore). Vuoto se inserito manualmente"
     },
     "collaboratore_nome": {
       "type": "string",
-      "description": "Nome del conducente (denormalizzato)"
+      "description": "Nome del conducente (denormalizzato o manuale)"
     },
     "tipo_orario": {
       "type": "string",
@@ -52,6 +52,6 @@
   "required": [
     "data",
     "furgone_id",
-    "collaboratore_id"
+    "collaboratore_nome"
   ]
 }
