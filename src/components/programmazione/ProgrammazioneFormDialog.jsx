@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Sun, CloudRain, AlertTriangle } from "lucide-react";
+import CantiereCombobox from "./CantiereCombobox";
 
 const EMPTY = {
   data: "",
@@ -39,6 +40,19 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
     queryKey: ["furgoni-attivi"],
     queryFn: () => base44.entities.Furgone.filter({ attivo: true }, "nome"),
   });
+  const { data: existingProg = [] } = useQuery({
+    queryKey: ["programmazione-giorno", form.data, form.tipo_giornata],
+    queryFn: () => base44.entities.Programmazione.filter({ data: form.data, tipo_giornata: form.tipo_giornata }),
+    enabled: !!form.data,
+  });
+
+  const cantieriUsati = useMemo(() => {
+    const ids = new Set();
+    existingProg.forEach((e) => {
+      if (e.id !== editing?.id && e.cantiere_id) ids.add(e.cantiere_id);
+    });
+    return ids;
+  }, [existingProg, editing]);
 
   useEffect(() => {
     if (!open) return;
@@ -205,19 +219,17 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
 
           <div className="space-y-1.5">
             <Label>Cantiere</Label>
-            <Select
+            <CantiereCombobox
+              cantieri={cantieri}
               value={form.cantiere_id}
-              onValueChange={(v) => setForm((f) => ({ ...f, cantiere_id: v }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleziona cantiere" />
-              </SelectTrigger>
-              <SelectContent>
-                {cantieri.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onSelect={(v) => setForm((f) => ({ ...f, cantiere_id: v }))}
+              excludedIds={cantieriUsati}
+            />
+            {cantieriUsati.size > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {cantieriUsati.size} cantiere/i già assegnati in questa giornata ({form.tipo_giornata}) sono nascosti dalla lista.
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
