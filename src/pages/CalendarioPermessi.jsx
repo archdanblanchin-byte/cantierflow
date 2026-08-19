@@ -5,7 +5,7 @@ import BottomNav from "@/components/BottomNav";
 
 // ID calendario decodificato dal parametro cid dell'URL fornito
 const CALENDAR_ID =
-  "31cd35a0b050cef3dc636f01d485ed06d5ca5855370e35862881d848bad18bb@group.calendar.google.com";
+  "31cd35a0b050ccef3dc636f01d485ed06d5ca5855370e35862881d848bad18bb@group.calendar.google.com";
 const EMBED_SRC = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(
   CALENDAR_ID
 )}&ctz=Europe%2FRome`;
