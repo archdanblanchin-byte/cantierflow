@@ -27,6 +27,7 @@ import Programma from './pages/Programma';
 import Programmazione from './pages/Programmazione';
 import Impostazioni from './pages/Impostazioni';
 import UsoFurgoni from './pages/UsoFurgoni';
+import Corsi from './pages/Corsi';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -83,7 +84,7 @@ const AuthenticatedApp = () => {
       <Route path="/ore-lavoratori" element={<OreLavoratori />} />
       <Route path="/timbratura" element={<Timbratura />} />
       <Route path="/account" element={<Account />} />
-      <Route path="/corsi" element={<Placeholder title="Corsi" />} />
+      <Route path="/corsi" element={<Corsi />} />
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>
