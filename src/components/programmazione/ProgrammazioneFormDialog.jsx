@@ -54,6 +54,22 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
     return ids;
   }, [existingProg, editing]);
 
+  const collaboratoriUsati = useMemo(() => {
+    const ids = new Set();
+    existingProg.forEach((e) => {
+      if (e.id !== editing?.id) (e.collaboratori || []).forEach((c) => c.collaboratore_id && ids.add(c.collaboratore_id));
+    });
+    return ids;
+  }, [existingProg, editing]);
+
+  const furgoniUsati = useMemo(() => {
+    const ids = new Set();
+    existingProg.forEach((e) => {
+      if (e.id !== editing?.id) (e.furgoni || []).forEach((f) => f.furgone_id && ids.add(f.furgone_id));
+    });
+    return ids;
+  }, [existingProg, editing]);
+
   useEffect(() => {
     if (!open) return;
     setErrore(null);
@@ -235,38 +251,54 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
           <div className="space-y-1.5">
             <Label>Collaboratori</Label>
             <div className="rounded-lg border border-border p-2 max-h-40 overflow-y-auto space-y-1">
-              {collaboratori.length === 0 && (
-                <p className="text-xs text-muted-foreground p-2">Nessun collaboratore attivo</p>
+              {collaboratori.filter((c) => !collaboratoriUsati.has(c.id)).length === 0 ? (
+                <p className="text-xs text-muted-foreground p-2">
+                  {collaboratori.length === 0 ? "Nessun collaboratore attivo" : "Tutti i collaboratori sono già assegnati in questa giornata."}
+                </p>
+              ) : (
+                collaboratori
+                  .filter((c) => !collaboratoriUsati.has(c.id))
+                  .map((c) => {
+                    const checked = !!form.collaboratori.find((x) => x.collaboratore_id === c.id);
+                    return (
+                      <label key={c.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent cursor-pointer">
+                        <Checkbox checked={checked} onCheckedChange={() => toggleCollaboratore(c)} />
+                        <span className="text-sm">{c.nome}</span>
+                        {c.ruolo && <span className="text-xs text-muted-foreground">· {c.ruolo}</span>}
+                      </label>
+                    );
+                  })
               )}
-              {collaboratori.map((c) => {
-                const checked = !!form.collaboratori.find((x) => x.collaboratore_id === c.id);
-                return (
-                  <label key={c.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent cursor-pointer">
-                    <Checkbox checked={checked} onCheckedChange={() => toggleCollaboratore(c)} />
-                    <span className="text-sm">{c.nome}</span>
-                    {c.ruolo && <span className="text-xs text-muted-foreground">· {c.ruolo}</span>}
-                  </label>
-                );
-              })}
             </div>
+            {collaboratoriUsati.size > 0 && (
+              <p className="text-xs text-muted-foreground">{collaboratoriUsati.size} collaboratore/i già assegnati in questa giornata.</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
             <Label>Furgoni / Mezzi</Label>
             <div className="rounded-lg border border-border p-2 max-h-40 overflow-y-auto space-y-1">
-              {furgoni.length === 0 && (
-                <p className="text-xs text-muted-foreground p-2">Nessun furgone attivo</p>
+              {furgoni.filter((v) => !furgoniUsati.has(v.id)).length === 0 ? (
+                <p className="text-xs text-muted-foreground p-2">
+                  {furgoni.length === 0 ? "Nessun furgone attivo" : "Tutti i furgoni sono già assegnati in questa giornata."}
+                </p>
+              ) : (
+                furgoni
+                  .filter((v) => !furgoniUsati.has(v.id))
+                  .map((v) => {
+                    const checked = !!form.furgoni.find((x) => x.furgone_id === v.id);
+                    return (
+                      <label key={v.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent cursor-pointer">
+                        <Checkbox checked={checked} onCheckedChange={() => toggleFurgone(v)} />
+                        <span className="text-sm">{v.nome}</span>
+                      </label>
+                    );
+                  })
               )}
-              {furgoni.map((v) => {
-                const checked = !!form.furgoni.find((x) => x.furgone_id === v.id);
-                return (
-                  <label key={v.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent cursor-pointer">
-                    <Checkbox checked={checked} onCheckedChange={() => toggleFurgone(v)} />
-                    <span className="text-sm">{v.nome}</span>
-                  </label>
-                );
-              })}
             </div>
+            {furgoniUsati.size > 0 && (
+              <p className="text-xs text-muted-foreground">{furgoniUsati.size} furgone/i già assegnati in questa giornata.</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
