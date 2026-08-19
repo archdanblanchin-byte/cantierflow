@@ -25,6 +25,7 @@ import Account from './pages/Account';
 import Cronoprogramma from './pages/Cronoprogramma';
 import Programma from './pages/Programma';
 import Programmazione from './pages/Programmazione';
+import Impostazioni from './pages/Impostazioni';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -75,6 +76,7 @@ const AuthenticatedApp = () => {
       <Route path="/ristorante" element={<Placeholder title="Ristorante" />} />
       <Route path="/permessi" element={<Permessi />} />
       <Route path="/permessi-ferie" element={<CalendarioPermessi />} />
+      <Route path="/impostazioni" element={<Impostazioni />} />
       <Route path="/utenti" element={<Utenti />} />
       <Route path="/ore-lavoratori" element={<OreLavoratori />} />
       <Route path="/timbratura" element={<Timbratura />} />

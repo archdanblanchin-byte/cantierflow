@@ -1,14 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, Truck, Wrench, Droplets, FileText, UtensilsCrossed, BookOpen, Route, MapPin } from "lucide-react";
+import { ArrowLeft, Users, Truck, Wrench, FileText, BookOpen, Package } from "lucide-react";
 import AnagrafePage from "@/components/anagrafe/AnagrafePage";
 import LavorazioniPage from "@/components/anagrafe/LavorazioniPage";
-import ConfigurazioneTrasfertaPage from "@/components/anagrafe/ConfigurazioneTrasfertaPage";
 
 const SEZIONI = [
-  { key: "trasferte", label: "Trasferte", icon: Route, color: "bg-orange-500", link: "/trasferte" },
-  { key: "centro_operativo", label: "Centro Operativo", icon: MapPin, color: "bg-red-500" },
   { key: "collaboratori", label: "Collaboratori", icon: Users, color: "bg-blue-500", entity: "Collaboratore", fields: [
     { key: "nome", label: "Nome", required: true },
     { key: "ruolo", label: "Ruolo" },
@@ -21,22 +18,17 @@ const SEZIONI = [
     { key: "nome", label: "Nome attrezzo", required: true },
     { key: "note", label: "Note" },
   ]},
-  { key: "idropulitrici", label: "Idropulitrici", icon: Droplets, color: "bg-sky-500", entity: "AnagrafaIdropulitrice", fields: [
-    { key: "nome", label: "Nome / Modello", required: true },
+  { key: "documenti", label: "Documenti Tipo", icon: FileText, color: "bg-indigo-500", entity: "TipoDocumento", fields: [
+    { key: "nome", label: "Nome documento", required: true },
     { key: "note", label: "Note" },
   ]},
   { key: "lavorazioni", label: "Lavorazioni", icon: BookOpen, color: "bg-emerald-500", entity: "TipoLavorazione", fields: [
     { key: "nome", label: "Nome lavorazione", required: true },
     { key: "descrizione", label: "Descrizione" },
   ]},
-  { key: "documenti", label: "Documenti Tipo", icon: FileText, color: "bg-indigo-500", entity: "TipoDocumento", fields: [
-    { key: "nome", label: "Nome documento", required: true },
-    { key: "note", label: "Note" },
-  ]},
-  { key: "ristoranti", label: "Ristoranti", icon: UtensilsCrossed, color: "bg-rose-500", entity: "Ristorante", fields: [
-    { key: "nome", label: "Nome ristorante", required: true },
-    { key: "indirizzo", label: "Indirizzo" },
-    { key: "note", label: "Note" },
+  { key: "materiali", label: "Materiali", icon: Package, color: "bg-amber-600", entity: "MaterialeBase", fields: [
+    { key: "nome", label: "Nome materiale", required: true },
+    { key: "unita_misura", label: "Unità di misura" },
   ]},
 ];
 
@@ -45,14 +37,6 @@ export default function Anagrafe() {
   const [sezioneAttiva, setSezioneAttiva] = useState(null);
 
   const sezione = SEZIONI.find(s => s.key === sezioneAttiva);
-
-  const handleSezioneClick = (s) => {
-    if (s.link) {
-      navigate(s.link);
-    } else {
-      setSezioneAttiva(s.key);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,7 +47,7 @@ export default function Anagrafe() {
           </Button>
           <div>
             <h1 className="font-bold text-lg">{sezione ? sezione.label : "Anagrafe"}</h1>
-            <p className="text-xs text-muted-foreground">{sezione ? "Gestione elenco" : "Anagrafiche, trasferte e configurazione"}</p>
+            <p className="text-xs text-muted-foreground">{sezione ? "Gestione elenco" : "Collaboratori, furgoni, attrezzi, documenti, lavorazioni e materiali"}</p>
           </div>
         </div>
       </div>
@@ -74,7 +58,7 @@ export default function Anagrafe() {
             {SEZIONI.map((s) => (
               <button
                 key={s.key}
-                onClick={() => handleSezioneClick(s)}
+                onClick={() => setSezioneAttiva(s.key)}
                 className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-border bg-card p-5 hover:shadow-lg hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-200 group aspect-square"
               >
                 <div className={`w-12 h-12 rounded-xl ${s.color} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-200`}>
@@ -86,8 +70,6 @@ export default function Anagrafe() {
           </div>
         ) : sezioneAttiva === "lavorazioni" ? (
           <LavorazioniPage />
-        ) : sezioneAttiva === "centro_operativo" ? (
-          <ConfigurazioneTrasfertaPage />
         ) : (
           <AnagrafePage sezione={sezione} />
         )}
