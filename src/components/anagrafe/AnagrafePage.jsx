@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { usePermessi } from "@/hooks/usePermessi";
+import { Plus, Pencil, Trash2, Check, X, ChevronRight } from "lucide-react";
 
 function ItemForm({ fields, initial = {}, onSave, onCancel }) {
   const [form, setForm] = useState(initial);
@@ -34,8 +36,10 @@ function ItemForm({ fields, initial = {}, onSave, onCancel }) {
 
 export default function AnagrafePage({ sezione }) {
   const queryClient = useQueryClient();
+  const { isAdmin } = usePermessi();
   const [adding, setAdding] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [detailItem, setDetailItem] = useState(null);
+  const [editInDetail, setEditInDetail] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["anagrafe", sezione.entity],
@@ -52,12 +56,14 @@ export default function AnagrafePage({ sezione }) {
 
   const handleUpdate = async (id, form) => {
     await base44.entities[sezione.entity].update(id, form);
-    setEditingId(null);
+    setEditInDetail(false);
+    setDetailItem(null);
     refresh();
   };
 
   const handleDelete = async (id) => {
     await base44.entities[sezione.entity].delete(id);
+    setDetailItem(null);
     refresh();
   };
 
@@ -70,32 +76,19 @@ export default function AnagrafePage({ sezione }) {
   return (
     <div className="space-y-3">
       {items.map(item => (
-        editingId === item.id ? (
-          <ItemForm
-            key={item.id}
-            fields={sezione.fields}
-            initial={item}
-            onSave={(form) => handleUpdate(item.id, form)}
-            onCancel={() => setEditingId(null)}
-          />
-        ) : (
-          <div key={item.id} className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
-            <div>
-              <p className="text-sm font-medium">{item[sezione.fields[0].key] || "—"}</p>
-              {sezione.fields[1] && item[sezione.fields[1].key] && (
-                <p className="text-xs text-muted-foreground mt-0.5">{item[sezione.fields[1].key]}</p>
-              )}
-            </div>
-            <div className="flex gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingId(item.id)}>
-                <Pencil className="w-3.5 h-3.5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            </div>
+        <button
+          key={item.id}
+          onClick={() => { setDetailItem(item); setEditInDetail(false); }}
+          className="flex items-center justify-between w-full text-left rounded-xl border border-border bg-card px-4 py-3 hover:bg-accent transition-colors"
+        >
+          <div>
+            <p className="text-sm font-medium">{item[sezione.fields[0].key] || "—"}</p>
+            {sezione.fields[1] && item[sezione.fields[1].key] && (
+              <p className="text-xs text-muted-foreground mt-0.5">{item[sezione.fields[1].key]}</p>
+            )}
           </div>
-        )
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+        </button>
       ))}
 
       {items.length === 0 && !adding && (
@@ -115,6 +108,45 @@ export default function AnagrafePage({ sezione }) {
           <Plus className="w-4 h-4" /> Aggiungi
         </Button>
       )}
+
+      <Dialog open={!!detailItem} onOpenChange={(v) => { if (!v) { setDetailItem(null); setEditInDetail(false); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{sezione.label}</DialogTitle>
+          </DialogHeader>
+          {detailItem && (
+            editInDetail ? (
+              <ItemForm
+                fields={sezione.fields}
+                initial={detailItem}
+                onSave={(form) => handleUpdate(detailItem.id, form)}
+                onCancel={() => setEditInDetail(false)}
+              />
+            ) : (
+              <div className="space-y-3 py-1">
+                {sezione.fields.map(f => (
+                  <div key={f.key} className="border-b border-border pb-2 last:border-0">
+                    <p className="text-xs text-muted-foreground">{f.label}</p>
+                    <p className="text-sm font-medium mt-0.5 break-words">{detailItem[f.key] || "—"}</p>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+          {!editInDetail && detailItem && (
+            <DialogFooter className="sm:justify-between">
+              <Button variant="outline" onClick={() => setEditInDetail(true)}>
+                <Pencil className="w-4 h-4 mr-1" /> Modifica
+              </Button>
+              {isAdmin && (
+                <Button variant="destructive" onClick={() => handleDelete(detailItem.id)}>
+                  <Trash2 className="w-4 h-4 mr-1" /> Elimina
+                </Button>
+              )}
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
