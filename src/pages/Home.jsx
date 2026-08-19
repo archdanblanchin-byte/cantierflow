@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, FileText, ArrowLeft, HardHat, UserCircle } from "lucide-react";
+import { Plus, FileText, ArrowLeft, UserCircle } from "lucide-react";
 import ReportCard from "@/components/home/ReportCard";
 import { SEZIONI_APP } from "@/lib/permissions";
 import { usePermessi } from "@/hooks/usePermessi";
@@ -17,11 +17,13 @@ function MenuGrid() {
       <div className="bg-card border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-5">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
-              <HardHat className="w-6 h-6 text-primary-foreground" />
-            </div>
+            <img
+              src="https://base44.com/logo_v2.svg"
+              alt="EveryDay 4.0"
+              className="w-11 h-11 rounded-xl object-cover shadow-lg"
+            />
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Gestione Cantiere</h1>
+              <h1 className="text-xl font-bold tracking-tight">EveryDay 4.0</h1>
               <p className="text-xs text-muted-foreground">Seleziona una sezione</p>
             </div>
             <Link to="/account" className="ml-auto">
