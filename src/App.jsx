@@ -22,6 +22,8 @@ import OreLavoratori from './pages/OreLavoratori';
 import Timbratura from './pages/Timbratura';
 import Account from './pages/Account';
 import Cronoprogramma from './pages/Cronoprogramma';
+import Programma from './pages/Programma';
+import Programmazione from './pages/Programmazione';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -63,7 +65,8 @@ const AuthenticatedApp = () => {
       {/* Placeholder sezioni */}
       <Route path="/foto" element={<FotoPage />} />
       <Route path="/anagrafe" element={<Anagrafe />} />
-      <Route path="/programma" element={<Placeholder title="Programma" />} />
+      <Route path="/programma" element={<Programma />} />
+      <Route path="/programmazione" element={<Programmazione />} />
       <Route path="/cronoprogramma" element={<Cronoprogramma />} />
       <Route path="/furgoni" element={<Placeholder title="Furgoni" />} />
       <Route path="/documenti" element={<Placeholder title="Documenti" />} />

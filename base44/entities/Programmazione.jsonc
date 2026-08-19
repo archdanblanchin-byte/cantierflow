@@ -1,0 +1,87 @@
+{
+  "name": "Programmazione",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "string",
+      "format": "date",
+      "description": "Giorno programmato"
+    },
+    "tipo_giornata": {
+      "type": "string",
+      "enum": [
+        "normale",
+        "pioggia"
+      ],
+      "default": "normale",
+      "description": "Scenario meteo: giornata normale o giornata di pioggia. Le due programmazioni sono alternative (ne viene eseguita una sola)"
+    },
+    "cantiere_id": {
+      "type": "string",
+      "description": "ID del cantiere assegnato"
+    },
+    "cantiere_nome": {
+      "type": "string",
+      "description": "Nome del cantiere (denormalizzato)"
+    },
+    "collaboratori": {
+      "type": "array",
+      "description": "Collaboratori assegnati a questa programmazione",
+      "items": {
+        "type": "object",
+        "properties": {
+          "collaboratore_id": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "furgoni": {
+      "type": "array",
+      "description": "Furgoni/mezzi assegnati a questa programmazione",
+      "items": {
+        "type": "object",
+        "properties": {
+          "furgone_id": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ora_arrivo_magazzino": {
+      "type": "string",
+      "description": "Ora di arrivo in magazzino (es. 07:00)"
+    },
+    "ora_arrivo_cantiere": {
+      "type": "string",
+      "description": "Ora di arrivo in cantiere (es. 08:00)"
+    },
+    "note": {
+      "type": "string",
+      "description": "Note generali: materiali da caricare, attrezzi da portare, mansioni da svolgere"
+    },
+    "stato": {
+      "type": "string",
+      "enum": [
+        "bozza",
+        "pubblicato"
+      ],
+      "default": "bozza",
+      "description": "Stato: bozza in lavorazione o pubblicato (visibile in Programma)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email dell'autore della programmazione"
+    }
+  },
+  "required": [
+    "data",
+    "cantiere_id"
+  ]
+}
