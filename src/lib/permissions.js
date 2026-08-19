@@ -29,14 +29,15 @@ export const SEZIONI_APP = [
   { key: "ristorante", label: "Ristorante", path: "/ristorante", icon: UtensilsCrossed, color: "bg-rose-500" },
   { key: "corsi", label: "Corsi", path: "/corsi", icon: GraduationCap, color: "bg-violet-500" },
   { key: "permessi", label: "Access Control", path: "/permessi", icon: ShieldCheck, color: "bg-teal-500", adminOnly: true },
+  { key: "permessi_ferie", label: "Permessi", path: "/permessi-ferie", icon: CalendarDays, color: "bg-rose-600" },
   { key: "utenti", label: "Utenti", path: "/utenti", icon: Users, color: "bg-slate-700", adminOnly: true },
 ];
 
 export const PERMESSI_DEFAULT = {
   admin: SEZIONI_APP.map(s => s.key),
-  responsabile_tecnico: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "trasferte", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "documenti", "corsi"],
-  capocantiere: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "trasferte", "ore_lavoratori", "programmazione", "programma", "furgoni", "idropulitrice"],
-  collaboratore: ["rapportini", "timbratura", "cantieri", "foto"],
+  responsabile_tecnico: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "trasferte", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "documenti", "corsi", "permessi_ferie"],
+  capocantiere: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "trasferte", "ore_lavoratori", "programmazione", "programma", "furgoni", "idropulitrice", "permessi_ferie"],
+  collaboratore: ["rapportini", "timbratura", "cantieri", "foto", "permessi_ferie"],
 };
 
 export function getRuoloLabel(key) {

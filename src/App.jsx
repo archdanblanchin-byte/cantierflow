@@ -17,6 +17,7 @@ import Anagrafe from './pages/Anagrafe';
 import EditReport from './pages/EditReport';
 import DashboardTrasferte from './pages/DashboardTrasferte';
 import Permessi from './pages/Permessi';
+import CalendarioPermessi from './pages/CalendarioPermessi';
 import Utenti from './pages/Utenti';
 import OreLavoratori from './pages/OreLavoratori';
 import Timbratura from './pages/Timbratura';
@@ -73,6 +74,7 @@ const AuthenticatedApp = () => {
       <Route path="/idropulitrice" element={<Placeholder title="Idropulitrice" />} />
       <Route path="/ristorante" element={<Placeholder title="Ristorante" />} />
       <Route path="/permessi" element={<Permessi />} />
+      <Route path="/permessi-ferie" element={<CalendarioPermessi />} />
       <Route path="/utenti" element={<Utenti />} />
       <Route path="/ore-lavoratori" element={<OreLavoratori />} />
       <Route path="/timbratura" element={<Timbratura />} />
