@@ -17,7 +17,7 @@ const EMPTY = {
   cantiere_id: "",
   collaboratori: [],
   furgoni: [],
-  ora_arrivo_magazzino: "",
+  ora_arrivo_magazzino: "06:45",
   ora_arrivo_cantiere: "",
   note: "",
 };
