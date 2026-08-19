@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import ProgrammazioneFormDialog from "@/components/programmazione/Programmazione
 
 export default function Programmazione() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const embed = params.get("embed") === "1";
   const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
   const [dataSelezionata, setDataSelezionata] = useState(today);
@@ -85,9 +87,11 @@ export default function Programmazione() {
     <div className="min-h-screen bg-background pb-24">
       <div className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+          {!embed && (
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          )}
           <div className="flex-1">
             <h1 className="font-bold text-lg">Programmazione</h1>
             <p className="text-xs text-muted-foreground">Pianifica e pubblica le giornate</p>
