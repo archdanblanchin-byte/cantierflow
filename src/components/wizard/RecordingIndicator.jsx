@@ -20,12 +20,8 @@ export default function RecordingIndicator({ seconds, fmt }) {
           />
         ))}
       </span>
-      <span className="font-mono text-xs font-bold text-red-600 tabular-nums">{fmt(seconds)}</span>
-      <span className="flex items-center gap-1 text-red-600">
-        <Mic className="w-3.5 h-3.5" />
-        <Square className="w-3 h-3 fill-current" />
-        ferma
-      </span>
+      <span className="font-mono text-sm font-bold text-red-600 tabular-nums">{fmt(seconds)}</span>
+      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold text-white bg-red-600 uppercase tracking-wide">REC</span>
     </span>
   );
 }

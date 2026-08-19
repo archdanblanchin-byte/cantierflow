@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Mic, Loader2 } from "lucide-react";
+import { Mic, Loader2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -219,27 +219,36 @@ Resoconto vocale:
 
   if (status === "processing") {
     return (
-      <Button disabled variant="outline" size="sm" className="gap-2">
+      <Button disabled variant="outline" size="sm" className="gap-2 w-full justify-center">
         <Loader2 className="w-4 h-4 animate-spin" />
-        Elaboro l'audio...
+        Elaborazione audio in corso...
       </Button>
     );
   }
 
   if (status === "recording") {
     return (
-      <Button variant="destructive" size="sm" className="gap-2 w-full justify-center" onClick={stopRecording}>
-        <RecordingIndicator seconds={seconds} fmt={fmt} />
-      </Button>
+      <div className="w-full space-y-1">
+        <Button variant="destructive" size="sm" className="gap-3 w-full justify-center h-12" onClick={stopRecording}>
+          <Square className="w-4 h-4 fill-current" />
+          <span className="font-bold uppercase tracking-wide">Ferma registrazione</span>
+          <RecordingIndicator seconds={seconds} fmt={fmt} />
+        </Button>
+        <p className="text-center text-xs text-muted-foreground">Tocca per fermare e avviare l'elaborazione IA</p>
+      </div>
     );
   }
 
   return (
     <div className="w-full">
-      <Button variant="outline" size="sm" className="gap-2 w-full" onClick={startRecording}>
-        <Mic className="w-4 h-4" />
-        {label}
+      <Button variant="outline" size="sm" className="gap-2 w-full justify-center h-11" onClick={startRecording}>
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+        </span>
+        <span className="font-semibold">Inizia registrazione</span>
       </Button>
+      <p className="text-center text-xs text-muted-foreground mt-1">{label}</p>
       <DictationGuide mode={mode} />
     </div>
   );
