@@ -1,6 +1,6 @@
 import {
   ClipboardList, Building2, Camera, BookUser,
-  CalendarDays, BarChart2, GraduationCap, Settings,
+  CalendarDays, BarChart2, GraduationCap, Settings, Car,
   HardHat, Clock, CalendarClock,
 } from "lucide-react";
 
@@ -23,14 +23,15 @@ export const SEZIONI_APP = [
   { key: "cronoprogramma", label: "Cronoprogramma", path: "/cronoprogramma", icon: BarChart2, color: "bg-cyan-500" },
   { key: "corsi", label: "Corsi", path: "/corsi", icon: GraduationCap, color: "bg-violet-500" },
   { key: "permessi_ferie", label: "Permessi", path: "/permessi-ferie", icon: CalendarDays, color: "bg-rose-600" },
+  { key: "uso_furgoni", label: "Uso Furgoni", path: "/uso-furgoni", icon: Car, color: "bg-zinc-700" },
   { key: "impostazioni", label: "Impostazioni", path: "/impostazioni", icon: Settings, color: "bg-slate-700", adminOnly: true },
 ];
 
 export const PERMESSI_DEFAULT = {
   admin: SEZIONI_APP.map(s => s.key),
-  responsabile_tecnico: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "corsi", "permessi_ferie"],
-  capocantiere: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "permessi_ferie"],
-  collaboratore: ["rapportini", "timbratura", "cantieri", "foto", "permessi_ferie"],
+  responsabile_tecnico: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "corsi", "permessi_ferie", "uso_furgoni"],
+  capocantiere: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "permessi_ferie", "uso_furgoni"],
+  collaboratore: ["rapportini", "timbratura", "cantieri", "foto", "permessi_ferie", "uso_furgoni"],
 };
 
 export function getRuoloLabel(key) {

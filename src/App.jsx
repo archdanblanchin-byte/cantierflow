@@ -26,6 +26,7 @@ import Cronoprogramma from './pages/Cronoprogramma';
 import Programma from './pages/Programma';
 import Programmazione from './pages/Programmazione';
 import Impostazioni from './pages/Impostazioni';
+import UsoFurgoni from './pages/UsoFurgoni';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -77,6 +78,7 @@ const AuthenticatedApp = () => {
       <Route path="/permessi" element={<Permessi />} />
       <Route path="/permessi-ferie" element={<CalendarioPermessi />} />
       <Route path="/impostazioni" element={<Impostazioni />} />
+      <Route path="/uso-furgoni" element={<UsoFurgoni />} />
       <Route path="/utenti" element={<Utenti />} />
       <Route path="/ore-lavoratori" element={<OreLavoratori />} />
       <Route path="/timbratura" element={<Timbratura />} />

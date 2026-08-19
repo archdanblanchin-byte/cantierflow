@@ -1,0 +1,57 @@
+{
+  "name": "UsoFurgone",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "string",
+      "format": "date",
+      "description": "Data di utilizzo del furgone"
+    },
+    "furgone_id": {
+      "type": "string",
+      "description": "ID del furgone utilizzato"
+    },
+    "furgone_nome": {
+      "type": "string",
+      "description": "Nome del furgone (denormalizzato)"
+    },
+    "collaboratore_id": {
+      "type": "string",
+      "description": "ID del conducente (collaboratore)"
+    },
+    "collaboratore_nome": {
+      "type": "string",
+      "description": "Nome del conducente (denormalizzato)"
+    },
+    "tipo_orario": {
+      "type": "string",
+      "enum": [
+        "tutta_giornata",
+        "fascia"
+      ],
+      "default": "tutta_giornata",
+      "description": "Tutta la giornata oppure fascia oraria specifica"
+    },
+    "ora_inizio": {
+      "type": "string",
+      "description": "Ora di inizio (HH:mm) se fascia oraria"
+    },
+    "ora_fine": {
+      "type": "string",
+      "description": "Ora di fine (HH:mm) se fascia oraria"
+    },
+    "nota": {
+      "type": "string",
+      "description": "Note / problemi segnalati (spie, accessi, anomalie)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email dell'autore della registrazione"
+    }
+  },
+  "required": [
+    "data",
+    "furgone_id",
+    "collaboratore_id"
+  ]
+}
