@@ -18,7 +18,7 @@ function MenuGrid() {
         <div className="max-w-2xl mx-auto px-4 py-5">
           <div className="flex items-center gap-3">
             <img
-              src="https://base44.com/logo_v2.svg"
+              src="https://media.base44.com/images/public/69df26522754d022dfa80e75/c29eb2d9b_Blanchin-Simbolo-Colore-Copia.png"
               alt="EveryDay 4.0"
               className="w-11 h-11 rounded-xl object-cover shadow-lg"
             />
