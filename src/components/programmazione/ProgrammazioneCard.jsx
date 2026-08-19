@@ -47,9 +47,9 @@ export default function ProgrammazioneCard({ item, onEdit, onDelete, onPublish, 
           <div className="flex items-start gap-2">
             <Clock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
             <span className="text-foreground/90">
-              {item.ora_arrivo_magazzino && `Magazzino ${item.ora_arrivo_magazzino}`}
+              {item.ora_arrivo_magazzino && `Arrivo in magazzino ${item.ora_arrivo_magazzino}`}
               {item.ora_arrivo_magazzino && item.ora_arrivo_cantiere && " · "}
-              {item.ora_arrivo_cantiere && `Cantiere ${item.ora_arrivo_cantiere}`}
+              {item.ora_arrivo_cantiere && `Arrivo in cantiere ${item.ora_arrivo_cantiere}`}
             </span>
           </div>
         )}

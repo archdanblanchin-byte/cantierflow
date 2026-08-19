@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Sun, CloudRain } from "lucide-react";
+import { Loader2, Sun, CloudRain, AlertTriangle } from "lucide-react";
 
 const EMPTY = {
   data: "",
@@ -25,6 +25,7 @@ const EMPTY = {
 export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editing, defaultData }) {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [errore, setErrore] = useState(null);
 
   const { data: cantieri = [] } = useQuery({
     queryKey: ["cantieri-attivi"],
@@ -41,6 +42,7 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
 
   useEffect(() => {
     if (!open) return;
+    setErrore(null);
     if (editing) {
       setForm({
         data: editing.data || "",
@@ -113,13 +115,13 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
   };
 
   const handleSave = async () => {
-    if (!form.data) { toast.error("Seleziona la data"); return; }
-    if (!form.cantiere_id) { toast.error("Seleziona il cantiere"); return; }
+    if (!form.data) { setErrore("Non puoi salvare: seleziona la data della programmazione."); return; }
+    if (!form.cantiere_id) { setErrore("Non puoi salvare: non hai ancora selezionato il cantiere."); return; }
 
     setSaving(true);
     try {
       const conflict = await checkConflicts();
-      if (conflict) { toast.error(conflict); setSaving(false); return; }
+      if (conflict) { setErrore(conflict); setSaving(false); return; }
 
       const cantiere = cantieri.find((c) => c.id === form.cantiere_id);
       const payload = {
@@ -144,6 +146,7 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
       onSaved?.();
       onClose?.();
     } catch (e) {
+      setErrore("Errore nel salvataggio, riprova.");
       toast.error("Errore nel salvataggio");
     } finally {
       setSaving(false);
@@ -160,6 +163,12 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {errore && (
+            <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span className="font-medium">{errore}</span>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Data</Label>
@@ -250,7 +259,7 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Arrivo magazzino</Label>
+              <Label>Arrivo in magazzino</Label>
               <Input
                 type="time"
                 value={form.ora_arrivo_magazzino}
@@ -258,7 +267,7 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Arrivo cantiere</Label>
+              <Label>Arrivo in cantiere</Label>
               <Input
                 type="time"
                 value={form.ora_arrivo_cantiere}
