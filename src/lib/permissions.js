@@ -28,7 +28,7 @@ export const SEZIONI_APP = [
   { key: "idropulitrice", label: "Idropulitrice", path: "/idropulitrice", icon: Droplets, color: "bg-sky-500" },
   { key: "ristorante", label: "Ristorante", path: "/ristorante", icon: UtensilsCrossed, color: "bg-rose-500" },
   { key: "corsi", label: "Corsi", path: "/corsi", icon: GraduationCap, color: "bg-violet-500" },
-  { key: "permessi", label: "Permessi", path: "/permessi", icon: ShieldCheck, color: "bg-teal-500", adminOnly: true },
+  { key: "permessi", label: "Access Control", path: "/permessi", icon: ShieldCheck, color: "bg-teal-500", adminOnly: true },
   { key: "utenti", label: "Utenti", path: "/utenti", icon: Users, color: "bg-slate-700", adminOnly: true },
 ];
 
