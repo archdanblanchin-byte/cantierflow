@@ -45,6 +45,30 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
     queryFn: () => base44.entities.Programmazione.filter({ data: form.data, tipo_giornata: form.tipo_giornata }),
     enabled: !!form.data,
   });
+  // Permessi/ferie dal calendario Google per la data selezionata
+  const { data: permessiData } = useQuery({
+    queryKey: ["permessi-ferie", form.data],
+    queryFn: () => base44.functions.invoke("get_permessi_ferie", { data: form.data }),
+    enabled: !!form.data,
+  });
+  const permessi = permessiData?.data?.permessi || [];
+
+  // Mappa nome collaboratore -> { tipo, nome } in permesso/ferie per la data
+  const permessiByColl = useMemo(() => {
+    const map = new Map();
+    if (!collaboratori.length || !permessi.length) return map;
+    const norm = (s) => (s || "").trim().toLowerCase();
+    const firstToken = (s) => norm(s).split(/\s+/)[0];
+    for (const p of permessi) {
+      const pNorm = norm(p.nome);
+      const pFirst = firstToken(p.nome);
+      const match = collaboratori.find(
+        (c) => norm(c.nome) === pNorm || firstToken(c.nome) === pFirst
+      );
+      if (match) map.set(match.id, p);
+    }
+    return map;
+  }, [collaboratori, permessi]);
 
   const cantieriUsati = useMemo(() => {
     const ids = new Set();
@@ -251,25 +275,54 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
           <div className="space-y-1.5">
             <Label>Collaboratori</Label>
             <div className="rounded-lg border border-border p-2 max-h-40 overflow-y-auto space-y-1">
-              {collaboratori.filter((c) => !collaboratoriUsati.has(c.id)).length === 0 ? (
-                <p className="text-xs text-muted-foreground p-2">
-                  {collaboratori.length === 0 ? "Nessun collaboratore attivo" : "Tutti i collaboratori sono già assegnati in questa giornata."}
-                </p>
-              ) : (
-                collaboratori
-                  .filter((c) => !collaboratoriUsati.has(c.id))
-                  .map((c) => {
-                    const checked = !!form.collaboratori.find((x) => x.collaboratore_id === c.id);
+              {(() => {
+                const visibili = collaboratori.filter(
+                  (c) => permessiByColl.has(c.id) || !collaboratoriUsati.has(c.id)
+                );
+                if (visibili.length === 0) {
+                  return (
+                    <p className="text-xs text-muted-foreground p-2">
+                      {collaboratori.length === 0
+                        ? "Nessun collaboratore attivo"
+                        : "Tutti i collaboratori sono già assegnati in questa giornata."}
+                    </p>
+                  );
+                }
+                return visibili.map((c) => {
+                  const permesso = permessiByColl.get(c.id);
+                  const checked = !!form.collaboratori.find((x) => x.collaboratore_id === c.id);
+                  if (permesso) {
+                    const isFerie = permesso.tipo === "ferie";
                     return (
-                      <label key={c.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent cursor-pointer">
-                        <Checkbox checked={checked} onCheckedChange={() => toggleCollaboratore(c)} />
-                        <span className="text-sm">{c.nome}</span>
-                        {c.ruolo && <span className="text-xs text-muted-foreground">· {c.ruolo}</span>}
-                      </label>
+                      <div
+                        key={c.id}
+                        className="flex items-center gap-2 p-1.5 rounded bg-purple-100 border border-purple-300"
+                        title={`${isFerie ? "In ferie" : "In permesso"} per questa data`}
+                      >
+                        <Checkbox checked={false} disabled />
+                        <span className="text-sm text-purple-900 font-medium line-through opacity-80">{c.nome}</span>
+                        {c.ruolo && <span className="text-xs text-purple-700">· {c.ruolo}</span>}
+                        <span className="ml-auto text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-purple-600 text-white">
+                          {isFerie ? "Ferie" : "Permesso"}
+                        </span>
+                      </div>
                     );
-                  })
-              )}
+                  }
+                  return (
+                    <label key={c.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent cursor-pointer">
+                      <Checkbox checked={checked} onCheckedChange={() => toggleCollaboratore(c)} />
+                      <span className="text-sm">{c.nome}</span>
+                      {c.ruolo && <span className="text-xs text-muted-foreground">· {c.ruolo}</span>}
+                    </label>
+                  );
+                });
+              })()}
             </div>
+            {permessiByColl.size > 0 && (
+              <p className="text-xs text-purple-700">
+                {permessiByColl.size} collaboratore/i in ferie/permesso per questa data (in viola, non selezionabili).
+              </p>
+            )}
             {collaboratoriUsati.size > 0 && (
               <p className="text-xs text-muted-foreground">{collaboratoriUsati.size} collaboratore/i già assegnati in questa giornata.</p>
             )}
