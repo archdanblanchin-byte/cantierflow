@@ -1,0 +1,40 @@
+{
+  "name": "NotaFurgone",
+  "type": "object",
+  "properties": {
+    "furgone_id": {
+      "type": "string",
+      "description": "ID del furgone a cui si riferisce la nota"
+    },
+    "furgone_nome": {
+      "type": "string",
+      "description": "Nome del furgone (denormalizzato)"
+    },
+    "testo": {
+      "type": "string",
+      "description": "Contenuto della nota / segnalazione"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "nota",
+        "problema",
+        "avviso"
+      ],
+      "default": "nota",
+      "description": "Tipo di segnalazione: nota informativa, problema/anomalia, avviso/scadenza"
+    },
+    "autore_nome": {
+      "type": "string",
+      "description": "Nome dell'autore (denormalizzato)"
+    },
+    "autore_email": {
+      "type": "string",
+      "description": "Email dell'autore"
+    }
+  },
+  "required": [
+    "furgone_id",
+    "testo"
+  ]
+}

@@ -4,11 +4,38 @@
   "properties": {
     "nome": {
       "type": "string",
-      "description": "Nome o targa del furgone"
+      "description": "Nome del furgone"
+    },
+    "targa": {
+      "type": "string",
+      "description": "Targa del furgone"
+    },
+    "marca_modello": {
+      "type": "string",
+      "description": "Marca e modello"
+    },
+    "assicurazione_scadenza": {
+      "type": "string",
+      "format": "date",
+      "description": "Scadenza assicurazione"
+    },
+    "revisione_scadenza": {
+      "type": "string",
+      "format": "date",
+      "description": "Scadenza revisione / collaudo"
+    },
+    "ultima_manutenzione": {
+      "type": "string",
+      "format": "date",
+      "description": "Data ultima manutenzione / controllo meccanico generale"
+    },
+    "km": {
+      "type": "number",
+      "description": "Chilometri percorsi"
     },
     "note": {
       "type": "string",
-      "description": "Note"
+      "description": "Note generali"
     },
     "attivo": {
       "type": "boolean",

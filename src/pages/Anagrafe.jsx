@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Users, Truck, Wrench, FileText, BookOpen, Package } from "lucide-react";
 import AnagrafePage from "@/components/anagrafe/AnagrafePage";
+import FurgoniPage from "@/components/anagrafe/FurgoniPage";
 import LavorazioniPage from "@/components/anagrafe/LavorazioniPage";
 
 const SEZIONI = [
@@ -68,6 +69,8 @@ export default function Anagrafe() {
               </button>
             ))}
           </div>
+        ) : sezioneAttiva === "furgoni" ? (
+          <FurgoniPage />
         ) : sezioneAttiva === "lavorazioni" ? (
           <LavorazioniPage />
         ) : (
