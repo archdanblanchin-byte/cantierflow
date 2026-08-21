@@ -89,6 +89,10 @@
       "default": false,
       "description": "Se la nota/lista \u00e8 stata completata"
     },
+    "completato_da": {
+      "type": "string",
+      "description": "Email di chi ha completato l'attivit\u00e0 (task)"
+    },
     "origine": {
       "type": "string",
       "enum": [
@@ -109,6 +113,11 @@
         },
         {
           "data.destinatari_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
