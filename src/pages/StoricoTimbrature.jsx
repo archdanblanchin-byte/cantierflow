@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users } from "lucide-react";
+import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
@@ -51,6 +51,7 @@ export default function StoricoTimbrature() {
   const [editTarget, setEditTarget] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -64,9 +65,23 @@ export default function StoricoTimbrature() {
   };
 
   const handleDelete = async () => {
-    await base44.entities.Timbratura.delete(deleteTarget.id);
-    toast({ title: "Timbratura eliminata" });
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await base44.entities.Timbratura.delete(deleteTarget.id);
+      toast({ title: "Timbratura eliminata" });
+    } catch (err) {
+      const msg = err?.message || "";
+      if (msg.toLowerCase().includes("not found")) {
+        toast({ title: "Timbratura già rimossa" });
+      } else {
+        toast({ title: "Errore eliminazione", description: msg, variant: "destructive" });
+        setDeleting(false);
+        return;
+      }
+    }
     setDeleteTarget(null);
+    setDeleting(false);
     queryClient.invalidateQueries({ queryKey: ["storico-timbrature"] });
     queryClient.invalidateQueries({ queryKey: ["timbrature-giornata"] });
   };
@@ -259,10 +274,11 @@ export default function StoricoTimbrature() {
           <AlertDialogFooter>
             <AlertDialogCancel>Annulla</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              disabled={deleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Elimina
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Elimina"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
