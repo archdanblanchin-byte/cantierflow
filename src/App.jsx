@@ -9,6 +9,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import TabLayout, { TAB_PATHS } from './components/TabLayout';
 import AnimatedRoutes from './components/AnimatedRoutes';
 import BottomNav from './components/BottomNav';
+import Splash from './components/Splash';
 import CreateReport from './pages/CreateReport';
 import ReportDetail from './pages/ReportDetail';
 import CantiereForm from './pages/CantiereForm';
@@ -120,6 +121,7 @@ function App() {
         <Router>
           <AuthenticatedApp />
         </Router>
+        <Splash />
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
