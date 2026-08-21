@@ -88,6 +88,10 @@ export default function Timbratura() {
   activeSession.events.some((t) => t.tipo_evento === "pausa_inizio") && !activeSession.events.some((t) => t.tipo_evento === "pausa_fine") :
   false;
 
+  // True quando l'ultimo timbro è uno spostamento e non c'è sessione attiva:
+  // l'utente è in viaggio verso un nuovo cantiere.
+  const spostamentoInCorso = !activeSession && timbratureOrd.length > 0 && timbratureOrd[timbratureOrd.length - 1].tipo_evento === "spostamento";
+
   const calcolaOre = () => {
     if (!activeSession) return 0;
     const tIn = new Date(activeSession.ingresso.data_ora);
@@ -235,7 +239,7 @@ export default function Timbratura() {
   };
 
   const pausaTipo = inPausa ? "pausa_fine" : "pausa_inizio";
-  const pausaLabel = inPausa ? "Riprendi lavoro" : "Pausa pranzo";
+  const pausaLabel = inPausa ? "Riprendi lavoro" : "Inizio pausa pranzo";
   const PausaIcon = inPausa ? PlayCircle : Coffee;
 
   return (
@@ -328,7 +332,7 @@ export default function Timbratura() {
             className="h-14 text-sm font-semibold gap-1.5 bg-emerald-600 hover:bg-emerald-700">
             
             {loadingTipo === "ingresso" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-            Inizia lavoro
+            {spostamentoInCorso ? "Arrivato · Inizia cantiere" : "Inizia lavoro"}
           </Button>
           <Button
             onClick={() => handleTimbra(pausaTipo)}
@@ -344,7 +348,7 @@ export default function Timbratura() {
             className="h-14 text-sm font-semibold gap-1.5 bg-orange-500 hover:bg-orange-600">
             
             {loadingTipo === "spostamento" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />}
-            Spostamento
+            Chiudi cantiere e spostati
           </Button>
           <Button
             onClick={() => handleTimbra("uscita")}
@@ -358,7 +362,12 @@ export default function Timbratura() {
 
         {activeSession &&
         <p className="text-[11px] text-muted-foreground text-center">
-            Lo <span className="font-medium text-orange-600">Spostamento</span> chiude automaticamente il cantiere attuale: una volta arrivato al nuovo cantiere premi <span className="font-medium text-emerald-600">Inizia lavoro</span>.
+            <span className="font-medium text-orange-600">Chiudi cantiere e spostati</span> chiude il cantiere attuale e ti mette in viaggio: una volta arrivato al nuovo cantiere premi <span className="font-medium text-emerald-600">Arrivato · Inizia cantiere</span>.
+          </p>
+        }
+        {spostamentoInCorso &&
+        <p className="text-[11px] text-orange-700 text-center font-medium">
+            Sei in spostamento. Quando arrivi al nuovo cantiere selezionalo sopra e premi «Arrivato · Inizia cantiere».
           </p>
         }
 
