@@ -47,6 +47,9 @@ export default function NotaFormDialog({ open, onOpenChange, initial, onSaved })
   const [saving, setSaving] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [dubbio, setDubbio] = useState("");
+  const [revealCantiere, setRevealCantiere] = useState(false);
+  const [revealFurgone, setRevealFurgone] = useState(false);
+  const [revealDest, setRevealDest] = useState(false);
 
   // Opzioni destinatari: utenti app + collaboratori con email
   const destOptions = (() => {
@@ -95,6 +98,10 @@ export default function NotaFormDialog({ open, onOpenChange, initial, onSaved })
     setDestinatari(destEmails);
     setDataPromemoria(toLocalInput(init.data_promemoria));
     setPriorita(init.priorita || "media");
+    setRevealCantiere(false);
+    setRevealFurgone(false);
+    setRevealDest(false);
+    setDubbio("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial, cantieri, furgoni, users, collaboratori]);
 
@@ -258,35 +265,53 @@ Testo dell'utente:
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label>Cantiere</Label>
-              <SheetSelect value={cantiereId} onValueChange={setCantiereId} options={cantieri.filter((c) => c.attivo !== false).map((c) => ({ value: c.id, label: c.nome }))} placeholder="Nessuno" />
-            </div>
-            <div className="space-y-1">
-              <Label>Furgone</Label>
-              <SheetSelect value={furgoneId} onValueChange={setFurgoneId} options={furgoni.filter((f) => f.attivo !== false).map((f) => ({ value: f.id, label: f.nome }))} placeholder="Nessuno" />
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {(cantiereId || revealCantiere) ? (
+              <div className="space-y-1 flex-1 min-w-[140px]">
+                <Label className="flex items-center justify-between">Cantiere
+                  {cantiereId && <button type="button" onClick={() => setCantiereId("")} className="text-[11px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>}
+                </Label>
+                <SheetSelect value={cantiereId} onValueChange={setCantiereId} options={cantieri.filter((c) => c.attivo !== false).map((c) => ({ value: c.id, label: c.nome }))} placeholder="Nessuno" />
+              </div>
+            ) : (
+              <Button type="button" variant="ghost" size="sm" className="gap-1" onClick={() => setRevealCantiere(true)}><Plus className="w-4 h-4" /> Cantiere</Button>
+            )}
+            {(furgoneId || revealFurgone) ? (
+              <div className="space-y-1 flex-1 min-w-[140px]">
+                <Label className="flex items-center justify-between">Furgone
+                  {furgoneId && <button type="button" onClick={() => setFurgoneId("")} className="text-[11px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>}
+                </Label>
+                <SheetSelect value={furgoneId} onValueChange={setFurgoneId} options={furgoni.filter((f) => f.attivo !== false).map((f) => ({ value: f.id, label: f.nome }))} placeholder="Nessuno" />
+              </div>
+            ) : (
+              <Button type="button" variant="ghost" size="sm" className="gap-1" onClick={() => setRevealFurgone(true)}><Plus className="w-4 h-4" /> Furgone</Button>
+            )}
           </div>
 
-          <div className="space-y-1">
-            <Label>Destinatari (chi deve riceverla)</Label>
-            <div className="flex flex-wrap gap-1.5">
-              <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setDestinatari(users.filter((u) => u.email).map((u) => u.email))}>Tutti gli utenti</Button>
-              <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setDestinatari(collaboratori.filter((c) => c.user_email).map((c) => c.user_email))}>Tutti i collaboratori</Button>
-              <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setDestinatari([])}>Nessuno</Button>
+          {(tipo === "messaggio" || destinatari.length > 0 || revealDest) ? (
+            <div className="space-y-1">
+              <Label className="flex items-center justify-between">Destinatari (chi deve riceverla)
+                {tipo !== "messaggio" && <button type="button" onClick={() => { setRevealDest(false); setDestinatari([]); }} className="text-[11px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>}
+              </Label>
+              <div className="flex flex-wrap gap-1.5">
+                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setDestinatari(users.filter((u) => u.email).map((u) => u.email))}>Tutti gli utenti</Button>
+                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setDestinatari(collaboratori.filter((c) => c.user_email).map((c) => c.user_email))}>Tutti i collaboratori</Button>
+                <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setDestinatari([])}>Nessuno</Button>
+              </div>
+              <div className="max-h-40 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
+                {destOptions.length === 0 && <p className="text-xs text-muted-foreground p-2">Nessun utente/collega con email disponibile.</p>}
+                {destOptions.map((o) => (
+                  <label key={o.email} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent cursor-pointer">
+                    <Checkbox checked={destinatari.includes(o.email)} onCheckedChange={() => toggleDest(o.email)} />
+                    <span className="text-sm">{o.nome} <span className="text-xs text-muted-foreground">({o.email})</span></span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground">Senza destinatari la nota è personale (visibile solo a te).</p>
             </div>
-            <div className="max-h-40 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
-              {destOptions.length === 0 && <p className="text-xs text-muted-foreground p-2">Nessun utente/collega con email disponibile.</p>}
-              {destOptions.map((o) => (
-                <label key={o.email} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent cursor-pointer">
-                  <Checkbox checked={destinatari.includes(o.email)} onCheckedChange={() => toggleDest(o.email)} />
-                  <span className="text-sm">{o.nome} <span className="text-xs text-muted-foreground">({o.email})</span></span>
-                </label>
-              ))}
-            </div>
-            <p className="text-[11px] text-muted-foreground">Senza destinatari la nota è personale (visibile solo a te).</p>
-          </div>
+          ) : (
+            <Button type="button" variant="ghost" size="sm" className="gap-1" onClick={() => setRevealDest(true)}><Plus className="w-4 h-4" /> Invia a qualcuno (comunicazione)</Button>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annulla</Button>
