@@ -116,11 +116,11 @@ export default function CreateReport() {
       toast.error("Seleziona un cantiere");
       return false;
     }
-    if (step === 3 && (formData.collaboratori || []).length === 0) {
-      toast.error("Aggiungi almeno un collaboratore");
+    if (step === 2 && (formData.collaboratori || []).length === 0) {
+      toast.error("Aggiungi almeno un collaboratore per continuare");
       return false;
     }
-    if (step === 3 && (!formData.ore_totali_squadra || formData.ore_totali_squadra <= 0)) {
+    if (step === 2 && (!formData.ore_totali_squadra || formData.ore_totali_squadra <= 0)) {
       toast.error("Inserisci le ore totali squadra");
       return false;
     }

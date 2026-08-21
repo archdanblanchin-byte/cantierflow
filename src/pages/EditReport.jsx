@@ -81,7 +81,7 @@ export default function EditReport() {
 
   const validateStep = () => {
     if (step === 1 && !formData.cantiere_id) { toast.error("Seleziona un cantiere"); return false; }
-    if (step === 3 && (formData.collaboratori || []).length === 0) { toast.error("Aggiungi almeno un collaboratore"); return false; }
+    if (step === 2 && (formData.collaboratori || []).length === 0) { toast.error("Aggiungi almeno un collaboratore per continuare"); return false; }
     if (step === 4) {
       const oreLav = (formData.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0) || (formData.ore_totali_squadra || 0);
       const oreExtra = formData.has_lavorazioni_extra ? (formData.lavorazioni_extra || []).reduce((s, l) => s + (l.ore || 0), 0) : 0;

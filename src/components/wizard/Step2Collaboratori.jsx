@@ -159,9 +159,9 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
         <div className={`rounded-xl border-2 border-dashed p-8 text-center ${showErrors ? "border-destructive bg-destructive/5" : "border-border"}`}>
           <Users className={`w-8 h-8 mx-auto mb-2 ${showErrors ? "text-destructive/50" : "opacity-40"}`} />
           <p className={`text-sm font-medium ${showErrors ? "text-destructive" : "text-muted-foreground"}`}>
-            {showErrors ? "⚠️ Aggiungi almeno un collaboratore" : "Nessun collaboratore aggiunto"}
+            {showErrors ? "⚠️ Devi aggiungere o confermare almeno un collaboratore per continuare" : "Nessun collaboratore aggiunto"}
           </p>
-          <p className="text-xs mt-1 text-muted-foreground">Premi il bottone qui sotto per aggiungere</p>
+          <p className="text-xs mt-1 text-muted-foreground">Premi il bottone qui sotto per aggiungere i collaboratori della squadra</p>
         </div>
       )}
 
