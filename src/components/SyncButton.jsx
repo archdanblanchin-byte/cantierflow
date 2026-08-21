@@ -6,6 +6,7 @@ import { toast } from "sonner";
 /**
  * Pulsante di sincronizzazione globale: invalida e riflette tutte le query
  * (React Query) così l'utente non deve uscire e rientrare nell'app.
+ * Versione inline (da inserire nell'header).
  */
 export default function SyncButton() {
   const queryClient = useQueryClient();
@@ -31,9 +32,9 @@ export default function SyncButton() {
       onClick={handleSync}
       aria-label="Sincronizza"
       disabled={syncing}
-      className="fixed z-30 top-[calc(env(safe-area-inset-top)+56px)] right-3 flex items-center justify-center w-10 h-10 rounded-full bg-card/90 backdrop-blur border border-border shadow-md text-muted-foreground hover:text-foreground active:scale-90 transition safe-area-top-pt"
+      className="ml-auto w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent active:scale-90 transition-colors text-muted-foreground hover:text-foreground"
     >
-      <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
+      <RefreshCw className={`w-5 h-5 ${syncing ? "animate-spin" : ""}`} />
     </button>
   );
 }

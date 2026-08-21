@@ -4,7 +4,6 @@ import Home from "@/pages/Home";
 import Timbratura from "@/pages/Timbratura";
 import Cantieri from "@/pages/Cantieri";
 import Anagrafe from "@/pages/Anagrafe";
-import SyncButton from "@/components/SyncButton";
 
 // Percorsi gestiti come "tab" dalla BottomNav: rimangono montati
 // (nascosti via CSS) quando si passa da uno all'altro, preservando
@@ -38,7 +37,6 @@ export default function TabLayout() {
 
   return (
     <>
-      <SyncButton />
       {TABS.map(({ path: tabPath, Comp, props }) => {
         if (!visited.has(tabPath)) return null;
         const active = tabPath === path;
