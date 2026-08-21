@@ -156,15 +156,20 @@ export default function CreateReport() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    if (draftId) {
-      await base44.entities.Rapportino.update(draftId, { ...formData, stato: "inviato" });
-    } else {
-      await base44.entities.Rapportino.create({ ...formData, stato: "inviato" });
+    try {
+      if (draftId) {
+        await base44.entities.Rapportino.update(draftId, { ...formData, stato: "inviato" });
+      } else {
+        await base44.entities.Rapportino.create({ ...formData, stato: "inviato" });
+      }
+      queryClient.invalidateQueries({ queryKey: ["rapportini"] });
+      queryClient.invalidateQueries({ queryKey: ["cantieri"] });
+      toast.success("Rapportino inviato con successo!");
+      navigate("/");
+    } catch (err) {
+      toast.error("Errore nell'invio del rapportino: " + (err?.message || "riprova"));
+      setSubmitting(false);
     }
-    queryClient.invalidateQueries({ queryKey: ["rapportini"] });
-    toast.success("Rapportino inviato con successo!");
-    setSubmitting(false);
-    navigate("/");
   };
 
   const canProceedStep6 = (() => {
@@ -225,6 +230,7 @@ export default function CreateReport() {
         onPrev={handlePrev}
         onNext={handleNext}
         onSubmit={handleSubmit}
+        submitting={submitting}
         canProceed={step === TOTAL_STEPS ? canProceedStep6 && !submitting : true}
       />
     </div>

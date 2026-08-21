@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, Loader2 } from "lucide-react";
 
-export default function WizardNavigation({ currentStep, totalSteps, onPrev, onNext, onSubmit, canProceed = true }) {
+export default function WizardNavigation({ currentStep, totalSteps, onPrev, onNext, onSubmit, canProceed = true, submitting = false }) {
   const isFirst = currentStep === 1;
   const isLast = currentStep === totalSteps;
 
@@ -21,10 +21,10 @@ export default function WizardNavigation({ currentStep, totalSteps, onPrev, onNe
           <Button
             onClick={onSubmit}
             className="flex-1 h-12 gap-2 text-base shadow-lg shadow-primary/20"
-            disabled={!canProceed}
+            disabled={!canProceed || submitting}
           >
-            <Send className="w-4 h-4" />
-            Invia
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {submitting ? "Invio…" : "Invia"}
           </Button>
         ) : (
           <Button
