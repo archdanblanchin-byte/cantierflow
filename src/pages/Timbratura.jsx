@@ -230,7 +230,7 @@ export default function Timbratura() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="bg-card border-b border-border">
+      <div className="bg-card border-b border-border safe-area-top-pt">
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">

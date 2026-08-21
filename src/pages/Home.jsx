@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, FileText, ArrowLeft, UserCircle } from "lucide-react";
+import { Plus, FileText, UserCircle } from "lucide-react";
 import ReportCard from "@/components/home/ReportCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import { SEZIONI_APP } from "@/lib/permissions";
@@ -13,8 +13,8 @@ function MenuGrid() {
   const { puoVedere } = usePermessi();
   const items = SEZIONI_APP.filter(s => puoVedere(s.key));
   return (
-    <div className="min-h-screen bg-background">
-      <div className="bg-card border-b border-border">
+    <div className="min-h-screen bg-background pb-24">
+      <div className="bg-card border-b border-border safe-area-top-pt">
         <div className="max-w-2xl mx-auto px-4 py-5">
           <div className="flex items-center gap-3">
             <img
@@ -70,13 +70,10 @@ function RapportiniList() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="bg-card border-b border-border">
+      <div className="bg-card border-b border-border safe-area-top-pt">
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
               <div>
                 <h1 className="font-bold text-lg">Rapportini</h1>
                 <p className="text-xs text-muted-foreground">

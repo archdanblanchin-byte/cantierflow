@@ -71,8 +71,8 @@ export default function ReportDetail() {
   const compilatoreNome = usersList.find((u) => u.email === d.user_email)?.full_name || d.user_email;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="bg-card border-b border-border">
+    <div className="min-h-screen bg-background pb-24">
+      <div className="bg-card border-b border-border safe-area-top-pt">
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

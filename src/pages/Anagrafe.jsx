@@ -40,12 +40,14 @@ export default function Anagrafe() {
   const sezione = SEZIONI.find(s => s.key === sezioneAttiva);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="bg-card border-b border-border sticky top-0 z-10">
+    <div className="min-h-screen bg-background pb-24">
+      <div className="bg-card border-b border-border sticky top-0 z-10 safe-area-top-pt">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => sezioneAttiva ? setSezioneAttiva(null) : navigate("/")}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+          {sezioneAttiva && (
+            <Button variant="ghost" size="icon" onClick={() => setSezioneAttiva(null)}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          )}
           <div>
             <h1 className="font-bold text-lg">{sezione ? sezione.label : "Anagrafe"}</h1>
             <p className="text-xs text-muted-foreground">{sezione ? "Gestione elenco" : "Collaboratori, furgoni, attrezzi, documenti, lavorazioni e materiali"}</p>

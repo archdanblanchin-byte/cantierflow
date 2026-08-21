@@ -6,7 +6,7 @@ import { BrowserRouter as Router, Route, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import TabLayout from './components/TabLayout';
+import TabLayout, { TAB_PATHS } from './components/TabLayout';
 import AnimatedRoutes from './components/AnimatedRoutes';
 import BottomNav from './components/BottomNav';
 import CreateReport from './pages/CreateReport';
@@ -32,7 +32,13 @@ import Corsi from './pages/Corsi';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
-  const showBottomNav = ["/", "/timbratura", "/rapportini"].includes(location.pathname);
+  const p = location.pathname;
+  // BottomNav persistente (mai unmount) su tab + schermate di dettaglio:
+  // resta visibile anche su /report/:id e /cantieri/:id (escluse le form/modifica).
+  const showBottomNav =
+    TAB_PATHS.includes(p) ||
+    p.startsWith("/report/") ||
+    (p.startsWith("/cantieri/") && p !== "/cantieri/nuovo" && !p.endsWith("/modifica"));
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
