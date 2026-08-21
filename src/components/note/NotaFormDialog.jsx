@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import SheetSelect from "@/components/ui/sheet-select";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 const TIPI = [
@@ -45,6 +45,8 @@ export default function NotaFormDialog({ open, onOpenChange, initial, onSaved })
   const [dataPromemoria, setDataPromemoria] = useState("");
   const [priorita, setPriorita] = useState("media");
   const [saving, setSaving] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [dubbio, setDubbio] = useState("");
 
   // Opzioni destinatari: utenti app + collaboratori con email
   const destOptions = (() => {
@@ -101,6 +103,80 @@ export default function NotaFormDialog({ open, onOpenChange, initial, onSaved })
   const updateItem = (i, text) => setItems((it) => it.map((x, idx) => (idx === i ? { ...x, text } : x)));
   const removeItem = (i) => setItems((it) => it.filter((_, idx) => idx !== i));
 
+  const runAi = async () => {
+    if (!testo.trim()) { toast.error("Scrivi qualcosa prima"); return; }
+    setAiLoading(true);
+    setDubbio("");
+    try {
+      const oggi = new Date().toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+      const cantieriStr = cantieri.map((c) => c.nome).filter(Boolean).join(", ") || "(nessuno)";
+      const furgoniStr = furgoni.map((f) => f.nome).filter(Boolean).join(", ") || "(nessuno)";
+      const collStr = destOptions.map((o) => o.nome).join(", ") || "(nessuno)";
+      const prompt = `Sei un assistente che aiuta a scrivere note chiare e ben strutturate per un'azienda edile. Dal testo grezzo dell'utente, estrai e restituisci in JSON:
+- testo_migliorato: riscrivi in modo chiaro, corretto e conciso in italiano, mantenendo ogni dettaglio (chi, cosa, dove, quando). Non aggiungere informazioni non presenti.
+- tipo: "promemoria" se cita una data/ora, "lista" se è un elenco di materiale/attrezzi/cose da fare, "messaggio" se è rivolto a qualcuno, "personale" negli altri casi.
+- data_promemoria: data/ora ISO 8601 se citata. Oggi è ${oggi} (timezone Europe/Rome). Se dice "domani"/"lunedì"/"alle 14" calcola la data; senza ora usa le 09:00. Stringa vuota se non citata.
+- cantiere_nome: cantiere citato scelto SOLO tra: ${cantieriStr}. Vuoto se non citato o non in lista.
+- furgone_nome: furgone citato scelto SOLO tra: ${furgoniStr}. Vuoto se non citato.
+- destinatari_nomi: nomi/ruoli citati come destinatari tra: ${collStr}. Se cita un ruolo generico (magazziniere, titolare, responsabile, amministrazione) usa quel ruolo testuale. Array vuoto se è una nota personale.
+- priorita: "alta" se "urgente/subito/importante", "bassa" se "quando puoi", "media" altrimenti.
+- dubbio: se c'è AMBIGUITÀ su data, ora, luogo, destinatario o sull'azione da fare, scrivi una BREVE domanda in italiano per chiarire. Stringa vuota se tutto è chiaro.
+
+Testo dell'utente:
+"""${testo}"""`;
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            testo_migliorato: { type: "string" },
+            tipo: { type: "string", enum: ["personale", "promemoria", "lista", "messaggio"] },
+            data_promemoria: { type: "string" },
+            cantiere_nome: { type: "string" },
+            furgone_nome: { type: "string" },
+            destinatari_nomi: { type: "array", items: { type: "string" } },
+            priorita: { type: "string", enum: ["bassa", "media", "alta"] },
+            dubbio: { type: "string" },
+          },
+          required: ["testo_migliorato", "tipo", "dubbio"],
+        },
+      });
+      if (res?.testo_migliorato) setTesto(res.testo_migliorato);
+      if (res?.tipo) setTipo(res.tipo);
+      if (res?.priorita) setPriorita(res.priorita);
+      if (res?.data_promemoria) setDataPromemoria(toLocalInput(res.data_promemoria));
+      if (res?.cantiere_nome) {
+        const low = res.cantiere_nome.toLowerCase();
+        const m = cantieri.find((c) => c.nome?.toLowerCase() === low || c.nome?.toLowerCase().includes(low));
+        if (m) setCantiereId(m.id);
+      }
+      if (res?.furgone_nome) {
+        const low = res.furgone_nome.toLowerCase();
+        const m = furgoni.find((f) => f.nome?.toLowerCase() === low || f.nome?.toLowerCase().includes(low));
+        if (m) setFurgoneId(m.id);
+      }
+      if (Array.isArray(res?.destinatari_nomi) && res.destinatari_nomi.length) {
+        const emails = [];
+        res.destinatari_nomi.forEach((n) => {
+          const low = (n || "").toLowerCase();
+          const m = destOptions.find((o) => o.nome?.toLowerCase().includes(low) || low.includes(o.nome?.toLowerCase()));
+          if (m && !emails.includes(m.email)) emails.push(m.email);
+        });
+        if (emails.length) setDestinatari(emails);
+      }
+      if (res?.dubbio && res.dubbio.trim()) {
+        setDubbio(res.dubbio.trim());
+        toast.info("L'IA ha un dubbio: controlla sotto il testo");
+      } else {
+        toast.success("Nota migliorata e strutturata dall'IA");
+      }
+    } catch (e) {
+      toast.error("Errore IA: " + e.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!testo.trim()) { toast.error("Scrivi il contenuto della nota"); return; }
     setSaving(true);
@@ -139,7 +215,17 @@ export default function NotaFormDialog({ open, onOpenChange, initial, onSaved })
         <div className="space-y-4">
           <div className="space-y-1">
             <Label>Contenuto</Label>
-            <Textarea rows={3} value={testo} onChange={(e) => setTesto(e.target.value)} placeholder="Es. Ricordami di caricare gli attrezzi nel furgone..." />
+            <Textarea rows={3} value={testo} onChange={(e) => setTesto(e.target.value)} placeholder="Es. Ricordami di caricare gli attrezzi nel furgone domani alle 8, cantiere Rossi..." />
+            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={runAi} disabled={aiLoading}>
+              {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              {aiLoading ? "L'IA sta lavorando…" : "AI · Migliora e struttura"}
+            </Button>
+            <p className="text-[11px] text-muted-foreground">L'IA riscrive il testo in modo chiaro e compila data, luogo e destinatari; se ha un dubbio te lo chiede.</p>
+            {dubbio && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800">
+                <span className="font-semibold">🤔 L'IA ha un dubbio: </span>{dubbio}
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -185,6 +271,11 @@ export default function NotaFormDialog({ open, onOpenChange, initial, onSaved })
 
           <div className="space-y-1">
             <Label>Destinatari (chi deve riceverla)</Label>
+            <div className="flex flex-wrap gap-1.5">
+              <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setDestinatari(users.filter((u) => u.email).map((u) => u.email))}>Tutti gli utenti</Button>
+              <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setDestinatari(collaboratori.filter((c) => c.user_email).map((c) => c.user_email))}>Tutti i collaboratori</Button>
+              <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setDestinatari([])}>Nessuno</Button>
+            </div>
             <div className="max-h-40 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
               {destOptions.length === 0 && <p className="text-xs text-muted-foreground p-2">Nessun utente/collega con email disponibile.</p>}
               {destOptions.map((o) => (

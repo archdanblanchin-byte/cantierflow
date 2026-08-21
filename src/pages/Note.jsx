@@ -49,7 +49,15 @@ export default function Note() {
   const comunicFiltered =
     subCom === "inviate" ? comunicInviate : subCom === "ricevute" ? comunicRicevute : comunic;
 
-  const list = tab === "personali" ? personali : comunicFiltered;
+  const sortByCompletato = (arr) => [...arr].sort((a, b) => {
+    const ca = a.completato ? 1 : 0;
+    const cb = b.completato ? 1 : 0;
+    if (ca !== cb) return ca - cb;
+    return new Date(b.created_date) - new Date(a.created_date);
+  });
+  const list = sortByCompletato(tab === "personali" ? personali : comunicFiltered);
+  const listAperte = list.filter((n) => !n.completato);
+  const listCompletate = list.filter((n) => n.completato);
 
   const handleResult = (notesArray) => {
     setReviewNotes(notesArray);
@@ -148,7 +156,19 @@ export default function Note() {
           </div>
         ) : (
           <div className="space-y-2.5">
-            {list.map((n) => <NotaCard key={n.id} nota={n} currentUser={user} />)}
+            {listAperte.map((n) => <NotaCard key={n.id} nota={n} currentUser={user} />)}
+            {listCompletate.length > 0 && (
+              <div className="pt-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Completate</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                <div className="space-y-2.5">
+                  {listCompletate.map((n) => <NotaCard key={n.id} nota={n} currentUser={user} />)}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
