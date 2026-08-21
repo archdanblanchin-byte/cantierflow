@@ -356,6 +356,12 @@ export default function Timbratura() {
           </Button>
         </div>
 
+        {activeSession &&
+        <p className="text-[11px] text-muted-foreground text-center">
+            Lo <span className="font-medium text-orange-600">Spostamento</span> chiude automaticamente il cantiere attuale: una volta arrivato al nuovo cantiere premi <span className="font-medium text-emerald-600">Inizia lavoro</span>.
+          </p>
+        }
+
         {/* Errore */}
         {error &&
         <div className="flex items-start gap-2 p-3 rounded-lg bg-rose-50 border border-rose-200">
