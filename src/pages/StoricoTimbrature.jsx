@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users, Loader2, Navigation } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { fmtOre } from "@/lib/timbratureUtils";
@@ -137,6 +137,7 @@ export default function StoricoTimbrature() {
         {giorni.map((giorno) => {
           const aperto = !!aperti[giorno.key];
           const ore = oreGiornata(giorno.list);
+          const oreSpost = calcolaOrePerCantiere(giorno.list).reduce((s, c) => s + (c.ore_spostamento || 0), 0);
           const nCantieri = new Set(
             giorno.list.map((t) => t.cantiere_id).filter(Boolean)
           ).size;
@@ -178,6 +179,12 @@ export default function StoricoTimbrature() {
                       <Clock className="w-2.5 h-2.5" />
                       {fmtOre(ore)}
                     </Badge>
+                    {oreSpost > 0 && (
+                      <Badge variant="secondary" className="text-[10px] gap-1 font-medium text-orange-700">
+                        <Navigation className="w-2.5 h-2.5" />
+                        +{fmtOre(oreSpost)}
+                      </Badge>
+                    )}
                     <Badge variant="secondary" className="text-[10px] gap-1 font-medium">
                       <MapPin className="w-2.5 h-2.5" />
                       {nCantieri} cant.

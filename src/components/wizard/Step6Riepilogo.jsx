@@ -73,6 +73,12 @@ export default function Step6Riepilogo({ data }) {
 
         <div className="p-4">
           <Section icon={Users} title={`Collaboratori (${(data.collaboratori || []).length})`}>
+            {data.ore_spostamento > 0 && (
+              <>
+                <Row label="Ore spostamento (auto)" value={`${data.ore_spostamento}h`} />
+                <Row label="Totale ore cantiere" value={`${(data.ore_totali_squadra || 0) + data.ore_spostamento}h`} />
+              </>
+            )}
             {(data.collaboratori || []).map((c, i) => (
               <div key={i} className="flex items-center justify-between py-1 text-sm">
                 <span>{c.nome}</span>

@@ -31,7 +31,7 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, onEdit
 
   // Ore canoniche per cantiere (lo spostamento conta come chiusura del cantiere)
   const oreMap = {};
-  calcolaOrePerCantiere(timbratureOrd).forEach((c) => { oreMap[c.cantiere_id] = c.ore; });
+  calcolaOrePerCantiere(timbratureOrd).forEach((c) => { oreMap[c.cantiere_id] = { ore: c.ore, spo: c.ore_spostamento || 0 }; });
 
   const gruppi = Object.entries(perCantiere).map(([id, g]) => {
     const tIng = g.timbri.find(t => t.tipo_evento === "ingresso");
@@ -40,11 +40,13 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, onEdit
     const tSpost = spostamenti.find(t => t.cantiere_id === id);
     const hasClose = !!(tUsc || tSpost);
     // Solo se la sessione è chiusa (uscita o spostamento) mostriamo le ore; se aperta resta "In corso"
-    const ore = hasClose ? (oreMap[id] || 0) : 0;
-    return { id, ...g, ore, completo: hasClose };
+    const ore = hasClose ? (oreMap[id]?.ore || 0) : 0;
+    const oreSpostamento = hasClose ? (oreMap[id]?.spo || 0) : 0;
+    return { id, ...g, ore, oreSpostamento, completo: hasClose };
   });
 
   const oreTotali = gruppi.reduce((s, g) => s + g.ore, 0);
+  const oreSpostTotali = gruppi.reduce((s, g) => s + (g.oreSpostamento || 0), 0);
   const kmTotali = spostamenti.reduce((s, t) => s + (t.km_spostamento || 0), 0);
 
   return (
@@ -53,6 +55,9 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, onEdit
         <div>
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Totale giornata</p>
           <p className="text-2xl font-bold text-primary">{fmtOre(oreTotali)}</p>
+          {oreSpostTotali > 0 && (
+            <p className="text-[11px] text-orange-600 font-medium">+{fmtOre(oreSpostTotali)} spostamento</p>
+          )}
         </div>
         <div className="text-right space-y-1">
           <p className="text-xs text-muted-foreground">{gruppi.length} cantiere/i</p>
@@ -103,8 +108,11 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, onEdit
               <MapPin className="w-4 h-4 text-primary" />
               <span className="font-semibold">{g.nome}</span>
             </div>
-            <div className="text-right">
+            <div className="text-right space-y-0.5">
               <p className="font-bold text-primary">{fmtOre(g.ore)}</p>
+              {g.oreSpostamento > 0 && (
+                <p className="text-[10px] text-orange-600 font-medium">+{fmtOre(g.oreSpostamento)} spost.</p>
+              )}
               {!g.completo && <Badge variant="secondary" className="text-[9px]">In corso</Badge>}
             </div>
           </div>
@@ -132,6 +140,12 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, onEdit
               );
             })}
           </div>
+          {g.oreSpostamento > 0 && (
+            <div className="flex justify-between text-xs pt-2 border-t border-dashed border-border">
+              <span className="text-muted-foreground">Totale cantiere (lav. + spost.)</span>
+              <span className="font-semibold text-primary">{fmtOre(g.ore + g.oreSpostamento)}</span>
+            </div>
+          )}
         </Card>
       ))}
     </div>

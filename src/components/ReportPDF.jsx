@@ -63,6 +63,7 @@ export function ReportPDFContent({ cantiere, rapportini = [], foto = [] }) {
       : s, 0);
   const totPiattaforma = sorted.reduce((s, r) => s + (r.piattaforma?.ore || r.ore_utilizzo_piattaforma || 0), 0);
   const totMezzi = sorted.reduce((s, r) => s + (r.ore_noleggio_mezzi || 0), 0);
+  const totOreSpostamento = sorted.reduce((s, r) => s + (r.ore_spostamento || 0), 0);
 
   // ── Aggregazioni per voce ─────────────────────────────────────────────────
   // Lavorazioni normali → mappa nome → [{data, ore, descrizione}]
@@ -186,6 +187,8 @@ export function ReportPDFContent({ cantiere, rapportini = [], foto = [] }) {
         <Row label="Ore totali squadra" value={fmt(totOreSquadra)} />
         <Row label="di cui lavorazioni preventivate" value={fmt(totOreNormali)} />
         <Row label="di cui lavorazioni extra" value={fmt(totOreExtra)} />
+        {totOreSpostamento > 0 && <Row label="Ore spostamento (auto)" value={fmt(totOreSpostamento)} />}
+        {totOreSpostamento > 0 && <Row label="Totale ore cantiere (lav. + spost.)" value={fmt(totOreSquadra + totOreSpostamento)} />}
         {totPiattaforma > 0 && <Row label="Ore piattaforma" value={fmt(totPiattaforma)} />}
         {totMezzi > 0 && <Row label="Ore noleggio mezzi" value={fmt(totMezzi)} />}
         {cantiere?.ore_stimate > 0 && <Row label="Ore stimate totali" value={fmt(cantiere.ore_stimate)} />}

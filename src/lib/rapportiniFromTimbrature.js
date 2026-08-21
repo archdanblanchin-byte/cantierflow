@@ -17,12 +17,29 @@ export function calcolaOrePerCantiere(timbrature) {
         cantiere_nome: t.cantiere_nome,
         ingresso: null,
         timbri: [],
+        ore_spostamento: 0,
       };
     }
     perCantiere[t.cantiere_id].timbri.push(t);
     if (t.tipo_evento === "ingresso" && !perCantiere[t.cantiere_id].ingresso) {
       perCantiere[t.cantiere_id].ingresso = t;
     }
+  });
+
+  // Spostamenti: per ogni spostamento trova il prossimo ingresso (cantiere di arrivo)
+  // e divide la durata a metà tra cantiere di partenza e cantiere di arrivo.
+  // Con catena A→B→C il cantiere centrale accumula metà di entrambi gli spostamenti.
+  tOrd.forEach((t, idx) => {
+    if (t.tipo_evento !== "spostamento" || !t.cantiere_id) return;
+    const nextIng = tOrd.slice(idx + 1).find(
+      (x) => x.tipo_evento === "ingresso" && x.cantiere_id && x.cantiere_id !== t.cantiere_id
+    );
+    if (!nextIng) return;
+    const durataMs = new Date(nextIng.data_ora) - new Date(t.data_ora);
+    if (durataMs <= 0) return;
+    const metaOre = arrotondaQuarti(durataMs / 2);
+    if (perCantiere[t.cantiere_id]) perCantiere[t.cantiere_id].ore_spostamento += metaOre;
+    if (perCantiere[nextIng.cantiere_id]) perCantiere[nextIng.cantiere_id].ore_spostamento += metaOre;
   });
 
   return Object.values(perCantiere).map((g) => {
@@ -61,6 +78,7 @@ export function calcolaOrePerCantiere(timbrature) {
       cantiere_nome: g.cantiere_nome,
       ingresso: g.ingresso,
       ore,
+      ore_spostamento: g.ore_spostamento,
     };
   });
 }
@@ -92,6 +110,7 @@ export async function generaRapportiniDaGiornata({ user, giorno, timbrature, rap
       foto_annotate: [],
       note_generali: "",
       ore_totali_squadra: c.ore,
+      ore_spostamento: c.ore_spostamento || 0,
       collaboratori: [],
       has_lavorazioni_extra: false,
       lavorazioni_extra: [],
@@ -118,12 +137,16 @@ export async function syncRapportinoOreDaTimbratura({ user_email, cantiere_id, g
     cantiere_id,
     data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() },
   });
-  const ore = calcolaOrePerCantiere(timb).find((c) => c.cantiere_id === cantiere_id)?.ore ?? 0;
+  const calc = calcolaOrePerCantiere(timb).find((c) => c.cantiere_id === cantiere_id);
+  const ore = calc?.ore ?? 0;
+  const ore_spostamento = calc?.ore_spostamento ?? 0;
 
   const rapportini = await base44.entities.Rapportino.filter({ user_email, cantiere_id });
   const r = rapportini.find((rr) => rr.data && new Date(rr.data).toDateString() === g.toDateString());
   if (!r) return null;
-  if (Math.abs((r.ore_totali_squadra ?? 0) - ore) < 0.001) return r;
-  await base44.entities.Rapportino.update(r.id, { ore_totali_squadra: ore });
-  return { ...r, ore_totali_squadra: ore };
+  const oreChanged = Math.abs((r.ore_totali_squadra ?? 0) - ore) >= 0.001;
+  const spoChanged = Math.abs((r.ore_spostamento ?? 0) - ore_spostamento) >= 0.001;
+  if (!oreChanged && !spoChanged) return r;
+  await base44.entities.Rapportino.update(r.id, { ore_totali_squadra: ore, ore_spostamento });
+  return { ...r, ore_totali_squadra: ore, ore_spostamento };
 }

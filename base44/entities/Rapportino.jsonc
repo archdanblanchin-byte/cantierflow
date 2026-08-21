@@ -97,7 +97,12 @@
     },
     "ore_totali_squadra": {
       "type": "number",
-      "description": "Ore squadra"
+      "description": "Ore di lavorazione effettive della squadra (tempo lavorato, escludendo gli spostamenti)"
+    },
+    "ore_spostamento": {
+      "type": "number",
+      "default": 0,
+      "description": "Quota di ore di spostamento attribuita a questo cantiere (met\u00e0 della durata di ogni spostamento che parte da o arriva a questo cantiere). Calcolata in automatico dalle timbrature, non modificabile."
     },
     "collaboratori": {
       "type": "array",
