@@ -10,6 +10,13 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
 import TimbraturaTimeline from "@/components/timbrature/TimbraturaTimeline";
+import TimbraturaEditDialog from "@/components/timbrature/TimbraturaEditDialog";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/components/ui/use-toast";
 
 // Calcola le ore totali di una giornata a partire dalla lista di timbrature
 function oreGiornata(timbs) {
@@ -37,12 +44,32 @@ function oreGiornata(timbs) {
 
 export default function StoricoTimbrature() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [user, setUser] = useState(null);
   const [aperti, setAperti] = useState({});
+  const [editTarget, setEditTarget] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  const handleSaveEdit = async (payload) => {
+    await base44.entities.Timbratura.update(editTarget.id, payload);
+    toast({ title: "Timbratura aggiornata" });
+    queryClient.invalidateQueries({ queryKey: ["storico-timbrature"] });
+    queryClient.invalidateQueries({ queryKey: ["timbrature-giornata"] });
+  };
+
+  const handleDelete = async () => {
+    await base44.entities.Timbratura.delete(deleteTarget.id);
+    toast({ title: "Timbratura eliminata" });
+    setDeleteTarget(null);
+    queryClient.invalidateQueries({ queryKey: ["storico-timbrature"] });
+    queryClient.invalidateQueries({ queryKey: ["timbrature-giornata"] });
+  };
 
   const isAdmin = user?.role === "admin";
 
@@ -195,7 +222,12 @@ export default function StoricoTimbrature() {
                               <p className="text-[10px] text-muted-foreground truncate">{email}</p>
                             </div>
                           </div>
-                          <TimbraturaTimeline timbrature={timbs} />
+                          <TimbraturaTimeline
+                            timbrature={timbs}
+                            isAdmin
+                            onEdit={(t) => { setEditTarget(t); setEditOpen(true); }}
+                            onDelete={(t) => setDeleteTarget(t)}
+                          />
                         </div>
                       );
                     })
@@ -206,6 +238,35 @@ export default function StoricoTimbrature() {
           );
         })}
       </div>
+
+      {/* Modifica timbratura (solo admin) */}
+      <TimbraturaEditDialog
+        open={editOpen}
+        timbratura={editTarget}
+        onOpenChange={setEditOpen}
+        onSave={handleSaveEdit}
+      />
+
+      {/* Conferma eliminazione (solo admin) */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare la timbratura?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'azione è definitiva e non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Elimina
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
