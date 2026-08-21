@@ -107,6 +107,12 @@ export default function Timbratura() {
   const oreInCorso = calcolaOre();
   const orePerCantiere = calcolaOrePerCantiere(timbratureOrd).filter((c) => c.ore > 0);
 
+  // Totali giornata: lavorazione + spostamento = totale giornaliero
+  const orePerCantiereAll = calcolaOrePerCantiere(timbratureOrd);
+  const totLavorazione = orePerCantiereAll.reduce((s, c) => s + c.ore, 0);
+  const totSpostamento = orePerCantiereAll.reduce((s, c) => s + (c.ore_spostamento || 0), 0);
+  const totGiornaliero = totLavorazione + totSpostamento;
+
   const canIngresso = !activeSession;
   const canPausa = !!activeSession;
   const canClose = !!activeSession && !inPausa;
@@ -371,6 +377,27 @@ export default function Timbratura() {
           </p>
         }
 
+        {/* Riepilogo giornata */}
+        {totGiornaliero > 0 &&
+        <Card className="p-4 space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Riepilogo giornata</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-center">
+                <p className="text-base font-bold text-emerald-700">{fmtOre(totLavorazione)}</p>
+                <p className="text-[10px] text-emerald-700/70 uppercase">Lavorazione</p>
+              </div>
+              <div className="rounded-lg bg-orange-50 border border-orange-200 p-2.5 text-center">
+                <p className="text-base font-bold text-orange-700">{fmtOre(totSpostamento)}</p>
+                <p className="text-[10px] text-orange-700/70 uppercase">Spostamento</p>
+              </div>
+              <div className="rounded-lg bg-primary/10 border border-primary/20 p-2.5 text-center">
+                <p className="text-base font-bold text-primary">{fmtOre(totGiornaliero)}</p>
+                <p className="text-[10px] text-primary/70 uppercase">Totale</p>
+              </div>
+            </div>
+          </Card>
+        }
+
         {/* Errore */}
         {error &&
         <div className="flex items-start gap-2 p-3 rounded-lg bg-rose-50 border border-rose-200">
@@ -477,7 +504,12 @@ export default function Timbratura() {
               {orePerCantiere.map((c) =>
             <div key={c.cantiere_id} className="flex items-center justify-between text-xs">
                   <span className="font-medium truncate flex-1">{c.cantiere_nome}</span>
-                  <span className="text-muted-foreground ml-2">{fmtOre(c.ore)}</span>
+                  <span className="text-muted-foreground ml-2">
+                    {fmtOre(c.ore)}
+                    {(c.ore_spostamento || 0) > 0 && (
+                      <span className="text-orange-600"> + {fmtOre(c.ore_spostamento)} spost.</span>
+                    )}
+                  </span>
                 </div>
             )}
             </div>

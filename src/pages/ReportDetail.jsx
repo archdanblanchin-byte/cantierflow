@@ -10,6 +10,7 @@ import {
   ArrowLeft, MapPin, Truck, Users, Zap, Wrench, Package, Calendar, User, Trash2, Pencil,
 } from "lucide-react";
 import DetailSection, { DetailRow } from "@/components/detail/DetailSection";
+import { fmtOre } from "@/lib/timbratureUtils";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -150,13 +151,9 @@ export default function ReportDetail() {
           )}
 
           <DetailSection icon={Users} title={`Collaboratori (${(d.collaboratori || []).length})`}>
-            <DetailRow label="Ore lavorazione" value={`${d.ore_totali_squadra || 0}h`} />
-            {d.ore_spostamento > 0 && (
-              <DetailRow label="Ore spostamento (auto)" value={`${d.ore_spostamento}h`} />
-            )}
-            {d.ore_spostamento > 0 && (
-              <DetailRow label="Totale ore cantiere" value={`${(d.ore_totali_squadra || 0) + d.ore_spostamento}h`} />
-            )}
+            <DetailRow label="Ore lavorazione" value={fmtOre(d.ore_totali_squadra || 0)} />
+            <DetailRow label="Ore spostamento (auto)" value={fmtOre(d.ore_spostamento || 0)} />
+            <DetailRow label="Totale ore cantiere" value={fmtOre((d.ore_totali_squadra || 0) + (d.ore_spostamento || 0))} />
             {(d.collaboratori || []).map((c, i) => (
               <div key={i} className="flex items-center justify-between py-1 text-sm">
                 <span>{c.nome}</span>

@@ -5,6 +5,7 @@ import { it } from "date-fns/locale";
 import {
   MapPin, Truck, Users, Zap, Wrench, Package, FileText,
 } from "lucide-react";
+import { fmtOre } from "@/lib/timbratureUtils";
 
 function Section({ icon: Icon, title, children }) {
   return (
@@ -73,12 +74,9 @@ export default function Step6Riepilogo({ data }) {
 
         <div className="p-4">
           <Section icon={Users} title={`Collaboratori (${(data.collaboratori || []).length})`}>
-            {data.ore_spostamento > 0 && (
-              <>
-                <Row label="Ore spostamento (auto)" value={`${data.ore_spostamento}h`} />
-                <Row label="Totale ore cantiere" value={`${(data.ore_totali_squadra || 0) + data.ore_spostamento}h`} />
-              </>
-            )}
+            <Row label="Ore lavorazione" value={fmtOre(data.ore_totali_squadra || 0)} />
+            <Row label="Ore spostamento (auto)" value={fmtOre(data.ore_spostamento || 0)} />
+            <Row label="Totale ore cantiere" value={fmtOre((data.ore_totali_squadra || 0) + (data.ore_spostamento || 0))} />
             {(data.collaboratori || []).map((c, i) => (
               <div key={i} className="flex items-center justify-between py-1 text-sm">
                 <span>{c.nome}</span>

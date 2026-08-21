@@ -182,7 +182,12 @@ export default function StoricoTimbrature() {
                     {oreSpost > 0 && (
                       <Badge variant="secondary" className="text-[10px] gap-1 font-medium text-orange-700">
                         <Navigation className="w-2.5 h-2.5" />
-                        +{fmtOre(oreSpost)}
+                        {fmtOre(oreSpost)}
+                      </Badge>
+                    )}
+                    {oreSpost > 0 && (
+                      <Badge className="text-[10px] gap-1 bg-primary/10 text-primary border-primary/20 font-semibold">
+                        Tot {fmtOre(ore + oreSpost)}
                       </Badge>
                     )}
                     <Badge variant="secondary" className="text-[10px] gap-1 font-medium">
