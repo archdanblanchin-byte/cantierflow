@@ -54,7 +54,7 @@ export default function NotaCard({ nota, currentUser }) {
       if (others.length > 0) {
         try {
           await base44.entities.Nota.create({
-            testo: `✓ ${nome} ha completato: "${nota.testo}"`,
+            testo: `✓ ${nome} ha completato il task: "${nota.testo}"`,
             tipo: "messaggio",
             destinatari_email: others,
             destinatari_nomi: others,
@@ -64,8 +64,6 @@ export default function NotaCard({ nota, currentUser }) {
             furgone_nome: nota.furgone_nome || null,
             priorita: "media",
             origine: "manuale",
-            completato: true,
-            completato_da: currentUser?.email,
           });
         } catch { /* notifica best-effort */ }
       }
