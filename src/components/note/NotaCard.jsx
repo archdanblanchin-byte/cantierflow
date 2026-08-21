@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card } from "@/components/ui/card";
@@ -7,8 +7,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { MapPin, Car, Trash2, CheckCheck, Bell, Users } from "lucide-react";
+import { MapPin, Car, Trash2, CheckCheck, Bell, Users, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import NotaFormDialog from "./NotaFormDialog";
 
 const TIPO_LABEL = { personale: "Personale", promemoria: "Promemoria", lista: "Lista", messaggio: "Messaggio" };
 const TIPO_COLOR = {
@@ -20,6 +21,7 @@ const TIPO_COLOR = {
 
 export default function NotaCard({ nota, currentUser }) {
   const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
   const isAuthor = nota.created_by === currentUser?.email;
   const isRecipient = (nota.destinatari_email || []).includes(currentUser?.email);
   const isRead = (nota.letto_da || []).includes(currentUser?.email);
@@ -132,11 +134,20 @@ export default function NotaCard({ nota, currentUser }) {
           </Button>
         )}
         {(isAuthor || currentUser?.role === "admin") && (
-          <Button variant="ghost" size="sm" className="gap-1 text-xs text-destructive ml-auto" onClick={handleDelete}>
-            <Trash2 className="w-3.5 h-3.5" /> Elimina
-          </Button>
+          <>
+            <Button variant="ghost" size="sm" className="gap-1 text-xs ml-auto" onClick={() => setEditing(true)}>
+              <Pencil className="w-3.5 h-3.5" /> Modifica
+            </Button>
+            <Button variant="ghost" size="sm" className="gap-1 text-xs text-destructive" onClick={handleDelete}>
+              <Trash2 className="w-3.5 h-3.5" /> Elimina
+            </Button>
+          </>
         )}
       </div>
+
+      {editing && (
+        <NotaFormDialog open={editing} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); refresh(); }} initial={nota} />
+      )}
     </Card>
   );
 }
