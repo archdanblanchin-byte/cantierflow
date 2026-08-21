@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, ClipboardList, Building2, BookUser, Clock } from "lucide-react";
+import { Home, ClipboardList, Building2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermessi } from "@/hooks/usePermessi";
 import { TAB_PATHS } from "@/components/TabLayout";
@@ -9,7 +9,6 @@ const ALL_NAV_ITEMS = [
   { key: "timbratura", label: "Timbra", icon: Clock, path: "/timbratura" },
   { key: "rapportini", label: "Rapportini", icon: ClipboardList, path: "/rapportini" },
   { key: "cantieri", label: "Cantieri", icon: Building2, path: "/cantieri" },
-  { key: "anagrafe", label: "Anagrafe", icon: BookUser, path: "/anagrafe" },
 ];
 
 // Mappa un percorso (anche di dettaglio) al tab "proprietario".
