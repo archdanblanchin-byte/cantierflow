@@ -45,7 +45,31 @@ export default function NotaCard({ nota, currentUser }) {
   };
 
   const toggleComplete = async () => {
-    await base44.entities.Nota.update(nota.id, { completato: !nota.completato });
+    const willComplete = !nota.completato;
+    await base44.entities.Nota.update(nota.id, { completato: willComplete, completato_da: willComplete ? currentUser?.email : null });
+    // Notifica di completamento agli altri coinvolti (autore + destinatari tranne chi completa)
+    if (willComplete && (nota.destinatari_email || []).length > 0 && !(nota.testo || "").startsWith("✓")) {
+      const nome = currentUser?.full_name || currentUser?.email || "Qualcuno";
+      const others = Array.from(new Set([nota.created_by, ...(nota.destinatari_email || [])])).filter((e) => e && e !== currentUser?.email);
+      if (others.length > 0) {
+        try {
+          await base44.entities.Nota.create({
+            testo: `✓ ${nome} ha completato: "${nota.testo}"`,
+            tipo: "messaggio",
+            destinatari_email: others,
+            destinatari_nomi: others,
+            cantiere_id: nota.cantiere_id || null,
+            cantiere_nome: nota.cantiere_nome || null,
+            furgone_id: nota.furgone_id || null,
+            furgone_nome: nota.furgone_nome || null,
+            priorita: "media",
+            origine: "manuale",
+            completato: true,
+            completato_da: currentUser?.email,
+          });
+        } catch { /* notifica best-effort */ }
+      }
+    }
     refresh();
   };
 
@@ -103,16 +127,18 @@ export default function NotaCard({ nota, currentUser }) {
         </div>
       )}
 
-      {(isAuthor || currentUser?.role === "admin") && (
-        <div className="flex items-center gap-1 pt-1 border-t border-border">
+      <div className="flex items-center gap-1 pt-1 border-t border-border">
+        {(isAuthor || isRecipient || currentUser?.role === "admin") && (
           <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={toggleComplete}>
             <CheckCheck className="w-3.5 h-3.5" /> {nota.completato ? "Riapri" : "Completa"}
           </Button>
+        )}
+        {(isAuthor || currentUser?.role === "admin") && (
           <Button variant="ghost" size="sm" className="gap-1 text-xs text-destructive ml-auto" onClick={handleDelete}>
             <Trash2 className="w-3.5 h-3.5" /> Elimina
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </Card>
   );
 }
