@@ -11,6 +11,7 @@ import { usePermessi } from "@/hooks/usePermessi";
 import { useAuth } from "@/lib/AuthContext";
 import moment from "moment";
 import { Plus, Pencil, Trash2, Check, X, ChevronRight, AlertTriangle, Info, Bell } from "lucide-react";
+import FurgoneRegistroVocale from "./FurgoneRegistroVocale";
 
 const FURGONE_FIELDS = [
   { key: "nome", label: "Nome", required: true, type: "text" },
@@ -38,9 +39,16 @@ function renderValore(field, value) {
 
 function FurgoneForm({ initial = {}, onSave, onCancel }) {
   const [form, setForm] = useState(initial);
+  const editing = !!initial?.id;
 
   return (
     <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+      {editing && (
+        <div className="space-y-1">
+          <FurgoneRegistroVocale furgone={initial} onFields={(campi) => setForm((prev) => ({ ...prev, ...campi }))} />
+          <p className="text-[11px] text-muted-foreground">Parla: l'IA compila i campi e registra problemi/segnalazioni nel registro.</p>
+        </div>
+      )}
       {FURGONE_FIELDS.map(f => (
         <div key={f.key}>
           <Label className="text-xs text-muted-foreground">{f.label}{f.required ? " *" : ""}</Label>

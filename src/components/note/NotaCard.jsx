@@ -146,7 +146,7 @@ export default function NotaCard({ nota, currentUser }) {
       </div>
 
       {editing && (
-        <NotaFormDialog open={editing} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); refresh(); }} initial={nota} />
+        <NotaFormDialog open={editing} onOpenChange={setEditing} onSaved={() => { setEditing(false); refresh(); }} initial={nota} />
       )}
     </Card>
   );

@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import SheetSelect from "@/components/ui/sheet-select";
 import { Plus, Trash2, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { maybeMirrorNotaToFurgone } from "@/lib/notaFurgoneMirror";
 
 const TIPI = [
   { value: "personale", label: "Personale" },
@@ -202,7 +203,8 @@ Testo dell'utente:
         priorita,
         origine: initial?._vocale ? "vocale" : "manuale",
       };
-      await base44.entities.Nota.create(payload);
+      const created = await base44.entities.Nota.create(payload);
+      await maybeMirrorNotaToFurgone(created);
       toast.success("Nota creata");
       onSaved?.();
       onOpenChange(false);

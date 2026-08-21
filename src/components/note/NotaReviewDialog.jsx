@@ -8,6 +8,7 @@ import NotaEditableFields from "@/components/note/NotaEditableFields";
 import { resolveNota, buildNotaPayload, buildDestOptions } from "@/lib/notaResolve";
 import { Loader2, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { maybeMirrorNotaToFurgone } from "@/lib/notaFurgoneMirror";
 
 /**
  * Revisione di più note estratte da una singola registrazione vocale.
@@ -39,7 +40,8 @@ export default function NotaReviewDialog({ open, onOpenChange, notes = [], onSav
     setSaving(true);
     try {
       const payloads = valid.map((n) => buildNotaPayload(n, { cantieri, furgoni, destOptions }));
-      await base44.entities.Nota.bulkCreate(payloads);
+      const created = await base44.entities.Nota.bulkCreate(payloads);
+      await Promise.all((created || []).map((c) => maybeMirrorNotaToFurgone(c)));
       toast.success(`${payloads.length} note create`);
       onSaved?.();
       onOpenChange(false);
