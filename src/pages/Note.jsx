@@ -15,7 +15,8 @@ export default function Note() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
-  const [tab, setTab] = useState("mie"); // mie | ricevute
+  const [tab, setTab] = useState("personali"); // personali | comunicazione
+  const [subCom, setSubCom] = useState("tutte"); // tutte | inviate | ricevute
   const [recorderMode, setRecorderMode] = useState(null); // null | "personale" | "comunicazione"
   const [formOpen, setFormOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -39,9 +40,16 @@ export default function Note() {
     enabled: !!user,
   });
 
-  const mie = note.filter((n) => n.created_by === user?.email);
-  const ricevute = note.filter((n) => (n.destinatari_email || []).includes(user?.email));
-  const list = tab === "mie" ? mie : ricevute;
+  // Personali: nessun destinatario (visibili solo all'autore)
+  const personali = note.filter((n) => (n.destinatari_email || []).length === 0);
+  // Comunicazione: hanno almeno un destinatario (inviate o ricevute)
+  const comunic = note.filter((n) => (n.destinatari_email || []).length > 0);
+  const comunicInviate = comunic.filter((n) => n.created_by === user?.email);
+  const comunicRicevute = comunic.filter((n) => (n.destinatari_email || []).includes(user?.email));
+  const comunicFiltered =
+    subCom === "inviate" ? comunicInviate : subCom === "ricevute" ? comunicRicevute : comunic;
+
+  const list = tab === "personali" ? personali : comunicFiltered;
 
   const handleResult = (notesArray) => {
     setReviewNotes(notesArray);
@@ -115,20 +123,28 @@ export default function Note() {
         )}
 
         <div className="flex gap-2">
-          <Button variant={tab === "mie" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setTab("mie")}>
-            <Send className="w-3.5 h-3.5" /> Le mie ({mie.length})
+          <Button variant={tab === "personali" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setTab("personali")}>
+            <User className="w-3.5 h-3.5" /> Personali ({personali.length})
           </Button>
-          <Button variant={tab === "ricevute" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setTab("ricevute")}>
-            <Inbox className="w-3.5 h-3.5" /> Ricevute ({ricevute.length})
+          <Button variant={tab === "comunicazione" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setTab("comunicazione")}>
+            <Share2 className="w-3.5 h-3.5" /> Comunicazione ({comunic.length})
           </Button>
         </div>
+
+        {tab === "comunicazione" && (
+          <div className="flex gap-2 -mt-1">
+            <Button variant={subCom === "tutte" ? "secondary" : "ghost"} size="sm" onClick={() => setSubCom("tutte")}>Tutte ({comunic.length})</Button>
+            <Button variant={subCom === "inviate" ? "secondary" : "ghost"} size="sm" className="gap-1" onClick={() => setSubCom("inviate")}><Send className="w-3 h-3" /> Inviate ({comunicInviate.length})</Button>
+            <Button variant={subCom === "ricevute" ? "secondary" : "ghost"} size="sm" className="gap-1" onClick={() => setSubCom("ricevute")}><Inbox className="w-3 h-3" /> Ricevute ({comunicRicevute.length})</Button>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
         ) : list.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <StickyNote className="w-10 h-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">{tab === "mie" ? "Nessuna nota creata" : "Nessuna nota ricevuta"}</p>
+            <p className="text-sm">Nessuna nota {tab === "personali" ? "personale" : "di comunicazione"}</p>
           </div>
         ) : (
           <div className="space-y-2.5">
