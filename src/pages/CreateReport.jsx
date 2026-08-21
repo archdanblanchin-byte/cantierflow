@@ -14,6 +14,7 @@ import Step2Collaboratori from "@/components/wizard/Step2Collaboratori";
 import Step3Lavorazioni from "@/components/wizard/Step3Lavorazioni";
 import Step4Materiali from "@/components/wizard/Step5Materiali";
 import Step5Riepilogo from "@/components/wizard/Step6Riepilogo";
+import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
 
 const TOTAL_STEPS = 5;
 const AUTOSAVE_INTERVAL = 30000; // 30 secondi
@@ -48,6 +49,7 @@ export default function CreateReport() {
     lavorazioni_normali: [],
     materiali: [],
     stato: "bozza",
+    partecipanti_email: [],
   });
 
   useEffect(() => {
@@ -94,6 +96,17 @@ export default function CreateReport() {
     queryKey: ["materialiBase"],
     queryFn: () => base44.entities.MaterialeBase.list(),
   });
+
+  // Mantiene aggiornata la lista email dei partecipanti (autore + collaboratori)
+  // per la regola RLS di visibilità del rapportino.
+  useEffect(() => {
+    const pe = computePartecipantiEmail(formData, collaboratoriList, formData.user_email);
+    setFormData((prev) => {
+      if (JSON.stringify(prev.partecipanti_email || []) === JSON.stringify(pe)) return prev;
+      return { ...prev, partecipanti_email: pe };
+    });
+  }, [formData.collaboratori, formData.user_email, collaboratoriList]);
+
   const updateForm = (updates) => {
     setFormData((prev) => ({ ...prev, ...updates }));
   };

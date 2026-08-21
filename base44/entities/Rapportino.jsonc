@@ -19,6 +19,13 @@
       "type": "string",
       "description": "Email utente compilatore"
     },
+    "partecipanti_email": {
+      "type": "array",
+      "description": "Email dei partecipanti (autore + collaboratori) per la visibilit\u00e0 RLS",
+      "items": {
+        "type": "string"
+      }
+    },
     "foto": {
       "type": "array",
       "description": "Array di URL foto (legacy)",
@@ -205,5 +212,51 @@
     "data",
     "cantiere_id",
     "ore_totali_squadra"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "data.partecipanti_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }

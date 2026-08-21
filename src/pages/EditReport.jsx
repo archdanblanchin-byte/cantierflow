@@ -15,6 +15,7 @@ import Step2Collaboratori from "@/components/wizard/Step2Collaboratori";
 import Step3Lavorazioni from "@/components/wizard/Step3Lavorazioni";
 import Step4Materiali from "@/components/wizard/Step5Materiali";
 import Step5Riepilogo from "@/components/wizard/Step6Riepilogo";
+import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
 
 const TOTAL_STEPS = 5;
 
@@ -65,6 +66,18 @@ export default function EditReport() {
     queryFn: () => base44.entities.MaterialeBase.list(),
   });
   const updateForm = (updates) => setFormData((prev) => ({ ...prev, ...updates }));
+
+  // Mantiene aggiornata la lista email dei partecipanti (autore + collaboratori)
+  // per la regola RLS di visibilità del rapportino.
+  useEffect(() => {
+    if (!formData) return;
+    const pe = computePartecipantiEmail(formData, collaboratoriList, formData.user_email);
+    setFormData((prev) => {
+      if (!prev) return prev;
+      if (JSON.stringify(prev.partecipanti_email || []) === JSON.stringify(pe)) return prev;
+      return { ...prev, partecipanti_email: pe };
+    });
+  }, [formData?.collaboratori, formData?.user_email, collaboratoriList]);
 
   const validateStep = () => {
     if (step === 1 && !formData.cantiere_id) { toast.error("Seleziona un cantiere"); return false; }
