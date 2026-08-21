@@ -32,7 +32,7 @@ export default function SyncButton() {
       onClick={handleSync}
       aria-label="Sincronizza"
       disabled={syncing}
-      className="ml-auto w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent active:scale-90 transition-colors text-muted-foreground hover:text-foreground"
+      className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent active:scale-90 transition-colors text-muted-foreground hover:text-foreground"
     >
       <RefreshCw className={`w-5 h-5 ${syncing ? "animate-spin" : ""}`} />
     </button>
