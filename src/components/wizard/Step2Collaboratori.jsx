@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SheetSelect from "@/components/ui/sheet-select";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, Trash2, Users, Clock, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -21,22 +21,15 @@ function NoteImprevisti({ value, onChange }) {
   return (
     <div className="space-y-1">
       <Label className="text-xs text-muted-foreground">Dinamica diversa</Label>
-      <Select
+      <SheetSelect
         value={selectValue}
         onValueChange={(v) => {
           if (v === "Altro") onChange("Altro");
           else onChange(v);
         }}
-      >
-        <SelectTrigger className="mt-1 h-8 text-xs">
-          <SelectValue placeholder="Seleziona..." />
-        </SelectTrigger>
-        <SelectContent>
-          {NOTE_OPTIONS.map((o) => (
-            <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        options={NOTE_OPTIONS.map((o) => ({ value: o, label: o }))}
+        placeholder="Seleziona..."
+      />
       {(selectValue === "Altro" || isAltro) && (
         <Textarea
           value={isAltro ? value : ""}

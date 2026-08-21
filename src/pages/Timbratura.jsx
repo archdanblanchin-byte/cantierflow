@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SheetSelect from "@/components/ui/sheet-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,6 @@ import { distanzaM, getPosizione, STEP_CONFIG, arrotondaQuarti, fmtOre } from "@
 import { calcolaOrePerCantiere, generaRapportiniDaGiornata, syncRapportinoOreDaTimbratura } from "@/lib/rapportiniFromTimbrature";
 import { getRuoloLabel } from "@/lib/permissions";
 import NewCantiereModal from "@/components/wizard/NewCantiereModal";
-import BottomNav from "@/components/BottomNav";
 
 export default function Timbratura() {
   const queryClient = useQueryClient();
@@ -265,14 +264,14 @@ export default function Timbratura() {
             <div>
               <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Cantiere</Label>
               <div className="flex gap-2 mt-1.5">
-                <Select value={selectedCantiereId} onValueChange={setSelectedCantiereId}>
-                  <SelectTrigger className="flex-1"><SelectValue placeholder="Seleziona cantiere..." /></SelectTrigger>
-                  <SelectContent>
-                    {cantieri.filter((c) => c.attivo !== false).map((c) =>
-                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                  )}
-                  </SelectContent>
-                </Select>
+                <div className="flex-1">
+                  <SheetSelect
+                    value={selectedCantiereId}
+                    onValueChange={setSelectedCantiereId}
+                    options={cantieri.filter((c) => c.attivo !== false).map((c) => ({ value: c.id, label: c.nome }))}
+                    placeholder="Seleziona cantiere..."
+                  />
+                </div>
                 <Button variant="outline" size="icon" onClick={() => setShowNewCantiere(true)}>
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -471,25 +470,27 @@ export default function Timbratura() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Cantiere</Label>
-              <Select value={editForm.cantiere_id} onValueChange={(v) => setEditForm((f) => ({ ...f, cantiere_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Seleziona cantiere" /></SelectTrigger>
-                <SelectContent>
-                  {cantieri.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SheetSelect
+                value={editForm.cantiere_id}
+                onValueChange={(v) => setEditForm((f) => ({ ...f, cantiere_id: v }))}
+                options={cantieri.map((c) => ({ value: c.id, label: c.nome }))}
+                placeholder="Seleziona cantiere"
+              />
             </div>
             <div className="space-y-1">
               <Label>Tipo evento</Label>
-              <Select value={editForm.tipo_evento} onValueChange={(v) => setEditForm((f) => ({ ...f, tipo_evento: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ingresso">Ingresso</SelectItem>
-                  <SelectItem value="pausa_inizio">Pausa inizio</SelectItem>
-                  <SelectItem value="pausa_fine">Pausa fine</SelectItem>
-                  <SelectItem value="spostamento">Spostamento</SelectItem>
-                  <SelectItem value="uscita">Uscita</SelectItem>
-                </SelectContent>
-              </Select>
+              <SheetSelect
+                value={editForm.tipo_evento}
+                onValueChange={(v) => setEditForm((f) => ({ ...f, tipo_evento: v }))}
+                options={[
+                  { value: "ingresso", label: "Ingresso" },
+                  { value: "pausa_inizio", label: "Pausa inizio" },
+                  { value: "pausa_fine", label: "Pausa fine" },
+                  { value: "spostamento", label: "Spostamento" },
+                  { value: "uscita", label: "Uscita" },
+                ]}
+                placeholder="Seleziona..."
+              />
             </div>
             <div className="space-y-1">
               <Label>Data e ora</Label>
@@ -516,7 +517,6 @@ export default function Timbratura() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <BottomNav />
     </div>);
 
 }

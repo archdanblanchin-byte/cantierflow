@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SheetSelect from "@/components/ui/sheet-select";
 import { Plus, MapPin, FileText } from "lucide-react";
 import MezziSection from "./MezziSection";
 import FotoRapportino from "./FotoRapportino";
@@ -40,20 +40,17 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
           </div>
         ) : (
           <div className="flex gap-2 mt-1.5">
-            <Select
-              value={data.cantiere_id || ""}
-              onValueChange={(val) => {
-                const c = (cantieri || []).find((c) => c.id === val);
-                onChange({ cantiere_id: val, cantiere_nome: c?.nome || "" });
-              }}
-            >
-              <SelectTrigger className="flex-1"><SelectValue placeholder="Seleziona cantiere..." /></SelectTrigger>
-              <SelectContent>
-                {(cantieri || []).filter((c) => c.attivo !== false).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex-1">
+              <SheetSelect
+                value={data.cantiere_id || ""}
+                onValueChange={(val) => {
+                  const c = (cantieri || []).find((c) => c.id === val);
+                  onChange({ cantiere_id: val, cantiere_nome: c?.nome || "" });
+                }}
+                options={(cantieri || []).filter((c) => c.attivo !== false).map((c) => ({ value: c.id, label: c.nome }))}
+                placeholder="Seleziona cantiere..."
+              />
+            </div>
             <Button variant="outline" size="icon" onClick={() => setShowNewCantiere(true)}>
               <Plus className="w-4 h-4" />
             </Button>

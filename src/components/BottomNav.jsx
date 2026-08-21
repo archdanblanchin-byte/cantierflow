@@ -17,7 +17,7 @@ export default function BottomNav() {
   const NAV_ITEMS = ALL_NAV_ITEMS.filter(i => i.always || puoVedere(i.key));
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md safe-area-bottom">
       <div className="max-w-2xl mx-auto flex items-center justify-around px-2 py-1.5">
         {NAV_ITEMS.map((item) => {
           const active = location.pathname === item.path;

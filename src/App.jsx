@@ -2,26 +2,25 @@ import { useEffect } from 'react'
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import Home from './pages/Home';
+import TabLayout from './components/TabLayout';
+import AnimatedRoutes from './components/AnimatedRoutes';
+import BottomNav from './components/BottomNav';
 import CreateReport from './pages/CreateReport';
 import ReportDetail from './pages/ReportDetail';
-import Cantieri from './pages/Cantieri';
 import CantiereForm from './pages/CantiereForm';
 import CantiereDetail from './pages/CantiereDetail';
 import Placeholder from './pages/Placeholder';
 import FotoPage from './pages/Foto';
-import Anagrafe from './pages/Anagrafe';
 import EditReport from './pages/EditReport';
 import DashboardTrasferte from './pages/DashboardTrasferte';
 import Permessi from './pages/Permessi';
 import CalendarioPermessi from './pages/CalendarioPermessi';
 import Utenti from './pages/Utenti';
 import OreLavoratori from './pages/OreLavoratori';
-import Timbratura from './pages/Timbratura';
 import Account from './pages/Account';
 import Cronoprogramma from './pages/Cronoprogramma';
 import Programma from './pages/Programma';
@@ -32,6 +31,8 @@ import Corsi from './pages/Corsi';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const location = useLocation();
+  const showBottomNav = ["/", "/timbratura", "/rapportini"].includes(location.pathname);
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -51,25 +52,26 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
+    <>
+    <AnimatedRoutes>
+      <Route path="/" element={<TabLayout />} />
       <Route path="/trasferte" element={<DashboardTrasferte />} />
 
       {/* Rapportini */}
-      <Route path="/rapportini" element={<Home showRapportini />} />
+      <Route path="/rapportini" element={<TabLayout />} />
       <Route path="/nuovo" element={<CreateReport />} />
       <Route path="/report/:id" element={<ReportDetail />} />
       <Route path="/modifica-report/:id" element={<EditReport />} />
 
       {/* Cantieri */}
-      <Route path="/cantieri" element={<Cantieri />} />
+      <Route path="/cantieri" element={<TabLayout />} />
       <Route path="/cantieri/nuovo" element={<CantiereForm />} />
       <Route path="/cantieri/:id" element={<CantiereDetail />} />
       <Route path="/cantieri/:id/modifica" element={<CantiereForm />} />
 
       {/* Placeholder sezioni */}
       <Route path="/foto" element={<FotoPage />} />
-      <Route path="/anagrafe" element={<Anagrafe />} />
+      <Route path="/anagrafe" element={<TabLayout />} />
       <Route path="/programma" element={<Programma />} />
       <Route path="/programmazione" element={<Programmazione />} />
       <Route path="/cronoprogramma" element={<Cronoprogramma />} />
@@ -83,12 +85,14 @@ const AuthenticatedApp = () => {
       <Route path="/uso-furgoni" element={<UsoFurgoni />} />
       <Route path="/utenti" element={<Utenti />} />
       <Route path="/ore-lavoratori" element={<OreLavoratori />} />
-      <Route path="/timbratura" element={<Timbratura />} />
+      <Route path="/timbratura" element={<TabLayout />} />
       <Route path="/account" element={<Account />} />
       <Route path="/corsi" element={<Corsi />} />
 
       <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    </AnimatedRoutes>
+    {showBottomNav && <BottomNav />}
+    </>
   );
 };
 

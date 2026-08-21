@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SheetSelect from "@/components/ui/sheet-select";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -131,27 +131,22 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
                 {/* Categoria */}
                 <div>
                   <Label className="text-xs text-muted-foreground">Categoria</Label>
-                  <Select
+                  <SheetSelect
                     value={lav.categoria || ""}
                     onValueChange={(val) => updateLav(i, { categoria: val, tipo_lavorazione_id: "", tipo_lavorazione_nome: "", descrizione_custom: "" })}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Seleziona categoria..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[...new Set(tipiLavorazione.map(t => t.categoria).filter(Boolean))].map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                      <SelectItem value="__custom__">✏️ Personalizzata</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      ...[...new Set(tipiLavorazione.map(t => t.categoria).filter(Boolean))].map(cat => ({ value: cat, label: cat })),
+                      { value: "__custom__", label: "✏️ Personalizzata" },
+                    ]}
+                    placeholder="Seleziona categoria..."
+                  />
                 </div>
 
                 {/* Tipo (filtrato) */}
                 {lav.categoria && lav.categoria !== "__custom__" && (
                   <div>
                     <Label className="text-xs text-muted-foreground">Tipo lavorazione</Label>
-                    <Select
+                    <SheetSelect
                       value={lav.tipo_lavorazione_id || ""}
                       onValueChange={(val) => {
                         if (val === "__custom_tipo__") {
@@ -161,17 +156,12 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
                           updateLav(i, { tipo_lavorazione_id: val, tipo_lavorazione_nome: tipo?.nome || "", descrizione_custom: "" });
                         }
                       }}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Seleziona tipo..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tipiLavorazione.filter(t => t.categoria === lav.categoria).map((t) => (
-                          <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
-                        ))}
-                        <SelectItem value="__custom_tipo__">✏️ Non trovata — scrivi manualmente</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        ...tipiLavorazione.filter(t => t.categoria === lav.categoria).map((t) => ({ value: t.id, label: t.nome })),
+                        { value: "__custom_tipo__", label: "✏️ Non trovata — scrivi manualmente" },
+                      ]}
+                      placeholder="Seleziona tipo..."
+                    />
                     {!lav.tipo_lavorazione_id && (
                       <Input
                         value={lav.descrizione_custom || ""}

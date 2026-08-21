@@ -8,7 +8,6 @@ import ReportCard from "@/components/home/ReportCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import { SEZIONI_APP } from "@/lib/permissions";
 import { usePermessi } from "@/hooks/usePermessi";
-import BottomNav from "@/components/BottomNav";
 
 function MenuGrid() {
   const { puoVedere } = usePermessi();
@@ -53,7 +52,6 @@ function MenuGrid() {
           ))}
         </div>
       </div>
-      <BottomNav />
     </div>
   );
 }
@@ -118,7 +116,6 @@ function RapportiniList() {
         )}
         </PullToRefresh>
       </div>
-      <BottomNav />
     </div>
   );
 }
