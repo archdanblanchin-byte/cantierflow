@@ -29,6 +29,7 @@ import Programmazione from './pages/Programmazione';
 import Impostazioni from './pages/Impostazioni';
 import UsoFurgoni from './pages/UsoFurgoni';
 import Corsi from './pages/Corsi';
+import StoricoTimbrature from './pages/StoricoTimbrature';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -93,6 +94,7 @@ const AuthenticatedApp = () => {
       <Route path="/utenti" element={<Utenti />} />
       <Route path="/ore-lavoratori" element={<OreLavoratori />} />
       <Route path="/timbratura" element={<TabLayout />} />
+      <Route path="/storico-timbrature" element={<StoricoTimbrature />} />
       <Route path="/account" element={<Account />} />
       <Route path="/corsi" element={<Corsi />} />
 

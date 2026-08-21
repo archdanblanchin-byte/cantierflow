@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import {
   MapPin, Loader2, Clock, LogIn, Coffee, PlayCircle, LogOut, Navigation,
-  AlertTriangle, CheckCircle2, Plus, FileText, Trash2, Pencil } from
+  AlertTriangle, CheckCircle2, Plus, FileText, Trash2, Pencil, Calendar } from
 "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -240,6 +240,13 @@ export default function Timbratura() {
               <h1 className="text-lg font-bold">Timbratura</h1>
               <p className="text-xs text-muted-foreground capitalize">{format(oggi, "EEEE d MMMM", { locale: it })}</p>
             </div>
+            <button
+              onClick={() => navigate("/storico-timbrature")}
+              className="ml-auto w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent transition-colors"
+              title="Storico timbri"
+            >
+              <Calendar className="w-5 h-5 text-muted-foreground" />
+            </button>
           </div>
         </div>
       </div>
