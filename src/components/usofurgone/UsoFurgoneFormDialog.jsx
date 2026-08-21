@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import SheetSelect from "@/components/ui/sheet-select";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Car, UserCog } from "lucide-react";
 
@@ -122,14 +122,12 @@ export default function UsoFurgoneFormDialog({ open, onOpenChange }) {
           </div>
           <div>
             <Label>Furgone</Label>
-            <Select value={furgoneId} onValueChange={setFurgoneId}>
-              <SelectTrigger className="mt-1"><SelectValue placeholder="Seleziona furgone" /></SelectTrigger>
-              <SelectContent>
-                {furgoni.map(f => (
-                  <SelectItem key={f.id} value={f.id}>{f.nome}{f.targa ? ` · ${f.targa}` : ""}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SheetSelect
+              value={furgoneId}
+              onValueChange={setFurgoneId}
+              placeholder="Seleziona furgone"
+              options={furgoni.map(f => ({ value: f.id, label: f.targa ? `${f.nome} · ${f.targa}` : f.nome }))}
+            />
           </div>
           <div>
             <Label>Conducente</Label>
@@ -152,14 +150,12 @@ export default function UsoFurgoneFormDialog({ open, onOpenChange }) {
               </Button>
             </div>
             {modalitaConducente === "anagrafe" ? (
-              <Select value={collaboratoreId} onValueChange={setCollaboratoreId} className="mt-2">
-                <SelectTrigger><SelectValue placeholder="Seleziona collaboratore" /></SelectTrigger>
-                <SelectContent>
-                  {collaboratori.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SheetSelect
+                value={collaboratoreId}
+                onValueChange={setCollaboratoreId}
+                placeholder="Seleziona collaboratore"
+                options={collaboratori.map(c => ({ value: c.id, label: c.nome }))}
+              />
             ) : (
               <Input
                 value={conducenteManuale}

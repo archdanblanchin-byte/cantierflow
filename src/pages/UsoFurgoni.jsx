@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -7,15 +7,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Plus, Car, Clock } from "lucide-react";
 import moment from "moment";
 import UsoFurgoneFormDialog from "@/components/usofurgone/UsoFurgoneFormDialog";
+import PullToRefresh from "@/components/PullToRefresh";
 
 export default function UsoFurgoni() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
   const { data: records = [], isLoading } = useQuery({
     queryKey: ["uso-furgoni"],
     queryFn: () => base44.entities.UsoFurgone.list("-data", 200),
   });
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["uso-furgoni"] });
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -35,6 +41,7 @@ export default function UsoFurgoni() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-4">
+        <PullToRefresh onRefresh={handleRefresh}>
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
@@ -69,6 +76,7 @@ export default function UsoFurgoni() {
             ))}
           </div>
         )}
+        </PullToRefresh>
       </div>
 
       <UsoFurgoneFormDialog open={open} onOpenChange={setOpen} />

@@ -86,3 +86,34 @@
     @apply bg-background text-foreground font-inter;
   }
 }
+
+/* === Native mobile / WebView packaging === */
+html,
+body {
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Disabilita selezione testo / callout sui nodi interattivi (tap più nativi) */
+button,
+a,
+[role="button"] {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Safe areas per notch e home bar */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-area-top-pt {
+  padding-top: max(env(safe-area-inset-top), 0px);
+}
+.safe-area-bottom-pb {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}

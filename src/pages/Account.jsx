@@ -1,20 +1,41 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { usePermessi } from "@/hooks/usePermessi";
 import { getRuoloLabel, getRuoloColor } from "@/lib/permissions";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, LogIn, LogOut, Mail, User as UserIcon, Shield } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/components/ui/use-toast";
+import { ArrowLeft, LogIn, LogOut, Mail, User as UserIcon, Shield, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 
 export default function Account() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout, navigateToLogin } = useAuth();
   const { ruolo } = usePermessi();
+  const { toast } = useToast();
+  const [eliminando, setEliminando] = useState(false);
 
   const handleLogin = () => navigateToLogin();
   const handleLogout = () => logout();
+
+  const handleDeleteAccount = async () => {
+    setEliminando(true);
+    try {
+      await base44.functions.invoke("elimina_account");
+      toast({ title: "Account eliminato", description: "I tuoi dati sono stati rimossi." });
+      logout("/");
+    } catch (e) {
+      toast({ title: "Errore eliminazione", description: e.message, variant: "destructive" });
+    } finally {
+      setEliminando(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -85,6 +106,48 @@ export default function Account() {
             con la stessa email con cui sei stato invitato.
           </p>
         </Card>
+
+        {/* Zona pericolosa - eliminazione account */}
+        {isAuthenticated && (
+          <Card className="p-4 space-y-3 border-destructive/30">
+            <p className="text-xs font-semibold text-destructive uppercase tracking-wide flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" /> Zona pericolosa
+            </p>
+            <p className="text-sm text-muted-foreground">
+              L'eliminazione dell'account è definitiva: rimuove il tuo profilo e revoca
+              l'accesso all'app. L'operazione non è reversibile.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full gap-2" disabled={eliminando}>
+                  {eliminando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  Elimina account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Sei sicuro di voler eliminare l'account?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Questa azione cancella definitivamente il tuo profilo da EveryDay 4.0.
+                    Non potrai più accedere all'app con questa email e i dati associati verranno
+                    rimossi. L'operazione non può essere annullata.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={eliminando}>Annulla</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteAccount}
+                    disabled={eliminando}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {eliminando && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                    Sì, elimina definitivamente
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </Card>
+        )}
       </div>
 
       <BottomNav />

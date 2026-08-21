@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, FileText, ArrowLeft, UserCircle } from "lucide-react";
 import ReportCard from "@/components/home/ReportCard";
+import PullToRefresh from "@/components/PullToRefresh";
 import { SEZIONI_APP } from "@/lib/permissions";
 import { usePermessi } from "@/hooks/usePermessi";
 import BottomNav from "@/components/BottomNav";
@@ -59,10 +60,15 @@ function MenuGrid() {
 
 function RapportiniList() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: rapportini = [], isLoading } = useQuery({
     queryKey: ["rapportini"],
     queryFn: () => base44.entities.Rapportino.list("-created_date", 50),
   });
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["rapportini"] });
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -91,6 +97,7 @@ function RapportiniList() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
+        <PullToRefresh onRefresh={handleRefresh}>
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
@@ -109,6 +116,7 @@ function RapportiniList() {
             {rapportini.map((r) => <ReportCard key={r.id} report={r} />)}
           </div>
         )}
+        </PullToRefresh>
       </div>
       <BottomNav />
     </div>
