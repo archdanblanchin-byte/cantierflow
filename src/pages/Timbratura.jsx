@@ -21,6 +21,7 @@ import { distanzaM, getPosizione, STEP_CONFIG, arrotondaQuarti, fmtOre } from "@
 import { calcolaOrePerCantiere, generaRapportiniDaGiornata, syncRapportinoOreDaTimbratura } from "@/lib/rapportiniFromTimbrature";
 import { getRuoloLabel } from "@/lib/permissions";
 import NewCantiereModal from "@/components/wizard/NewCantiereModal";
+import TimbratureOggiTutti from "@/components/timbrature/TimbratureOggiTutti";
 
 export default function Timbratura() {
   const queryClient = useQueryClient();
@@ -56,6 +57,15 @@ export default function Timbratura() {
       data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
     }),
     enabled: !!user
+  });
+
+  // Admin: tutte le timbrature della giornata di tutti gli utenti
+  const { data: tutteTimbrature = [] } = useQuery({
+    queryKey: ["timbrature-giornata-tutti", giornoKey],
+    queryFn: () => base44.entities.Timbratura.filter({
+      data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
+    }, "-data_ora", 1000),
+    enabled: !!user && isAdmin
   });
 
   const timbratureOrd = (timbrature || []).slice().sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
@@ -435,6 +445,11 @@ export default function Timbratura() {
           })}
           </div>
         }
+
+        {/* Admin: tutte le timbrature della giornata di tutti gli utenti */}
+        {isAdmin && tutteTimbrature.length > 0 && (
+          <TimbratureOggiTutti timbrature={tutteTimbrature} />
+        )}
 
         {/* Genera rapportini dalla giornata */}
         {orePerCantiere.length > 0 &&
