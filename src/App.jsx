@@ -36,12 +36,8 @@ const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
   const p = location.pathname;
-  // BottomNav persistente (mai unmount) su tab + schermate di dettaglio:
-  // resta visibile anche su /report/:id e /cantieri/:id (escluse le form/modifica).
-  const showBottomNav =
-    TAB_PATHS.includes(p) ||
-    p.startsWith("/report/") ||
-    (p.startsWith("/cantieri/") && p !== "/cantieri/nuovo" && !p.endsWith("/modifica"));
+  // BottomNav persistente su tutte le schermate (le 4 finestre principali sempre disponibili).
+  const showBottomNav = true;
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
