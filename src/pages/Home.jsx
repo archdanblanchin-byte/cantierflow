@@ -7,6 +7,7 @@ import { Plus, FileText, UserCircle } from "lucide-react";
 import ReportCard from "@/components/home/ReportCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import SyncButton from "@/components/SyncButton";
+import NotificationsBell from "@/components/NotificationsBell";
 import { SEZIONI_APP } from "@/lib/permissions";
 import { usePermessi } from "@/hooks/usePermessi";
 
@@ -28,6 +29,7 @@ function MenuGrid() {
               <p className="text-xs text-muted-foreground">Seleziona una sezione</p>
             </div>
             <div className="ml-auto flex items-center gap-2">
+              <NotificationsBell />
               <SyncButton />
               <Link to="/account">
                 <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent transition-colors">

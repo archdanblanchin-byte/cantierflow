@@ -29,6 +29,7 @@ import Programmazione from './pages/Programmazione';
 import Impostazioni from './pages/Impostazioni';
 import UsoFurgoni from './pages/UsoFurgoni';
 import Corsi from './pages/Corsi';
+import Note from './pages/Note';
 import StoricoTimbrature from './pages/StoricoTimbrature';
 
 const AuthenticatedApp = () => {
@@ -97,6 +98,7 @@ const AuthenticatedApp = () => {
       <Route path="/storico-timbrature" element={<StoricoTimbrature />} />
       <Route path="/account" element={<Account />} />
       <Route path="/corsi" element={<Corsi />} />
+      <Route path="/note" element={<Note />} />
 
       <Route path="*" element={<PageNotFound />} />
     </AnimatedRoutes>

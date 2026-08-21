@@ -1,0 +1,152 @@
+{
+  "name": "Nota",
+  "type": "object",
+  "properties": {
+    "testo": {
+      "type": "string",
+      "description": "Contenuto della nota / messaggio / promemoria"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "personale",
+        "promemoria",
+        "lista",
+        "messaggio"
+      ],
+      "default": "personale",
+      "description": "personale=privata, promemoria=sveglia/data, lista=elenco materiale/attrezzi, messaggio=rivolta a un collega"
+    },
+    "items": {
+      "type": "array",
+      "description": "Voci della lista (per tipo=lista)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "cantiere_id": {
+      "type": "string",
+      "description": "ID cantiere collegato"
+    },
+    "cantiere_nome": {
+      "type": "string",
+      "description": "Nome cantiere (denormalizzato)"
+    },
+    "furgone_id": {
+      "type": "string",
+      "description": "ID furgone collegato"
+    },
+    "furgone_nome": {
+      "type": "string",
+      "description": "Nome furgone (denormalizzato)"
+    },
+    "destinatari_email": {
+      "type": "array",
+      "description": "Email degli utenti a cui \u00e8 riferita la nota (per visibilit\u00e0 e notifiche)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "destinatari_nomi": {
+      "type": "array",
+      "description": "Nomi dei destinatari (denormalizzati, per display)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "data_promemoria": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quando ricordare (sveglia/promemoria)"
+    },
+    "priorita": {
+      "type": "string",
+      "enum": [
+        "bassa",
+        "media",
+        "alta"
+      ],
+      "default": "media"
+    },
+    "letto_da": {
+      "type": "array",
+      "description": "Email degli utenti che hanno gi\u00e0 letto la nota",
+      "items": {
+        "type": "string"
+      }
+    },
+    "completato": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se la nota/lista \u00e8 stata completata"
+    },
+    "origine": {
+      "type": "string",
+      "enum": [
+        "manuale",
+        "vocale"
+      ],
+      "default": "manuale"
+    }
+  },
+  "required": [
+    "testo"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "data.destinatari_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.destinatari_email": {
+            "$in": [
+              "{{user.email}}"
+            ]
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
