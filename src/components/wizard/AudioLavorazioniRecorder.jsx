@@ -17,9 +17,11 @@ import DictationGuide from "./DictationGuide";
 export default function AudioLavorazioniRecorder({ tipiLavorazione = [], mode = "normali", onResult }) {
   const [status, setStatus] = useState("idle"); // idle | recording | processing
   const [seconds, setSeconds] = useState(0);
+  const [processingSeconds, setProcessingSeconds] = useState(0);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
+  const reqTokenRef = useRef(0); // protegge da risposte in ritardo dopo annullamento/timeout
 
   const buildCatalog = () => {
     const byCat = {};
@@ -188,28 +190,50 @@ Resoconto vocale:
     };
   };
 
+  const resetProcessing = () => {
+    clearInterval(timerRef.current);
+    setStatus("idle");
+    setSeconds(0);
+    setProcessingSeconds(0);
+  };
+
+  const cancelProcessing = () => {
+    reqTokenRef.current++; // ignora eventuali risposte in ritardo
+    resetProcessing();
+    toast.info("Elaborazione annullata");
+  };
+
   const processRecording = async () => {
     setStatus("processing");
+    setProcessingSeconds(0);
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => setProcessingSeconds((s) => s + 1), 1000);
+    const token = ++reqTokenRef.current;
     try {
-      const [examples] = await Promise.all([fetchExamples()]);
-      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-      const file = new File([blob], "registrazione.webm", { type: blob.type });
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const transcript = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
+      const res = await Promise.race([
+        (async () => {
+          const [examples] = await Promise.all([fetchExamples()]);
+          const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+          const file = new File([blob], "registrazione.webm", { type: blob.type });
+          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          const transcript = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
+          return base44.integrations.Core.InvokeLLM({
+            prompt: buildPrompt(transcript, examples),
+            response_json_schema: buildSchema(),
+          });
+        })(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 90000)),
+      ]);
 
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: buildPrompt(transcript, examples),
-        response_json_schema: buildSchema(),
-      });
-
+      if (token !== reqTokenRef.current) return; // annullato nel frattempo
       const items = mode === "extra" ? res.lavorazioni_extra || [] : res.lavorazioni_normali || [];
       onResult?.(items);
       toast.success(`${items.length} voci riconosciute dall'IA`);
     } catch (err) {
-      toast.error("Errore nell'elaborazione dell'audio");
+      if (token !== reqTokenRef.current) return;
+      toast.error(err?.message === "timeout" ? "Elaborazione troppo lunga, riprova" : "Errore nell'elaborazione dell'audio");
     } finally {
-      setStatus("idle");
-      setSeconds(0);
+      if (token === reqTokenRef.current) resetProcessing();
     }
   };
 
@@ -219,10 +243,18 @@ Resoconto vocale:
 
   if (status === "processing") {
     return (
-      <Button disabled variant="outline" size="sm" className="gap-2 w-full justify-center">
-        <Loader2 className="w-4 h-4 animate-spin" />
-        Elaborazione audio in corso...
-      </Button>
+      <div className="w-full rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+        <div className="flex items-center gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-primary flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">Elaborazione audio in corso…</p>
+            <p className="text-xs text-muted-foreground">Trascrizione ed estrazione lavorazioni con IA ({fmt(processingSeconds)})</p>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" className="w-full" onClick={cancelProcessing}>
+          Annulla
+        </Button>
+      </div>
     );
   }
 
