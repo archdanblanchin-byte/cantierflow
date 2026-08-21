@@ -39,7 +39,7 @@ export function getPosizione() {
 export const STEP_CONFIG = {
   ingresso: { label: "Ingresso", icon: LogIn, color: "bg-emerald-600 hover:bg-emerald-700" },
   pausa_inizio: { label: "Inizio pausa", icon: Coffee, color: "bg-amber-500 hover:bg-amber-600" },
-  pausa_fine: { label: "Fine pausa", icon: PlayCircle, color: "bg-blue-600 hover:bg-blue-700" },
+  pausa_fine: { label: "Riprendi lavoro", icon: PlayCircle, color: "bg-blue-600 hover:bg-blue-700" },
   uscita: { label: "Uscita", icon: LogOut, color: "bg-rose-600 hover:bg-rose-700" },
   spostamento: { label: "Spostamento", icon: Navigation, color: "bg-orange-500 hover:bg-orange-600" },
 };

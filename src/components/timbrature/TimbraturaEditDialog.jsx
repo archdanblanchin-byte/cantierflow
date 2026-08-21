@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 const TIPI = [
   { value: "ingresso", label: "Ingresso" },
   { value: "pausa_inizio", label: "Inizio pausa" },
-  { value: "pausa_fine", label: "Fine pausa" },
+  { value: "pausa_fine", label: "Riprendi lavoro" },
   { value: "uscita", label: "Uscita" },
   { value: "spostamento", label: "Spostamento" },
 ];
