@@ -3,7 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { MapPin, Clock, AlertTriangle, Navigation, Pencil, Trash2 } from "lucide-react";
-import { STEP_CONFIG, arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
+import { STEP_CONFIG, fmtOre } from "@/lib/timbratureUtils";
+import { calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
 
 export default function TimbraturaTimeline({ timbrature, isAdmin = false, onEdit, onDelete }) {
   const timbratureOrd = (timbrature || []).slice().sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
@@ -28,21 +29,19 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, onEdit
     }
   });
 
+  // Ore canoniche per cantiere (lo spostamento conta come chiusura del cantiere)
+  const oreMap = {};
+  calcolaOrePerCantiere(timbratureOrd).forEach((c) => { oreMap[c.cantiere_id] = c.ore; });
+
   const gruppi = Object.entries(perCantiere).map(([id, g]) => {
     const tIng = g.timbri.find(t => t.tipo_evento === "ingresso");
     const tUsc = g.timbri.find(t => t.tipo_evento === "uscita");
-    let ore = 0;
-    if (tIng && tUsc) {
-      let totale = new Date(tUsc.data_ora) - new Date(tIng.data_ora);
-      const pauseInizio = g.timbri.filter(t => t.tipo_evento === "pausa_inizio");
-      const pauseFine = g.timbri.filter(t => t.tipo_evento === "pausa_fine");
-      const numPause = Math.min(pauseInizio.length, pauseFine.length);
-      for (let i = 0; i < numPause; i++) {
-        totale -= new Date(pauseFine[i].data_ora) - new Date(pauseInizio[i].data_ora);
-      }
-      ore = arrotondaQuarti(totale);
-    }
-    return { id, ...g, ore, completo: !!tUsc };
+    // Lo spostamento chiude il cantiere precedente: cerca lo spostamento di questo cantiere
+    const tSpost = spostamenti.find(t => t.cantiere_id === id);
+    const hasClose = !!(tUsc || tSpost);
+    // Solo se la sessione è chiusa (uscita o spostamento) mostriamo le ore; se aperta resta "In corso"
+    const ore = hasClose ? (oreMap[id] || 0) : 0;
+    return { id, ...g, ore, completo: hasClose };
   });
 
   const oreTotali = gruppi.reduce((s, g) => s + g.ore, 0);

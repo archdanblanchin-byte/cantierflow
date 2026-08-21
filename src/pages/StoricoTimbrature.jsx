@@ -8,7 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
+import { fmtOre } from "@/lib/timbratureUtils";
+import { calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
 import TimbraturaTimeline from "@/components/timbrature/TimbraturaTimeline";
 import TimbraturaEditDialog from "@/components/timbrature/TimbraturaEditDialog";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,28 +19,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
 
-// Calcola le ore totali di una giornata a partire dalla lista di timbrature
+// Calcola le ore totali di una giornata a partire dalla lista di timbrature.
+// Lo spostamento conta come chiusura del cantiere precedente (come l'uscita).
 function oreGiornata(timbs) {
-  const perCantiere = {};
-  timbs.forEach((t) => {
-    if (t.tipo_evento === "spostamento") return;
-    if (!t.cantiere_id) return;
-    (perCantiere[t.cantiere_id] ||= []).push(t);
-  });
-  let tot = 0;
-  Object.values(perCantiere).forEach((g) => {
-    const ing = g.find((t) => t.tipo_evento === "ingresso");
-    const usc = g.find((t) => t.tipo_evento === "uscita");
-    if (ing && usc) {
-      let ms = new Date(usc.data_ora) - new Date(ing.data_ora);
-      const pIn = g.filter((t) => t.tipo_evento === "pausa_inizio");
-      const pFin = g.filter((t) => t.tipo_evento === "pausa_fine");
-      const n = Math.min(pIn.length, pFin.length);
-      for (let i = 0; i < n; i++) ms -= new Date(pFin[i].data_ora) - new Date(pIn[i].data_ora);
-      tot += arrotondaQuarti(ms);
-    }
-  });
-  return tot;
+  return calcolaOrePerCantiere(timbs).reduce((s, c) => s + (c.ore || 0), 0);
 }
 
 export default function StoricoTimbrature() {
