@@ -5,11 +5,12 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
 /**
- * Registra una nota vocale, la trascrive ed estrae una nota strutturata con l'IA
- * (tipo, testo, lista, collegamenti a cantiere/furgone, destinatari, data promemoria).
- * onResult(parsed) apre il form di revisione.
+ * Registra una nota vocale, la trascrive ed estrae UNA O PIÙ note strutturate con l'IA.
+ * mode: "personale"  -> solo note personali (personale/promemoria/lista), senza destinatari
+ * mode: "comunicazione" -> note destinate ad altri (messaggi/liste con destinatari, problemi furgone, ecc.)
+ * onResult(notes[]) -> array di note parsed, aperto nella dialog di revisione.
  */
-export default function NotaVocaleRecorder({ cantieri = [], furgoni = [], colleghi = [], onResult }) {
+export default function NotaVocaleRecorder({ mode = "personale", cantieri = [], furgoni = [], colleghi = [], onResult }) {
   const [status, setStatus] = useState("idle"); // idle | recording | processing
   const [seconds, setSeconds] = useState(0);
   const [procSec, setProcSec] = useState(0);
@@ -41,32 +42,51 @@ export default function NotaVocaleRecorder({ cantieri = [], furgoni = [], colleg
   };
 
   const buildPrompt = (transcript) => {
-    const oggi = new Date();
-    const oggiStr = oggi.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const oggiStr = new Date().toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     const cantieriStr = cantieri.map((c) => c.nome).filter(Boolean).join(", ") || "(nessuno)";
     const furgoniStr = furgoni.map((f) => f.nome).filter(Boolean).join(", ") || "(nessuno)";
     const collStr = colleghi.map((c) => c.nome).filter(Boolean).join(", ") || "(nessuno)";
-    return `Sei un assistente vocale per un'azienda edile. Dal resoconto vocale di un lavoratore, estrai una NOTA strutturata.
+
+    if (mode === "personale") {
+      return `Sei un assistente vocale per un'azienda edile. Dal resoconto vocale di un lavoratore, estrai UNA O PIÙ NOTE PERSONALI, visibili SOLO a chi le crea. Non ci sono destinatari: non impostare mai destinatari_nomi.
 
 Tipi possibili:
-- "personale": annotazione privata per sé (nessun destinatario)
+- "personale": annotazione privata
 - "promemoria": cosa da ricordare in una data/ora (compila data_promemoria in formato ISO 8601)
 - "lista": elenco di materiale/attrezzi/cose da fare (compila items)
-- "messaggio": comunicazione rivolta a un collega o ruolo (compila destinatari_nomi)
-
-Riconosci i riferimenti:
-- cantiere_nome: se cita un cantiere, scegli il nome più vicino dalla lista cantieri
-- furgone_nome: se cita un furgone, scegli dalla lista furgoni
-- destinatari_nomi: se la nota è per qualcuno (es. "di' a Federico", "ricorda a Federico", "avvisa il magazziniere/titolare/amministrazione"), metti i nomi. Se cita un ruolo generico senza nome noto, metti il ruolo testuale (es. "magazziniere", "titolare").
-- data_promemoria: se dice "domani", "oggi", "lunedì", "alle 14", "tra 3 giorni", calcola data/ora in ISO 8601. Oggi è ${oggiStr} (timezone Europe/Rome). Se non dice un'ora, usa le 09:00.
-- items: elenca materiale/attrezzi/cose da fare come array di oggetti {text}
-- testo: riassunto breve e chiaro del contenuto/azione
-- priorita: "alta" se "urgente/subito/importante", "bassa" se "quando puoi", altrimenti "media"
 
 REGOLE:
-- Se non c'è un destinatario esplicito, il tipo è "personale" o "promemoria" e destinatari_nomi è vuoto.
-- Non inventare dati non detti.
-- Se il resoconto è vuoto o incomprensibile, metti testo vuoto e tipo "personale".
+- DIVIDI in PIÙ note quando l'utente cita cose distinte e separate (es. un promemoria con sveglia + una lista di materiale da caricare). Ogni nota è autonoma e con il suo tipo.
+- Se l'utente elenca materiale/attrezzi da caricare o cose da fare, crea una nota "lista" con items.
+- Se l'utente chiede un promemoria/sveglia con una data, crea una nota "promemoria" con data_promemoria.
+- data_promemoria: se dice "domani", "oggi", "lunedì", "alle 14", "tra 3 giorni", calcola ISO 8601. Oggi è ${oggiStr} (timezone Europe/Rome). Se non dice un'ora, usa le 09:00.
+- testo: riassunto breve e chiaro del contenuto/azione.
+- priorita: "alta" se "urgente/subito/importante", "bassa" se "quando puoi", altrimenti "media".
+- Non inventare dati non detti. Se il resoconto è vuoto o incomprensibile, restituisci un array vuoto.
+
+Cantieri conosciuti (usa cantiere_nome solo se esplicitamente citato): ${cantieriStr}
+Furgoni conosciuti (usa furgone_nome solo se esplicitamente citato): ${furgoniStr}
+
+Resoconto vocale:
+"""${transcript}"""`;
+    }
+
+    return `Sei un assistente vocale per un'azienda edile. Dal resoconto vocale di un lavoratore, estrai UNA O PIÙ NOTE di COMUNICAZIONE destinate ad altre persone (colleghi, magazziniere, responsabile, titolare, amministrazione).
+
+Tipi possibili:
+- "messaggio": comunicazione a una o più persone (compila destinatari_nomi). Collega cantiere_nome/furgone_nome se pertinente.
+- "promemoria": se è anche un promemoria con data (compila data_promemoria ISO 8601) rivolto a qualcuno (compila anche destinatari_nomi).
+- "lista": se è un elenco da inviare a qualcuno (es. materiale da far acquistare al magazziniere): compila items + destinatari_nomi.
+
+REGOLE:
+- DIVIDI in PIÙ note quando l'utente si rivolge a persone diverse o argomenti distinti (es. "di' al magazziniere di acquistare il materiale" + "di' a Jacopo di fare i ritocchi in cantiere X"). Una nota per destinatario/argomento.
+- destinatari_nomi: nomi dei colleghi/ruoli. Se cita un ruolo generico (magazziniere, titolare, amministrazione, responsabile) senza un nome noto, metti il ruolo testuale (es. "magazziniere", "titolare").
+- Se l'utente segnala un problema al furgone ("il furgone non va", "anomalia"), crea un messaggio per il "responsabile" o "amministrazione" e collega furgone_nome.
+- cantiere_nome / furgone_nome: scegli dalle liste solo se esplicitamente citati.
+- data_promemoria: ISO 8601 se dice una data/ora. Oggi è ${oggiStr} (Europe/Rome). Senza ora usa 09:00.
+- testo: spiega CHIARAMENTE cosa deve fare il destinatario (il "cosa" e il "dove"), usando le parole dell'utente. Il destinatario deve capire l'azione richiesta.
+- priorita: "alta" se "urgente/subito", "bassa" se "quando puoi", altrimenti "media".
+- Non inventare dati non detti. Se il resoconto è vuoto o incomprensibile, restituisci un array vuoto.
 
 Cantieri conosciuti: ${cantieriStr}
 Furgoni conosciuti: ${furgoniStr}
@@ -79,33 +99,32 @@ Resoconto vocale:
   const schema = () => ({
     type: "object",
     properties: {
-      tipo: { type: "string", enum: ["personale", "promemoria", "lista", "messaggio"] },
-      testo: { type: "string" },
-      items: {
+      note: {
         type: "array",
-        items: { type: "object", properties: { text: { type: "string" } }, required: ["text"] },
+        items: {
+          type: "object",
+          properties: {
+            tipo: { type: "string", enum: ["personale", "promemoria", "lista", "messaggio"] },
+            testo: { type: "string" },
+            items: {
+              type: "array",
+              items: { type: "object", properties: { text: { type: "string" } }, required: ["text"] },
+            },
+            cantiere_nome: { type: "string" },
+            furgone_nome: { type: "string" },
+            destinatari_nomi: { type: "array", items: { type: "string" } },
+            data_promemoria: { type: "string" },
+            priorita: { type: "string", enum: ["bassa", "media", "alta"] },
+          },
+          required: ["tipo", "testo"],
+        },
       },
-      cantiere_nome: { type: "string" },
-      furgone_nome: { type: "string" },
-      destinatari_nomi: { type: "array", items: { type: "string" } },
-      data_promemoria: { type: "string" },
-      priorita: { type: "string", enum: ["bassa", "media", "alta"] },
     },
-    required: ["tipo", "testo"],
+    required: ["note"],
   });
 
-  const reset = () => {
-    clearInterval(timer.current);
-    setStatus("idle");
-    setSeconds(0);
-    setProcSec(0);
-  };
-
-  const cancel = () => {
-    tokenRef.current++;
-    reset();
-    toast.info("Elaborazione annullata");
-  };
+  const reset = () => { clearInterval(timer.current); setStatus("idle"); setSeconds(0); setProcSec(0); };
+  const cancel = () => { tokenRef.current++; reset(); toast.info("Elaborazione annullata"); };
 
   const process = async () => {
     setStatus("processing");
@@ -128,8 +147,10 @@ Resoconto vocale:
         new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 90000)),
       ]);
       if (token !== tokenRef.current) return;
-      onResult?.({ ...res, _vocale: true });
-      toast.success("Nota riconosciuta dall'IA");
+      const note = Array.isArray(res?.note) ? res.note : [];
+      onResult?.(note);
+      if (note.length === 0) toast.info("Nessuna nota riconosciuta");
+      else toast.success(`${note.length} nota${note.length > 1 ? "e" : ""} riconosciut${note.length > 1 ? "e" : "a"} dall'IA`);
     } catch (e) {
       if (token !== tokenRef.current) return;
       toast.error(e?.message === "timeout" ? "Elaborazione troppo lunga, riprova" : "Errore nell'elaborazione dell'audio");
@@ -147,7 +168,7 @@ Resoconto vocale:
           <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-semibold">Elaborazione audio in corso…</p>
-            <p className="text-xs text-muted-foreground">Trascrizione ed estrazione nota con IA ({fmt(procSec)})</p>
+            <p className="text-xs text-muted-foreground">Trascrizione ed estrazione note con IA ({fmt(procSec)})</p>
           </div>
         </div>
         <Button variant="ghost" size="sm" className="w-full" onClick={cancel}>Annulla</Button>
@@ -174,7 +195,7 @@ Resoconto vocale:
         <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
         <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
       </span>
-      <span className="font-semibold">Registra nota vocale</span>
+      <span className="font-semibold">Registra {mode === "personale" ? "nota personale" : "comunicazione"}</span>
     </Button>
   );
 }

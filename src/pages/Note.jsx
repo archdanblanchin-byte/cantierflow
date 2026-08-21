@@ -4,9 +4,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, StickyNote, Mic, PenLine, Inbox, Send } from "lucide-react";
+import { ArrowLeft, StickyNote, PenLine, Inbox, Send, User, Share2 } from "lucide-react";
 import NotaVocaleRecorder from "@/components/note/NotaVocaleRecorder";
 import NotaFormDialog from "@/components/note/NotaFormDialog";
+import NotaReviewDialog from "@/components/note/NotaReviewDialog";
 import NotaCard from "@/components/note/NotaCard";
 import NotificationsBell from "@/components/NotificationsBell";
 
@@ -15,9 +16,10 @@ export default function Note() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState("mie"); // mie | ricevute
-  const [showRecorder, setShowRecorder] = useState(false);
+  const [recorderMode, setRecorderMode] = useState(null); // null | "personale" | "comunicazione"
   const [formOpen, setFormOpen] = useState(false);
-  const [initial, setInitial] = useState(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState([]);
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
@@ -41,10 +43,10 @@ export default function Note() {
   const ricevute = note.filter((n) => (n.destinatari_email || []).includes(user?.email));
   const list = tab === "mie" ? mie : ricevute;
 
-  const handleResult = (parsed) => {
-    setInitial(parsed);
-    setShowRecorder(false);
-    setFormOpen(true);
+  const handleResult = (notesArray) => {
+    setReviewNotes(notesArray);
+    setRecorderMode(null);
+    setReviewOpen(true);
   };
 
   const onSaved = () => {
@@ -64,27 +66,53 @@ export default function Note() {
           </div>
           <div>
             <h1 className="text-lg font-bold leading-tight">Note</h1>
-            <p className="text-[11px] text-muted-foreground">Vocali, promemoria, liste e messaggi</p>
+            <p className="text-[11px] text-muted-foreground">Personali o di comunicazione, anche più in una registrazione</p>
           </div>
           <div className="ml-auto"><NotificationsBell /></div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
-        <div className="space-y-2">
-          {!showRecorder ? (
+        {!recorderMode ? (
+          <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" className="gap-2 h-11" onClick={() => setShowRecorder(true)}>
-                <Mic className="w-4 h-4 text-rose-500" /> Nota vocale
-              </Button>
-              <Button variant="outline" className="gap-2 h-11" onClick={() => { setInitial(null); setFormOpen(true); }}>
-                <PenLine className="w-4 h-4" /> Scrivi manualmente
-              </Button>
+              <button
+                onClick={() => setRecorderMode("personale")}
+                className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-4 hover:shadow-md hover:border-teal-500/30 transition-all"
+              >
+                <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center"><User className="w-5 h-5 text-teal-600" /></div>
+                <span className="text-sm font-semibold">Personale</span>
+                <span className="text-[11px] text-muted-foreground text-center">Solo tu le vedi</span>
+              </button>
+              <button
+                onClick={() => setRecorderMode("comunicazione")}
+                className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-4 hover:shadow-md hover:border-violet-500/30 transition-all"
+              >
+                <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center"><Share2 className="w-5 h-5 text-violet-600" /></div>
+                <span className="text-sm font-semibold">Comunicazione</span>
+                <span className="text-[11px] text-muted-foreground text-center">Collegate a colleghi/ruoli</span>
+              </button>
             </div>
-          ) : (
-            <NotaVocaleRecorder cantieri={cantieri} furgoni={furgoni} colleghi={colleghi} onResult={handleResult} />
-          )}
-        </div>
+            <Button variant="outline" className="gap-2 h-10 w-full" onClick={() => { setReviewNotes([]); setFormOpen(true); }}>
+              <PenLine className="w-4 h-4" /> Scrivi manualmente una nota
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {recorderMode === "personale" ? "Nota personale" : "Nota di comunicazione"}
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => setRecorderMode(null)}>Annulla</Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {recorderMode === "personale"
+                ? "Parla liberamente: l'IA crea una o più note personali (promemoria, liste)."
+                : "Parla liberamente: l'IA crea uno o più messaggi/liste per le persone citate."}
+            </p>
+            <NotaVocaleRecorder mode={recorderMode} cantieri={cantieri} furgoni={furgoni} colleghi={colleghi} onResult={handleResult} />
+          </div>
+        )}
 
         <div className="flex gap-2">
           <Button variant={tab === "mie" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setTab("mie")}>
@@ -109,7 +137,8 @@ export default function Note() {
         )}
       </div>
 
-      <NotaFormDialog open={formOpen} onOpenChange={setFormOpen} initial={initial} onSaved={onSaved} />
+      <NotaFormDialog open={formOpen} onOpenChange={setFormOpen} initial={null} onSaved={onSaved} />
+      <NotaReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} notes={reviewNotes} onSaved={onSaved} />
     </div>
   );
 }
