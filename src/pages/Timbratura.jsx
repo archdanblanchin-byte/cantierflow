@@ -23,6 +23,14 @@ import { getRuoloLabel } from "@/lib/permissions";
 import NewCantiereModal from "@/components/wizard/NewCantiereModal";
 import TimbratureOggiTutti from "@/components/timbrature/TimbratureOggiTutti";
 
+// Finestra di tempo entro cui un utente può annullare/modificare un timbro accidentale (1 ora)
+const UNDO_WINDOW_MS = 60 * 60 * 1000;
+const canUndo = (t) => {
+  if (!t) return false;
+  const ref = t.created_date || t.data_ora;
+  return Date.now() - new Date(ref).getTime() < UNDO_WINDOW_MS;
+};
+
 export default function Timbratura() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -91,6 +99,9 @@ export default function Timbratura() {
   // True quando l'ultimo timbro è uno spostamento e non c'è sessione attiva:
   // l'utente è in viaggio verso un nuovo cantiere.
   const spostamentoInCorso = !activeSession && timbratureOrd.length > 0 && timbratureOrd[timbratureOrd.length - 1].tipo_evento === "spostamento";
+
+  // Ultimo timbro della giornata (per eventuale annullamento rapido)
+  const ultimoTimbro = timbratureOrd.length > 0 ? timbratureOrd[timbratureOrd.length - 1] : null;
 
   const calcolaOre = () => {
     if (!activeSession) return 0;
@@ -377,6 +388,27 @@ export default function Timbratura() {
           </p>
         }
 
+        {/* Annulla ultimo timbro (entro 1 ora) */}
+        {ultimoTimbro && canUndo(ultimoTimbro) &&
+        <Card className="p-3 border-amber-300 bg-amber-50">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-amber-900">Annulla ultimo timbro?</p>
+                <p className="text-[11px] text-amber-700 truncate">
+                  {STEP_CONFIG[ultimoTimbro.tipo_evento]?.label || ultimoTimbro.tipo_evento} · {format(new Date(ultimoTimbro.data_ora), "HH:mm")} · {ultimoTimbro.cantiere_nome}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => apriEdit(ultimoTimbro)} className="gap-1.5 shrink-0 h-8">
+                <Pencil className="w-3.5 h-3.5" /> Modifica
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setEliminando(ultimoTimbro)} className="gap-1.5 shrink-0 h-8">
+                <Trash2 className="w-3.5 h-3.5" /> Annulla
+              </Button>
+            </div>
+          </Card>
+        }
+
         {/* Riepilogo giornata */}
         {totGiornaliero > 0 &&
         <Card className="p-4 space-y-3">
@@ -471,7 +503,7 @@ export default function Timbratura() {
                     {t.in_cantiere === true &&
                   <Badge className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-300 hidden">OK</Badge>
                   }
-                    {isAdmin &&
+                    {(isAdmin || canUndo(t)) &&
                   <>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => apriEdit(t)} title="Modifica timbratura">
                           <Pencil className="w-3.5 h-3.5" />
