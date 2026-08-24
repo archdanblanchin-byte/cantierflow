@@ -25,7 +25,26 @@
     "attivo": {
       "type": "boolean",
       "default": true,
-      "description": "Se il cantiere \u00e8 attivo"
+      "description": "Se il cantiere \u00e8 attivo (true solo se stato=aperto). Mantenuto per compatibilit\u00e0 filtri."
+    },
+    "stato": {
+      "type": "string",
+      "enum": [
+        "aperto",
+        "sospeso",
+        "chiuso"
+      ],
+      "default": "aperto",
+      "description": "Stato del cantiere: aperto (attivo, selezionabile nei rapportini), sospeso (in pausa), chiuso (terminato)"
+    },
+    "anno": {
+      "type": "number",
+      "description": "Anno di riferimento del cantiere (usato per raggruppare/filtrare per anno)"
+    },
+    "data_chiusura": {
+      "type": "string",
+      "format": "date",
+      "description": "Data di chiusura del cantiere"
     },
     "ore_stimate": {
       "type": "number",

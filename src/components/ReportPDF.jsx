@@ -47,7 +47,7 @@ function DateBadge({ data }) {
   );
 }
 
-export function ReportPDFContent({ cantiere, rapportini = [], foto = [] }) {
+export function ReportPDFContent({ cantiere, rapportini = [], foto = [], trasferte = [], spostamenti = [] }) {
   const sorted = [...rapportini].sort((a, b) => new Date(a.data) - new Date(b.data));
 
   // ── Totali ────────────────────────────────────────────────────────────────
@@ -134,6 +134,13 @@ export function ReportPDFContent({ cantiere, rapportini = [], foto = [] }) {
 
   // Note generali (solo quelle non vuote)
   const noteGenerali = sorted.filter(r => r.note_generali?.trim());
+
+  // Trasferte collegate al cantiere (primo o ultimo cantiere della giornata)
+  const trasferteCantiere = (trasferte || []).slice().sort((a, b) => new Date(a.data) - new Date(b.data));
+
+  // Spostamenti (timbrature tipo spostamento) collegati al cantiere
+  const spostamentiCantiere = (spostamenti || []).slice().sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
+  const totKmSpostamento = spostamentiCantiere.reduce((s, t) => s + (t.km_spostamento || 0), 0);
 
   // Foto
   const fotoFacciata = foto.find(f => f.tipo !== "codice_colore") || null;
@@ -325,7 +332,53 @@ export function ReportPDFContent({ cantiere, rapportini = [], foto = [] }) {
         </Section>
       )}
 
-      {/* 7. NOTE GENERALI */}
+      {/* 7. TRASFERTE */}
+      {trasferteCantiere.length > 0 && (
+        <Section title="Trasferte" color="#0d9488">
+          {trasferteCantiere.map((t, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f3f4f6", padding: "5px 0", fontSize: 13 }}>
+              <span>
+                <DateBadge data={t.data} />
+                {" "}· {" "}
+                {t.user_nome || t.user_email}
+                {t.mezzo_proprio && <span style={{ fontSize: 11, color: "#9ca3af" }}> (mezzo proprio)</span>}
+                {" — "}
+                <span style={{ fontSize: 12, color: "#6b7280" }}>
+                  {t.primo_cantiere_nome || "—"} → {t.ultimo_cantiere_nome || "—"}
+                </span>
+              </span>
+              <span style={{ fontWeight: 600 }}>
+                {t.km_totali ? `${t.km_totali} km` : "—"}
+                {t.tipo_trasferta && <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 6 }}>({t.tipo_trasferta})</span>}
+              </span>
+            </div>
+          ))}
+          <Row label="Totale km trasferte" value={`${trasferteCantiere.reduce((s, t) => s + (t.km_totali || 0), 0)} km`} />
+        </Section>
+      )}
+
+      {/* 8. SPOSTAMENTI */}
+      {spostamentiCantiere.length > 0 && (
+        <Section title="Spostamenti" color="#ea580c">
+          {spostamentiCantiere.map((t, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f3f4f6", padding: "5px 0", fontSize: 13 }}>
+              <span>
+                <DateBadge data={t.data_ora} />
+                {" "}· {" "}
+                <span style={{ fontSize: 12, color: "#6b7280" }}>
+                  {t.cantiere_nome || "—"} → {t.cantiere_destinazione_nome || "—"}
+                </span>
+                {t.mezzo_proprio && <span style={{ fontSize: 11, color: "#9ca3af" }}> (mezzo proprio)</span>}
+                {t.user_nome && <span style={{ fontSize: 11, color: "#9ca3af" }}> · {t.user_nome}</span>}
+              </span>
+              <span style={{ fontWeight: 600 }}>{t.km_spostamento ? `${t.km_spostamento} km` : "—"}</span>
+            </div>
+          ))}
+          {totKmSpostamento > 0 && <Row label="Totale km spostamenti" value={`${totKmSpostamento.toFixed(1)} km`} />}
+        </Section>
+      )}
+
+      {/* 9. NOTE GENERALI */}
       {noteGenerali.length > 0 && (
         <Section title="Note Generali" color="#6b7280">
           {noteGenerali.map((r, i) => (

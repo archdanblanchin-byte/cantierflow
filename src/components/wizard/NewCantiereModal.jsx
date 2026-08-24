@@ -12,7 +12,7 @@ export default function NewCantiereModal({ open, onClose, onCreated }) {
   const handleSubmit = async () => {
     if (!form.nome) return;
     setLoading(true);
-    const created = await base44.entities.Cantiere.create({ ...form, attivo: true });
+    const created = await base44.entities.Cantiere.create({ ...form, attivo: true, stato: "aperto", anno: new Date().getFullYear() });
     setLoading(false);
     setForm({ nome: "", indirizzo: "", cliente: "" });
     onCreated(created);

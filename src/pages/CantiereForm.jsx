@@ -6,17 +6,25 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, MapPin, Save, Crosshair, Loader2 } from "lucide-react";
 import { getPosizione } from "@/lib/timbratureUtils";
 import FotoUpload from "@/components/cantiere/FotoUpload";
 import DocumentiUpload from "@/components/cantiere/DocumentiUpload";
 import CantiereMappa from "@/components/cantiere/CantiereMappa";
 import AddressAutocomplete from "@/components/cantiere/AddressAutocomplete";
+import SheetSelect from "@/components/ui/sheet-select";
 
 function generateCodice() {
   return "C-" + Date.now().toString(36).toUpperCase().slice(-6);
 }
+
+const STATO_OPTIONS = [
+  { value: "aperto", label: "Aperto" },
+  { value: "sospeso", label: "Sospeso" },
+  { value: "chiuso", label: "Chiuso" },
+];
+
+const currentYear = new Date().getFullYear();
 
 const EMPTY = {
   codice: "",
@@ -25,6 +33,9 @@ const EMPTY = {
   indirizzo: "",
   cliente: "",
   attivo: true,
+  stato: "aperto",
+  anno: currentYear,
+  data_chiusura: "",
   ore_stimate: "",
   foto_cantiere: [],
   foto_estintore: [],
@@ -44,7 +55,12 @@ export default function CantiereForm() {
   useEffect(() => {
     if (!isEdit) return;
     base44.entities.Cantiere.filter({ id }).then((res) => {
-      if (res[0]) setForm(res[0]);
+      if (res[0]) {
+        const c = res[0];
+        if (!c.stato) c.stato = c.attivo === false ? "chiuso" : "aperto";
+        if (!c.anno) c.anno = c.created_date ? new Date(c.created_date).getFullYear() : currentYear;
+        setForm(c);
+      }
     });
   }, [id]);
 
@@ -53,11 +69,17 @@ export default function CantiereForm() {
   const handleSave = async () => {
     if (!form.nome) { toast.error("Inserisci il nome del cantiere"); return; }
     setSaving(true);
+    const payload = {
+      ...form,
+      attivo: form.stato === "aperto",
+      anno: form.anno || currentYear,
+      data_chiusura: form.stato === "chiuso" ? (form.data_chiusura || new Date().toISOString().slice(0, 10)) : form.data_chiusura || "",
+    };
     if (isEdit) {
-      await base44.entities.Cantiere.update(id, form);
+      await base44.entities.Cantiere.update(id, payload);
       toast.success("Cantiere aggiornato");
     } else {
-      await base44.entities.Cantiere.create(form);
+      await base44.entities.Cantiere.create(payload);
       toast.success("Cantiere creato");
     }
     queryClient.invalidateQueries({ queryKey: ["cantieri"] });
@@ -95,10 +117,40 @@ export default function CantiereForm() {
               <Label className="text-xs text-muted-foreground">ID Cantiere</Label>
               <Input value={form.codice} disabled className="mt-1 bg-muted font-mono text-sm" />
             </div>
-            <div className="flex items-center gap-3 pt-5">
-              <Switch checked={form.attivo} onCheckedChange={(v) => set("attivo", v)} />
-              <span className="text-sm font-medium">{form.attivo ? "Attivo" : "Chiuso"}</span>
+            <div>
+              <Label className="text-xs text-muted-foreground">Anno</Label>
+              <Input
+                type="number"
+                value={form.anno ?? currentYear}
+                onChange={(e) => set("anno", parseInt(e.target.value) || currentYear)}
+                className="mt-1"
+                min="2000"
+                max="2100"
+              />
             </div>
+          </div>
+
+          <div>
+            <Label className="text-xs text-muted-foreground">Stato cantiere</Label>
+            <div className="mt-1">
+              <SheetSelect
+                value={form.stato || "aperto"}
+                onValueChange={(v) => set("stato", v)}
+                options={STATO_OPTIONS}
+                placeholder="Seleziona stato..."
+              />
+            </div>
+            {form.stato === "chiuso" && (
+              <div className="mt-2">
+                <Label className="text-xs text-muted-foreground">Data chiusura</Label>
+                <Input
+                  type="date"
+                  value={form.data_chiusura || ""}
+                  onChange={(e) => set("data_chiusura", e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            )}
           </div>
 
           <div>

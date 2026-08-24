@@ -1,17 +1,31 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/AuthContext";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, MapPin, Pencil, FileText, Shield, Truck, Calculator, Camera,
+  Pause, Play, CheckCircle2,
 } from "lucide-react";
 import FotoCard from "@/components/foto/FotoCard";
 import ReportPDFButton, { ReportPDFContent } from "@/components/ReportPDF";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+
+const STATO_BADGE = {
+  aperto: { label: "Aperto", className: "bg-primary text-primary-foreground" },
+  sospeso: { label: "Sospeso", className: "bg-amber-100 text-amber-700 border border-amber-200" },
+  chiuso: { label: "Chiuso", className: "bg-muted text-muted-foreground" },
+};
+
+function statoOf(c) {
+  if (c?.stato) return c.stato;
+  return c?.attivo === false ? "chiuso" : "aperto";
+}
 
 function StatCard({ label, value, sub, color = "text-foreground" }) {
   return (
@@ -26,6 +40,10 @@ function StatCard({ label, value, sub, color = "text-foreground" }) {
 export default function CantiereDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { user } = useAuth();
+  const ruolo = user?.role === "user" ? "collaboratore" : user?.role;
+  const canManage = ruolo === "admin" || ruolo === "responsabile_tecnico";
+  const qc = useQueryClient();
   const [cantiere, setCantiere] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -41,12 +59,45 @@ export default function CantiereDetail() {
     enabled: !!id,
   });
 
+  const { data: trasferte = [] } = useQuery({
+    queryKey: ["trasferte_cantiere", id],
+    queryFn: async () => {
+      const all = await base44.entities.Trasferta.list();
+      return all.filter((t) => t.primo_cantiere_id === id || t.ultimo_cantiere_id === id);
+    },
+    enabled: !!id,
+  });
+
+  const { data: timbrature = [] } = useQuery({
+    queryKey: ["timbrature_cantiere", id],
+    queryFn: () => base44.entities.Timbratura.filter({ cantiere_id: id }),
+    enabled: !!id,
+  });
+
   useEffect(() => {
     base44.entities.Cantiere.filter({ id }).then((res) => {
       setCantiere(res[0] || null);
       setLoading(false);
     });
   }, [id]);
+
+  const cambiaStato = async (nuovo) => {
+    try {
+      const payload = {
+        stato: nuovo,
+        attivo: nuovo === "aperto",
+        data_chiusura: nuovo === "chiuso" ? (cantiere.data_chiusura || new Date().toISOString().slice(0, 10)) : cantiere.data_chiusura,
+      };
+      await base44.entities.Cantiere.update(id, payload);
+      setCantiere((prev) => ({ ...prev, ...payload }));
+      qc.invalidateQueries({ queryKey: ["cantieri"] });
+      toast.success(`Stato aggiornato: ${STATO_BADGE[nuovo].label}`);
+    } catch (e) {
+      toast.error("Errore: " + (e?.message || e));
+    }
+  };
+
+  const spostamenti = (timbrature || []).filter((t) => t.tipo_evento === "spostamento");
 
   if (loading) return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-4">
@@ -97,7 +148,9 @@ export default function CantiereDetail() {
             </div>
           </div>
           <div className="flex gap-2">
-            <ReportPDFButton cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} />
+            {canManage && (
+              <ReportPDFButton cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
+            )}
             <Link to={`/cantieri/${id}/modifica`}>
               <Button variant="outline" size="sm" className="gap-2">
                 <Pencil className="w-3.5 h-3.5" /> Modifica
@@ -110,12 +163,14 @@ export default function CantiereDetail() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
 
         {/* Info base */}
-        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <Badge variant={cantiere.attivo ? "default" : "secondary"} className="text-[10px] uppercase">
-              {cantiere.attivo !== false ? "Attivo" : "Chiuso"}
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge className={`text-[10px] uppercase ${STATO_BADGE[statoOf(cantiere)].className}`}>
+              {STATO_BADGE[statoOf(cantiere)].label}
             </Badge>
+            {cantiere.anno && <Badge variant="outline" className="text-[10px]">{cantiere.anno}</Badge>}
             {cantiere.codice && <span className="text-xs font-mono text-muted-foreground">{cantiere.codice}</span>}
+            {cantiere.data_chiusura && <span className="text-xs text-muted-foreground">Chiuso il {format(new Date(cantiere.data_chiusura), "d MMM yyyy", { locale: it })}</span>}
           </div>
           {cantiere.cliente && <p className="text-sm text-muted-foreground">Cliente: <span className="font-medium text-foreground">{cantiere.cliente}</span></p>}
           {(cantiere.indirizzo || cantiere.citta) && (
@@ -123,6 +178,27 @@ export default function CantiereDetail() {
               <MapPin className="w-4 h-4" />
               {cantiere.indirizzo}{cantiere.indirizzo && cantiere.citta ? ", " : ""}{cantiere.citta}
             </a>
+          )}
+
+          {/* Gestione stato (solo admin/responsabile) */}
+          {canManage && (
+            <div className="flex flex-wrap gap-2 pt-1 border-t border-border">
+              {statoOf(cantiere) !== "aperto" && (
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => cambiaStato("aperto")}>
+                  <Play className="w-3.5 h-3.5" /> Riapri
+                </Button>
+              )}
+              {statoOf(cantiere) !== "sospeso" && (
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => cambiaStato("sospeso")}>
+                  <Pause className="w-3.5 h-3.5" /> Sospendi
+                </Button>
+              )}
+              {statoOf(cantiere) !== "chiuso" && (
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => cambiaStato("chiuso")}>
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Chiudi cantiere
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -261,7 +337,7 @@ export default function CantiereDetail() {
 
       {/* Contenuto PDF nascosto usato per la stampa */}
       <div className="hidden">
-        <ReportPDFContent cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} />
+        <ReportPDFContent cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
       </div>
     </div>
   );
