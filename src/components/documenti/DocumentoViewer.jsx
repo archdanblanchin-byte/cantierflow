@@ -1,20 +1,14 @@
+import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Flag, MessageSquare, Trash2, Search } from "lucide-react";
-import { formatBytes } from "./utils";
+import { FileText, Download, Flag, MessageSquare, Trash2, Search, Minus, Plus, BookOpen, FileType2 } from "lucide-react";
+import { formatBytes, matchCount } from "./utils";
 
-function countOccurrences(text, term) {
-  if (!text || !term) return 0;
-  const t = term.toLowerCase();
-  const s = text.toLowerCase();
-  let count = 0, idx = 0;
-  while ((idx = s.indexOf(t, idx)) !== -1) { count++; idx += t.length; }
-  return count;
-}
+const FONT_SIZES = ["text-sm", "text-base", "text-lg", "text-xl", "text-2xl"];
 
 function renderHighlighted(text, term) {
-  if (!text) return <span className="text-muted-foreground">Testo non estratto. Usa l'anteprima o scarica il file.</span>;
+  if (!text) return <span className="text-muted-foreground">Testo non estratto. Usa la vista PDF o scarica il file.</span>;
   if (!term) return text;
   const parts = [];
   const lower = text.toLowerCase();
@@ -29,75 +23,102 @@ function renderHighlighted(text, term) {
   return parts;
 }
 
-function snippet(text, term, len = 200) {
-  if (!text || !term) return null;
-  const idx = text.toLowerCase().indexOf(term.toLowerCase());
-  if (idx === -1) return null;
-  const start = Math.max(0, idx - len / 2);
-  const end = Math.min(text.length, idx + term.length + len / 2);
-  return (start > 0 ? "…" : "") + text.slice(start, end) + (end < text.length ? "…" : "");
-}
-
 export default function DocumentoViewer({ documento, searchTerm, canManage, onSegnalazione, onSegnalazioni, onDelete, segnalazioniCount }) {
+  const [view, setView] = useState("reader"); // reader | pdf
+  const [fontSize, setFontSize] = useState(1); // index in FONT_SIZES
+  const scrollRef = useRef(null);
+
+  // Reset view quando cambia documento
+  useEffect(() => {
+    setView("reader");
+    setFontSize(1);
+  }, [documento?.id]);
+
+  // Scroll in alto all'apertura
+  useEffect(() => {
+    if (documento && scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [documento?.id]);
+
   if (!documento) return null;
   const isPdf = documento.tipo_file === "pdf";
-  const occorrenze = countOccurrences(documento.contenuto_testo, searchTerm);
-  const snip = snippet(documento.contenuto_testo, searchTerm);
+  const occorrenze = matchCount(documento.contenuto_testo, searchTerm);
+  const hasText = !!documento.contenuto_testo?.trim();
 
   return (
     <Dialog open={!!documento} onOpenChange={(v) => { if (!v) { onSegnalazione?.(null); } }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-hidden flex flex-col p-0 gap-0">
+        <DialogHeader className="px-4 pt-4 pb-2 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 pr-8">
-            <FileText className="w-5 h-5" />
+            <FileText className="w-5 h-5 shrink-0" />
             <span className="truncate">{documento.nome}</span>
           </DialogTitle>
           <DialogDescription className="flex flex-wrap items-center gap-2">
             {documento.categoria && <Badge variant="secondary">{documento.categoria}</Badge>}
             <Badge variant="outline">{(documento.tipo_file || "file").toUpperCase()}</Badge>
             {documento.dimensione_bytes ? <span>{formatBytes(documento.dimensione_bytes)}</span> : null}
-            {documento.caricato_da_nome && <span>· caricato da {documento.caricato_da_nome}</span>}
+            {documento.caricato_da_nome ? <span>· {documento.caricato_da_nome}</span> : null}
           </DialogDescription>
         </DialogHeader>
 
-        {searchTerm && occorrenze > 0 && (
-          <div className="flex items-center gap-2 text-xs bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-md px-3 py-2">
-            <Search className="w-3.5 h-3.5" />
-            <span><b>{occorrenze}</b> occorrenze di "{searchTerm}" nel documento</span>
-          </div>
-        )}
-        {searchTerm && snip && (
-          <div className="text-xs bg-muted rounded-md px-3 py-2 max-h-20 overflow-auto">
-            {renderHighlighted(snip, searchTerm)}
-          </div>
-        )}
-
-        <div className="flex-1 overflow-hidden flex flex-col gap-3 min-h-0">
-          {isPdf ? (
-            <div className="flex-1 min-h-0">
-              <iframe src={documento.file_url} title={documento.nome} className="w-full h-full min-h-[55vh] rounded-md border" />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2 p-4 border rounded-md bg-muted/40">
-              <FileText className="w-5 h-5 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Anteprima non disponibile per questo formato.</span>
-              <a href={documento.file_url} download={documento.file_nome} target="_blank" rel="noopener noreferrer">
-                <Button size="sm" variant="outline" className="gap-2"><Download className="w-4 h-4" /> Scarica</Button>
-              </a>
+        {/* Barra ricerca + vista + font */}
+        <div className="flex items-center gap-2 px-4 py-2 border-b shrink-0 flex-wrap">
+          {/* Toggle vista */}
+          {isPdf && (
+            <div className="flex items-center bg-muted rounded-md p-0.5">
+              <Button size="sm" variant={view === "reader" ? "default" : "ghost"} className="h-7 gap-1 text-xs" onClick={() => setView("reader")}>
+                <BookOpen className="w-3.5 h-3.5" /> Reader
+              </Button>
+              <Button size="sm" variant={view === "pdf" ? "default" : "ghost"} className="h-7 gap-1 text-xs" onClick={() => setView("pdf")}>
+                <FileType2 className="w-3.5 h-3.5" /> PDF
+              </Button>
             </div>
           )}
 
-          <div className="border rounded-md">
-            <div className="px-3 py-2 border-b bg-muted/50 text-xs font-semibold flex items-center gap-2">
-              <Search className="w-3.5 h-3.5" /> Testo indicizzato
+          {/* Font size (solo reader) */}
+          {view === "reader" && hasText && (
+            <div className="flex items-center gap-1 ml-auto">
+              <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setFontSize((f) => Math.max(0, f - 1))} disabled={fontSize === 0}>
+                <Minus className="w-3.5 h-3.5" />
+              </Button>
+              <span className="text-xs text-muted-foreground w-10 text-center">A</span>
+              <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setFontSize((f) => Math.min(FONT_SIZES.length - 1, f + 1))} disabled={fontSize === FONT_SIZES.length - 1}>
+                <Plus className="w-3.5 h-3.5" />
+              </Button>
             </div>
-            <div className="px-3 py-2 max-h-40 overflow-auto text-sm whitespace-pre-wrap leading-relaxed">
-              {renderHighlighted(documento.contenuto_testo, searchTerm)}
+          )}
+
+          {searchTerm && occorrenze > 0 && (
+            <div className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 ${view === "reader" ? "" : "ml-auto"} bg-yellow-50 border border-yellow-200 text-yellow-800`}>
+              <Search className="w-3.5 h-3.5" />
+              <span><b>{occorrenze}</b> occorrenze</span>
             </div>
-          </div>
+          )}
         </div>
 
-        <DialogFooter className="flex-wrap gap-2">
+        {/* Corpo */}
+        <div className="flex-1 overflow-hidden min-h-0">
+          {view === "pdf" && isPdf ? (
+            <iframe src={documento.file_url} title={documento.nome} className="w-full h-full min-h-[60vh]" />
+          ) : (
+            <div ref={scrollRef} className="h-full overflow-auto px-5 py-4 bg-background">
+              <article className={`prose prose-sm max-w-none ${FONT_SIZES[fontSize]} leading-relaxed text-foreground whitespace-pre-wrap break-words`}>
+                {renderHighlighted(documento.contenuto_testo, searchTerm)}
+              </article>
+              {!hasText && (
+                <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                  <BookOpen className="w-12 h-12 text-muted-foreground opacity-40" />
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    Testo non disponibile per la lettura fluida.
+                    {isPdf ? " Puoi aprire il PDF originale o scaricarlo." : " Scarica il file per consultarlo."}
+                  </p>
+                  {isPdf && <Button size="sm" variant="outline" onClick={() => setView("pdf")}>Apri PDF originale</Button>}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="flex-wrap gap-2 px-4 py-3 border-t shrink-0">
           <Button variant="outline" size="sm" className="gap-2" onClick={() => onSegnalazione?.(documento)}>
             <Flag className="w-4 h-4" /> Segnala
           </Button>
