@@ -9,8 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, MapPin, Pencil, FileText, Shield, Truck, Calculator, Camera,
-  Pause, Play, CheckCircle2,
+  Pause, Play, CheckCircle2, Trash2,
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import FotoCard from "@/components/foto/FotoCard";
 import ReportPDFButton, { ReportPDFContent } from "@/components/ReportPDF";
 import { format } from "date-fns";
@@ -43,6 +48,7 @@ export default function CantiereDetail() {
   const { user } = useAuth();
   const ruolo = user?.role === "user" ? "collaboratore" : user?.role;
   const canManage = ruolo === "admin" || ruolo === "responsabile_tecnico";
+  const isAdmin = ruolo === "admin";
   const qc = useQueryClient();
   const [cantiere, setCantiere] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -98,6 +104,17 @@ export default function CantiereDetail() {
   };
 
   const spostamenti = (timbrature || []).filter((t) => t.tipo_evento === "spostamento");
+
+  const eliminaCantiere = async () => {
+    try {
+      await base44.entities.Cantiere.delete(id);
+      qc.invalidateQueries({ queryKey: ["cantieri"] });
+      toast.success("Cantiere eliminato");
+      navigate("/cantieri");
+    } catch (e) {
+      toast.error("Errore eliminazione: " + (e?.message || e));
+    }
+  };
 
   if (loading) return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-4">
@@ -156,6 +173,29 @@ export default function CantiereDetail() {
                 <Pencil className="w-3.5 h-3.5" /> Modifica
               </Button>
             </Link>
+            {isAdmin && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="gap-2">
+                    <Trash2 className="w-3.5 h-3.5" /> Elimina
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Eliminare il cantiere?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      L'azione è definitiva e rimuoverà il cantiere "{cantiere.nome}". I rapportini, le foto e le timbrature collegate non verranno eliminati.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annulla</AlertDialogCancel>
+                    <AlertDialogAction onClick={eliminaCantiere} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                      Elimina definitivamente
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </div>
       </div>
