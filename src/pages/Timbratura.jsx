@@ -127,6 +127,8 @@ export default function Timbratura() {
   const canIngresso = !activeSession;
   const canPausa = !!activeSession;
   const canClose = !!activeSession && !inPausa;
+  // Lo spostamento è consentito anche durante la pausa (si chiude il cantiere senza riprendere)
+  const canSpostamento = !!activeSession;
 
   const handleTimbra = async (tipoEvento) => {
     setLoadingTipo(tipoEvento);
@@ -361,11 +363,11 @@ export default function Timbratura() {
           </Button>
           <Button
             onClick={() => handleTimbra("spostamento")}
-            disabled={!!loadingTipo || !canClose}
+            disabled={!!loadingTipo || !canSpostamento}
             className="h-14 text-sm font-semibold gap-1.5 bg-orange-500 hover:bg-orange-600">
             
             {loadingTipo === "spostamento" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />}
-            Chiudi cantiere e spostati
+            Vado in un altro cantiere
           </Button>
           <Button
             onClick={() => handleTimbra("uscita")}
@@ -379,7 +381,7 @@ export default function Timbratura() {
 
         {activeSession &&
         <p className="text-[11px] text-muted-foreground text-center">
-            <span className="font-medium text-orange-600">Chiudi cantiere e spostati</span> chiude il cantiere attuale e ti mette in viaggio: una volta arrivato al nuovo cantiere premi <span className="font-medium text-emerald-600">Arrivato · Inizia cantiere</span>.
+            <span className="font-medium text-orange-600">Vado in un altro cantiere</span> chiude il cantiere attuale e ti mette in viaggio: una volta arrivato al nuovo cantiere premi <span className="font-medium text-emerald-600">Arrivato · Inizia cantiere</span>.
           </p>
         }
         {spostamentoInCorso &&
