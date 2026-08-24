@@ -1,0 +1,96 @@
+{
+  "name": "SegnalazioneDocumento",
+  "type": "object",
+  "properties": {
+    "documento_id": {
+      "type": "string",
+      "description": "ID del documento segnalato"
+    },
+    "documento_nome": {
+      "type": "string",
+      "description": "Nome del documento (denormalizzato)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email dell'autore della segnalazione"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome dell'autore (denormalizzato)"
+    },
+    "testo": {
+      "type": "string",
+      "description": "Contenuto della segnalazione / richiesta / osservazione"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "problema",
+        "richiesta",
+        "osservazione"
+      ],
+      "default": "osservazione",
+      "description": "Tipo di segnalazione"
+    },
+    "risolta": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se la segnalazione e' stata risolta"
+    },
+    "risolta_da_nome": {
+      "type": "string",
+      "description": "Nome di chi ha risolto (denormalizzato)"
+    }
+  },
+  "required": [
+    "documento_id",
+    "testo"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    }
+  }
+}

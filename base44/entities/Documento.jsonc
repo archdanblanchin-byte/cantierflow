@@ -1,0 +1,95 @@
+{
+  "name": "Documento",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome/titolo del documento"
+    },
+    "descrizione": {
+      "type": "string",
+      "description": "Descrizione breve del contenuto"
+    },
+    "categoria": {
+      "type": "string",
+      "description": "Categoria libera (es. Magazzino, Sicurezza, Manuali, Inventario)"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL del file caricato"
+    },
+    "file_nome": {
+      "type": "string",
+      "description": "Nome originale del file"
+    },
+    "tipo_file": {
+      "type": "string",
+      "description": "Estensione/tipo file (pdf, docx, ...)"
+    },
+    "dimensione_bytes": {
+      "type": "number",
+      "description": "Dimensione file in byte"
+    },
+    "contenuto_testo": {
+      "type": "string",
+      "description": "Testo estratto dal documento per la ricerca full-text"
+    },
+    "caricato_da_email": {
+      "type": "string",
+      "description": "Email di chi ha caricato (denormalizzato)"
+    },
+    "caricato_da_nome": {
+      "type": "string",
+      "description": "Nome di chi ha caricato (denormalizzato)"
+    }
+  },
+  "required": [
+    "nome",
+    "file_url"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    }
+  }
+}

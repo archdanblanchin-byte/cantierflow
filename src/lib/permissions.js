@@ -1,7 +1,7 @@
 import {
   ClipboardList, Building2, Camera, BookUser,
   CalendarDays, BarChart2, GraduationCap, Settings, Car,
-  HardHat, Clock, CalendarClock, StickyNote, Hammer,
+  HardHat, Clock, CalendarClock, StickyNote, Hammer, FileText,
 } from "lucide-react";
 
 export const RUOLI = [
@@ -26,14 +26,15 @@ export const SEZIONI_APP = [
   { key: "uso_furgoni", label: "Uso Furgoni", path: "/uso-furgoni", icon: Car, color: "bg-zinc-700" },
   { key: "note", label: "Note", path: "/note", icon: StickyNote, color: "bg-teal-600" },
   { key: "workflow", label: "WorkFlow", path: "/workflow", icon: Hammer, color: "bg-amber-700" },
+  { key: "documenti", label: "Documenti", path: "/documenti", icon: FileText, color: "bg-indigo-600" },
   { key: "impostazioni", label: "Impostazioni", path: "/impostazioni", icon: Settings, color: "bg-slate-700", adminOnly: true },
 ];
 
 export const PERMESSI_DEFAULT = {
   admin: SEZIONI_APP.map(s => s.key),
-  responsabile_tecnico: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "corsi", "permessi_ferie", "uso_furgoni", "note", "workflow"],
-  capocantiere: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "permessi_ferie", "uso_furgoni", "note", "workflow"],
-  collaboratore: ["rapportini", "timbratura", "cantieri", "foto", "permessi_ferie", "uso_furgoni", "note", "workflow"],
+  responsabile_tecnico: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "corsi", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
+  capocantiere: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
+  collaboratore: ["rapportini", "timbratura", "cantieri", "foto", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
 };
 
 export function getRuoloLabel(key) {

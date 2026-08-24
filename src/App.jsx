@@ -32,6 +32,7 @@ import Corsi from './pages/Corsi';
 import Note from './pages/Note';
 import StoricoTimbrature from './pages/StoricoTimbrature';
 import WorkflowApp from './pages/WorkflowApp';
+import Documenti from './pages/Documenti';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -82,7 +83,7 @@ const AuthenticatedApp = () => {
       <Route path="/programmazione" element={<Programmazione />} />
       <Route path="/cronoprogramma" element={<Cronoprogramma />} />
       <Route path="/furgoni" element={<Placeholder title="Furgoni" />} />
-      <Route path="/documenti" element={<Placeholder title="Documenti" />} />
+      <Route path="/documenti" element={<Documenti />} />
       <Route path="/idropulitrice" element={<Placeholder title="Idropulitrice" />} />
       <Route path="/ristorante" element={<Placeholder title="Ristorante" />} />
       <Route path="/permessi" element={<Permessi />} />
