@@ -108,10 +108,6 @@ export default function StoricoTimbrature() {
     });
   };
 
-  const selectedCount = giorni
-    .filter((g) => selectedDays.has(g.key))
-    .reduce((s, g) => s + g.list.length, 0);
-
   const isAdmin = user?.role === "admin";
 
   const { data: timbrature = [], isLoading } = useQuery({
@@ -137,6 +133,10 @@ export default function StoricoTimbrature() {
       }))
       .sort((a, b) => (a.key < b.key ? 1 : -1));
   }, [timbrature]);
+
+  const selectedCount = giorni
+    .filter((g) => selectedDays.has(g.key))
+    .reduce((s, g) => s + g.list.length, 0);
 
   const toggle = (key) => setAperti((s) => ({ ...s, [key]: !s[key] }));
 
