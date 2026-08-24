@@ -136,6 +136,7 @@ export default function Documenti() {
         onSegnalazione={(d) => setSegnalazioneDoc(d)}
         onSegnalazioni={(d) => setSegnalazioniListDoc(d)}
         onDelete={handleDelete}
+        onClose={() => setSelected(null)}
         segnalazioniCount={selected ? segCountById[selected.id] : undefined}
       />
 

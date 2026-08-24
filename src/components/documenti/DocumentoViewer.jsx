@@ -3,7 +3,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Flag, MessageSquare, Trash2, Search, Minus, Plus, BookOpen, FileType2, Loader2, ZoomIn, ZoomOut, Maximize2, Minimize2 } from "lucide-react";
+import { FileText, Download, Flag, MessageSquare, Trash2, Search, Minus, Plus, BookOpen, FileType2, Loader2, ZoomIn, ZoomOut, Maximize2, Minimize2, ArrowLeft } from "lucide-react";
 import { formatBytes, matchCount } from "./utils";
 
 // Worker pdf.js via CDN corrispondente alla versione bundled
@@ -27,7 +27,7 @@ function renderHighlighted(text, term) {
   return parts;
 }
 
-export default function DocumentoViewer({ documento, searchTerm, canManage, onSegnalazione, onSegnalazioni, onDelete, segnalazioniCount }) {
+export default function DocumentoViewer({ documento, searchTerm, canManage, onSegnalazione, onSegnalazioni, onDelete, segnalazioniCount, onClose }) {
   const [view, setView] = useState("pagine"); // pagine | lettore
   const [fontSize, setFontSize] = useState(1);
   const [scale, setScale] = useState(1);
@@ -89,7 +89,7 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
   };
 
   return (
-    <Dialog open={!!documento} onOpenChange={(v) => { if (!v) onSegnalazione?.(null); }}>
+    <Dialog open={!!documento} onOpenChange={(v) => { if (!v) { onSegnalazione?.(null); onClose?.(); } }}>
       <DialogContent className={`overflow-hidden flex flex-col p-0 gap-0 ${fullscreen ? "!fixed !inset-0 !left-0 !top-0 max-w-none max-h-none w-full h-full !rounded-none !translate-x-0 !translate-y-0" : "max-w-3xl max-h-[92vh]"}`}>
         <DialogHeader className="px-4 pt-4 pb-2 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 pr-16">
@@ -201,6 +201,9 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
         </div>
 
         <DialogFooter className="flex-wrap gap-2 px-4 py-3 border-t shrink-0">
+          <Button variant="default" size="sm" className="gap-2" onClick={() => { onSegnalazione?.(null); onClose?.(); }}>
+            <ArrowLeft className="w-4 h-4" /> Chiudi
+          </Button>
           <Button variant="outline" size="sm" className="gap-2" onClick={() => onSegnalazione?.(documento)}>
             <Flag className="w-4 h-4" /> Segnala
           </Button>
