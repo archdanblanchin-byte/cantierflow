@@ -3,7 +3,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Flag, MessageSquare, Trash2, Search, Minus, Plus, BookOpen, FileType2, Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { FileText, Download, Flag, MessageSquare, Trash2, Search, Minus, Plus, BookOpen, FileType2, Loader2, ZoomIn, ZoomOut, Maximize2, Minimize2 } from "lucide-react";
 import { formatBytes, matchCount } from "./utils";
 
 // Worker pdf.js via CDN corrispondente alla versione bundled
@@ -35,6 +35,7 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
   const [fullText, setFullText] = useState("");
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -76,11 +77,14 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
 
   return (
     <Dialog open={!!documento} onOpenChange={(v) => { if (!v) onSegnalazione?.(null); }}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-hidden flex flex-col p-0 gap-0">
+      <DialogContent className={`overflow-hidden flex flex-col p-0 gap-0 ${fullscreen ? "fixed inset-0 max-w-none max-h-none w-full h-full rounded-none" : "max-w-3xl max-h-[92vh]"}`}>
         <DialogHeader className="px-4 pt-4 pb-2 border-b shrink-0">
-          <DialogTitle className="flex items-center gap-2 pr-8">
+          <DialogTitle className="flex items-center gap-2 pr-16">
             <FileText className="w-5 h-5 shrink-0" />
             <span className="truncate">{documento.nome}</span>
+            <Button size="icon" variant="ghost" className="absolute right-10 top-3.5 h-7 w-7" onClick={() => setFullscreen((f) => !f)} title={fullscreen ? "Riduci" : "Schermo intero"}>
+              {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </Button>
           </DialogTitle>
           <DialogDescription className="flex flex-wrap items-center gap-2">
             {documento.categoria && <Badge variant="secondary">{documento.categoria}</Badge>}
