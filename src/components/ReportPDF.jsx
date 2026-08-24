@@ -3,6 +3,9 @@ import { FileDown, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
+import { toast } from "sonner";
 
 function fmt(n) {
   return `${(n || 0).toFixed(1)}h`;
@@ -449,24 +452,67 @@ export function ReportPDFContent({ cantiere, rapportini = [], foto = [], trasfer
 export default function ReportPDFButton({ cantiere, rapportini, foto }) {
   const [loading, setLoading] = useState(false);
 
-  const handlePrint = () => {
-    setLoading(true);
+  const handlePrint = async () => {
     const el = document.getElementById("pdf-content");
-    if (!el) { setLoading(false); return; }
-    const w = window.open("", "_blank");
-    w.document.write(`
-      <html><head><title>Report ${cantiere?.nome}</title>
-      <style>
-        body { margin: 0; padding: 0; font-family: sans-serif; }
-        img { max-width: 100%; }
-        @media print { button { display: none; } }
-      </style></head><body>
-      ${el.outerHTML}
-      <script>window.onload=()=>{window.print();}<\/script>
-      </body></html>
-    `);
-    w.document.close();
-    setLoading(false);
+    if (!el) { toast.error("Contenuto non trovato"); return; }
+    setLoading(true);
+    try {
+      // Clona il contenuto in un contenitore off-screen visibile: html2canvas
+      // non riesce a renderizzare elementi con display:none (il wrapper è hidden).
+      const wrap = document.createElement("div");
+      wrap.style.position = "fixed";
+      wrap.style.left = "-99999px";
+      wrap.style.top = "0";
+      wrap.style.width = "794px";
+      wrap.style.background = "#ffffff";
+      wrap.style.zIndex = "-1";
+      const clone = el.cloneNode(true);
+      wrap.appendChild(clone);
+      document.body.appendChild(wrap);
+
+      // Attendi il caricamento di tutte le immagini
+      const imgs = [...clone.querySelectorAll("img")];
+      await Promise.all(imgs.map((img) =>
+        img.complete ? Promise.resolve() : new Promise((res) => {
+          img.onload = res;
+          img.onerror = res;
+        })
+      ));
+
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+      document.body.removeChild(wrap);
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgH = (canvas.height * pageW) / canvas.width;
+
+      let heightLeft = imgH;
+      let position = 0;
+      pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
+      heightLeft -= pageH;
+      while (heightLeft > 0) {
+        position -= pageH;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
+        heightLeft -= pageH;
+      }
+
+      const nome = (cantiere?.nome || "cantiere").replace(/[^a-zA-Z0-9-_ ]/g, "").trim() || "cantiere";
+      pdf.save(`Report_${nome}.pdf`);
+      toast.success("PDF generato");
+    } catch (e) {
+      console.error("PDF error", e);
+      toast.error("Errore generazione PDF");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
