@@ -31,6 +31,7 @@ import UsoFurgoni from './pages/UsoFurgoni';
 import Corsi from './pages/Corsi';
 import Note from './pages/Note';
 import StoricoTimbrature from './pages/StoricoTimbrature';
+import WorkflowApp from './pages/WorkflowApp';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -95,6 +96,7 @@ const AuthenticatedApp = () => {
       <Route path="/account" element={<Account />} />
       <Route path="/corsi" element={<Corsi />} />
       <Route path="/note" element={<Note />} />
+      <Route path="/workflow" element={<WorkflowApp />} />
 
       <Route path="*" element={<PageNotFound />} />
     </AnimatedRoutes>
