@@ -1,14 +1,18 @@
 import { useState, useRef, useEffect } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Flag, MessageSquare, Trash2, Search, Minus, Plus, BookOpen, FileType2 } from "lucide-react";
+import { FileText, Download, Flag, MessageSquare, Trash2, Search, Minus, Plus, BookOpen, FileType2, Loader2, ZoomIn, ZoomOut } from "lucide-react";
 import { formatBytes, matchCount } from "./utils";
+
+// Worker pdf.js via CDN corrispondente alla versione bundled
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const FONT_SIZES = ["text-sm", "text-base", "text-lg", "text-xl", "text-2xl"];
 
 function renderHighlighted(text, term) {
-  if (!text) return <span className="text-muted-foreground">Testo non estratto. Usa la vista PDF o scarica il file.</span>;
+  if (!text) return <span className="text-muted-foreground">Testo non estratto.</span>;
   if (!term) return text;
   const parts = [];
   const lower = text.toLowerCase();
@@ -24,28 +28,54 @@ function renderHighlighted(text, term) {
 }
 
 export default function DocumentoViewer({ documento, searchTerm, canManage, onSegnalazione, onSegnalazioni, onDelete, segnalazioniCount }) {
-  const [view, setView] = useState("reader"); // reader | pdf
-  const [fontSize, setFontSize] = useState(1); // index in FONT_SIZES
+  const [view, setView] = useState("pagine"); // pagine | lettore
+  const [fontSize, setFontSize] = useState(1);
+  const [scale, setScale] = useState(1);
+  const [numPages, setNumPages] = useState(0);
+  const [fullText, setFullText] = useState("");
+  const [loadingPdf, setLoadingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState(false);
   const scrollRef = useRef(null);
 
-  // Reset view quando cambia documento: PDF apre nella vista visuale, altri nel reader
   useEffect(() => {
-    setView(documento?.tipo_file === "pdf" ? "pdf" : "reader");
+    setView(documento?.tipo_file === "pdf" ? "pagine" : "lettore");
     setFontSize(1);
+    setScale(1);
+    setNumPages(0);
+    setFullText("");
+    setPdfError(false);
   }, [documento?.id]);
 
-  // Scroll in alto all'apertura
   useEffect(() => {
     if (documento && scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [documento?.id]);
+  }, [documento?.id, view, scale]);
 
   if (!documento) return null;
   const isPdf = documento.tipo_file === "pdf";
-  const occorrenze = matchCount(documento.contenuto_testo, searchTerm);
-  const hasText = !!documento.contenuto_testo?.trim();
+  const displayText = isPdf && fullText ? fullText : documento.contenuto_testo;
+  const occorrenze = matchCount(displayText, searchTerm);
+  const hasText = !!displayText?.trim();
+
+  const onPdfLoad = async (pdf) => {
+    setNumPages(pdf.numPages);
+    setLoadingPdf(true);
+    try {
+      let text = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map((it) => it.str).join(" ") + "\n\n";
+      }
+      setFullText(text);
+    } catch (e) {
+      // testo non disponibile, resta il rendering pagine
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
 
   return (
-    <Dialog open={!!documento} onOpenChange={(v) => { if (!v) { onSegnalazione?.(null); } }}>
+    <Dialog open={!!documento} onOpenChange={(v) => { if (!v) onSegnalazione?.(null); }}>
       <DialogContent className="max-w-3xl max-h-[92vh] overflow-hidden flex flex-col p-0 gap-0">
         <DialogHeader className="px-4 pt-4 pb-2 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 pr-8">
@@ -60,22 +90,32 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
           </DialogDescription>
         </DialogHeader>
 
-        {/* Barra ricerca + vista + font */}
+        {/* Barra vista + controlli */}
         <div className="flex items-center gap-2 px-4 py-2 border-b shrink-0 flex-wrap">
-          {/* Toggle vista */}
           {isPdf && (
             <div className="flex items-center bg-muted rounded-md p-0.5">
-              <Button size="sm" variant={view === "reader" ? "default" : "ghost"} className="h-7 gap-1 text-xs" onClick={() => setView("reader")}>
-                <BookOpen className="w-3.5 h-3.5" /> Reader
+              <Button size="sm" variant={view === "pagine" ? "default" : "ghost"} className="h-7 gap-1 text-xs" onClick={() => setView("pagine")}>
+                <FileType2 className="w-3.5 h-3.5" /> Pagine
               </Button>
-              <Button size="sm" variant={view === "pdf" ? "default" : "ghost"} className="h-7 gap-1 text-xs" onClick={() => setView("pdf")}>
-                <FileType2 className="w-3.5 h-3.5" /> PDF
+              <Button size="sm" variant={view === "lettore" ? "default" : "ghost"} className="h-7 gap-1 text-xs" onClick={() => setView("lettore")}>
+                <BookOpen className="w-3.5 h-3.5" /> Lettore
               </Button>
             </div>
           )}
 
-          {/* Font size (solo reader) */}
-          {view === "reader" && hasText && (
+          {view === "pagine" && isPdf && (
+            <div className="flex items-center gap-1 ml-auto">
+              <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setScale((s) => Math.max(0.5, +(s - 0.2).toFixed(2)))} disabled={scale <= 0.5}>
+                <ZoomOut className="w-3.5 h-3.5" />
+              </Button>
+              <span className="text-xs text-muted-foreground w-10 text-center">{Math.round(scale * 100)}%</span>
+              <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setScale((s) => Math.min(3, +(s + 0.2).toFixed(2)))} disabled={scale >= 3}>
+                <ZoomIn className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          )}
+
+          {view === "lettore" && hasText && (
             <div className="flex items-center gap-1 ml-auto">
               <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setFontSize((f) => Math.max(0, f - 1))} disabled={fontSize === 0}>
                 <Minus className="w-3.5 h-3.5" />
@@ -88,7 +128,7 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
           )}
 
           {searchTerm && occorrenze > 0 && (
-            <div className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 ${view === "reader" ? "" : "ml-auto"} bg-yellow-50 border border-yellow-200 text-yellow-800`}>
+            <div className="flex items-center gap-1.5 text-xs rounded-md px-2 py-1 ml-auto sm:ml-0 bg-yellow-50 border border-yellow-200 text-yellow-800">
               <Search className="w-3.5 h-3.5" />
               <span><b>{occorrenze}</b> occorrenze</span>
             </div>
@@ -96,26 +136,40 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
         </div>
 
         {/* Corpo */}
-        <div className="flex-1 overflow-hidden min-h-0">
-          {view === "pdf" && isPdf ? (
-            <iframe
-              src={`https://docs.google.com/viewer?url=${encodeURIComponent(documento.file_url)}&embedded=true`}
-              title={documento.nome}
-              className="w-full h-full min-h-[60vh]"
-            />
+        <div ref={scrollRef} className="flex-1 overflow-auto min-h-0 bg-muted/30">
+          {view === "pagine" && isPdf ? (
+            <div className="flex flex-col items-center gap-3 py-4">
+              {pdfError ? (
+                <div className="flex flex-col items-center gap-3 py-16 text-center">
+                  <BookOpen className="w-12 h-12 text-muted-foreground opacity-40" />
+                  <p className="text-sm text-muted-foreground max-w-xs">Impossibile visualizzare il PDF. Apri la modalità Lettore per il testo.</p>
+                  <Button size="sm" variant="outline" onClick={() => setView("lettore")}>Apri Lettore</Button>
+                </div>
+              ) : (
+                <Document
+                  file={documento.file_url}
+                  onLoadSuccess={onPdfLoad}
+                  onLoadError={() => setPdfError(true)}
+                  loading={<div className="py-16 flex items-center gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Caricamento documento...</div>}
+                >
+                  {Array.from({ length: numPages }, (_, i) => (
+                    <Page key={i} pageNumber={i + 1} scale={scale} className="shadow-md" renderTextLayer={false} renderAnnotationLayer={false} />
+                  ))}
+                </Document>
+              )}
+            </div>
           ) : (
-            <div ref={scrollRef} className="h-full overflow-auto px-5 py-4 bg-background">
+            <div className="px-5 py-4 bg-background min-h-full">
+              {loadingPdf && (
+                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3"><Loader2 className="w-4 h-4 animate-spin" /> Estrazione testo...</div>
+              )}
               <article className={`prose prose-sm max-w-none ${FONT_SIZES[fontSize]} leading-relaxed text-foreground whitespace-pre-wrap break-words`}>
-                {renderHighlighted(documento.contenuto_testo, searchTerm)}
+                {renderHighlighted(displayText, searchTerm)}
               </article>
-              {!hasText && (
+              {!hasText && !loadingPdf && (
                 <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
                   <BookOpen className="w-12 h-12 text-muted-foreground opacity-40" />
-                  <p className="text-sm text-muted-foreground max-w-xs">
-                    Testo non disponibile per la lettura fluida.
-                    {isPdf ? " Puoi aprire il PDF originale o scaricarlo." : " Scarica il file per consultarlo."}
-                  </p>
-                  {isPdf && <Button size="sm" variant="outline" onClick={() => setView("pdf")}>Apri PDF originale</Button>}
+                  <p className="text-sm text-muted-foreground max-w-xs">Testo non disponibile per la lettura fluida.</p>
                 </div>
               )}
             </div>
@@ -131,9 +185,11 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
               <MessageSquare className="w-4 h-4" /> Segnalazioni{typeof segnalazioniCount === "number" ? ` (${segnalazioniCount})` : ""}
             </Button>
           )}
-          <a href={documento.file_url} download={documento.file_nome} target="_blank" rel="noopener noreferrer" className="ml-auto">
-            <Button variant="outline" size="sm" className="gap-2"><Download className="w-4 h-4" /> Scarica</Button>
-          </a>
+          {canManage && (
+            <a href={documento.file_url} download={documento.file_nome} target="_blank" rel="noopener noreferrer" className="ml-auto">
+              <Button variant="outline" size="sm" className="gap-2"><Download className="w-4 h-4" /> Scarica</Button>
+            </a>
+          )}
           {canManage && (
             <Button variant="destructive" size="sm" className="gap-2" onClick={() => onDelete?.(documento)}>
               <Trash2 className="w-4 h-4" /> Elimina
