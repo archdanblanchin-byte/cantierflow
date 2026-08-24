@@ -1,7 +1,7 @@
 import {
   ClipboardList, Building2, Camera, BookUser,
   CalendarDays, BarChart2, GraduationCap, Settings, Car,
-  HardHat, Clock, CalendarClock, StickyNote, Hammer, FileText,
+  HardHat, Clock, CalendarClock, StickyNote, Hammer, FileText, Archive,
 } from "lucide-react";
 
 export const RUOLI = [
@@ -14,6 +14,7 @@ export const RUOLI = [
 export const SEZIONI_APP = [
   { key: "rapportini", label: "Rapportino", path: "/rapportini", icon: ClipboardList, color: "bg-blue-500" },
   { key: "cantieri", label: "Cantiere", path: "/cantieri", icon: Building2, color: "bg-emerald-500" },
+  { key: "archivio_cantieri", label: "Archivio Cantieri", path: "/archivio-cantieri", icon: Archive, color: "bg-emerald-700" },
   { key: "timbratura", label: "Timbratura", path: "/timbratura", icon: Clock, color: "bg-emerald-600" },
   { key: "foto", label: "Foto", path: "/foto", icon: Camera, color: "bg-purple-500" },
   { key: "anagrafe", label: "Anagrafe", path: "/anagrafe", icon: BookUser, color: "bg-slate-600" },
@@ -32,9 +33,9 @@ export const SEZIONI_APP = [
 
 export const PERMESSI_DEFAULT = {
   admin: SEZIONI_APP.map(s => s.key),
-  responsabile_tecnico: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "corsi", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
-  capocantiere: ["rapportini", "timbratura", "cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
-  collaboratore: ["rapportini", "timbratura", "cantieri", "foto", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
+  responsabile_tecnico: ["rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "corsi", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
+  capocantiere: ["rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "anagrafe", "ore_lavoratori", "programmazione", "programma", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
+  collaboratore: ["rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
 };
 
 export function getRuoloLabel(key) {

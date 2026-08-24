@@ -14,6 +14,8 @@ import CreateReport from './pages/CreateReport';
 import ReportDetail from './pages/ReportDetail';
 import CantiereForm from './pages/CantiereForm';
 import CantiereDetail from './pages/CantiereDetail';
+import ArchivioCantieri from './pages/ArchivioCantieri';
+import ArchivioCantiereDetail from './pages/ArchivioCantiereDetail';
 import Placeholder from './pages/Placeholder';
 import FotoPage from './pages/Foto';
 import EditReport from './pages/EditReport';
@@ -75,6 +77,10 @@ const AuthenticatedApp = () => {
       <Route path="/cantieri/nuovo" element={<CantiereForm />} />
       <Route path="/cantieri/:id" element={<CantiereDetail />} />
       <Route path="/cantieri/:id/modifica" element={<CantiereForm />} />
+
+      {/* Archivio cantieri chiusi (sola lettura) */}
+      <Route path="/archivio-cantieri" element={<ArchivioCantieri />} />
+      <Route path="/archivio-cantieri/:id" element={<ArchivioCantiereDetail />} />
 
       {/* Placeholder sezioni */}
       <Route path="/foto" element={<FotoPage />} />
