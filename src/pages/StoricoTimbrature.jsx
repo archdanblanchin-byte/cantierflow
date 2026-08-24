@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users, Loader2, Navigation } from "lucide-react";
+import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users, Loader2, Navigation, CheckSquare, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { fmtOre } from "@/lib/timbratureUtils";
@@ -35,6 +36,10 @@ export default function StoricoTimbrature() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedDays, setSelectedDays] = useState(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -68,6 +73,44 @@ export default function StoricoTimbrature() {
     queryClient.invalidateQueries({ queryKey: ["storico-timbrature"] });
     queryClient.invalidateQueries({ queryKey: ["timbrature-giornata"] });
   };
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    const ids = giorni
+      .filter((g) => selectedDays.has(g.key))
+      .flatMap((g) => g.list.map((t) => t.id));
+    if (ids.length === 0) {
+      setBulkDeleteOpen(false);
+      setBulkDeleting(false);
+      return;
+    }
+    try {
+      await base44.entities.Timbratura.deleteMany({ id: { $in: ids } });
+      toast({ title: `${ids.length} timbrature eliminate` });
+    } catch (err) {
+      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+      setBulkDeleting(false);
+      return;
+    }
+    setBulkDeleteOpen(false);
+    setBulkDeleting(false);
+    setSelectMode(false);
+    setSelectedDays(new Set());
+    queryClient.invalidateQueries({ queryKey: ["storico-timbrature"] });
+    queryClient.invalidateQueries({ queryKey: ["timbrature-giornata"] });
+  };
+
+  const toggleDaySelection = (key) => {
+    setSelectedDays((s) => {
+      const ns = new Set(s);
+      if (ns.has(key)) ns.delete(key); else ns.add(key);
+      return ns;
+    });
+  };
+
+  const selectedCount = giorni
+    .filter((g) => selectedDays.has(g.key))
+    .reduce((s, g) => s + g.list.length, 0);
 
   const isAdmin = user?.role === "admin";
 
@@ -120,6 +163,20 @@ export default function StoricoTimbrature() {
               </p>
             </div>
           </div>
+          {isAdmin && (
+            <button
+              onClick={() => { setSelectMode(!selectMode); if (selectMode) setSelectedDays(new Set()); }}
+              className={`ml-auto w-9 h-9 rounded-full border flex items-center justify-center transition-colors ${
+                selectMode
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted border-border hover:bg-accent"
+              }`}
+              aria-label="Seleziona"
+              title={selectMode ? "Annulla selezione" : "Seleziona in blocco"}
+            >
+              <CheckSquare className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -158,13 +215,17 @@ export default function StoricoTimbrature() {
             });
           }
 
+          const isSelected = selectedDays.has(giorno.key);
           return (
-            <Card key={giorno.key} className="overflow-hidden">
+            <Card key={giorno.key} className={`overflow-hidden ${selectMode && isSelected ? "ring-2 ring-primary" : ""}`}>
               <button
-                onClick={() => toggle(giorno.key)}
+                onClick={() => selectMode ? toggleDaySelection(giorno.key) : toggle(giorno.key)}
                 className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-accent/40 transition-colors"
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex flex-col items-center justify-center shrink-0">
+                {selectMode && (
+                  <Checkbox checked={isSelected} className="shrink-0 pointer-events-none" />
+                )}
+                <div className={`w-10 h-10 rounded-lg bg-primary/10 flex flex-col items-center justify-center shrink-0 ${selectMode ? "hidden" : ""}`}>
                   <span className="text-[10px] font-semibold uppercase leading-none text-primary">
                     {format(new Date(giorno.key + "T00:00:00"), "MMM", { locale: it })}
                   </span>
@@ -257,7 +318,50 @@ export default function StoricoTimbrature() {
         onSave={handleSaveEdit}
       />
 
-      {/* Conferma eliminazione (solo admin) */}
+      {/* Barra azione multipla (solo admin, modalità selezione) */}
+      {selectMode && (
+        <div className="fixed bottom-16 left-0 right-0 z-20 safe-area-bottom-pb px-4">
+          <div className="max-w-2xl mx-auto bg-card border border-border rounded-xl shadow-lg p-3 flex items-center justify-between">
+            <p className="text-sm font-medium">
+              {selectedCount > 0
+                ? `${selectedCount} timbrature selezionate`
+                : "Nessuna giornata selezionata"}
+            </p>
+            <button
+              onClick={() => selectedCount > 0 && setBulkDeleteOpen(true)}
+              disabled={selectedCount === 0}
+              className="inline-flex items-center gap-2 px-4 h-9 rounded-md bg-destructive text-destructive-foreground text-sm font-medium disabled:opacity-50 hover:bg-destructive/90 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              Elimina in blocco
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Conferma eliminazione multipla (solo admin) */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={(o) => !o && setBulkDeleteOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare {selectedCount} timbrature?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Verranno eliminate tutte le timbrature dei giorni selezionati. L'azione è definitiva e non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleBulkDelete(); }}
+              disabled={bulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Elimina"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Conferma eliminazione singola (solo admin) */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
