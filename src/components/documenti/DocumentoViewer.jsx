@@ -28,9 +28,9 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
   const [fontSize, setFontSize] = useState(1); // index in FONT_SIZES
   const scrollRef = useRef(null);
 
-  // Reset view quando cambia documento
+  // Reset view quando cambia documento: PDF apre nella vista visuale, altri nel reader
   useEffect(() => {
-    setView("reader");
+    setView(documento?.tipo_file === "pdf" ? "pdf" : "reader");
     setFontSize(1);
   }, [documento?.id]);
 
@@ -98,7 +98,11 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
         {/* Corpo */}
         <div className="flex-1 overflow-hidden min-h-0">
           {view === "pdf" && isPdf ? (
-            <iframe src={documento.file_url} title={documento.nome} className="w-full h-full min-h-[60vh]" />
+            <iframe
+              src={`https://docs.google.com/viewer?url=${encodeURIComponent(documento.file_url)}&embedded=true`}
+              title={documento.nome}
+              className="w-full h-full min-h-[60vh]"
+            />
           ) : (
             <div ref={scrollRef} className="h-full overflow-auto px-5 py-4 bg-background">
               <article className={`prose prose-sm max-w-none ${FONT_SIZES[fontSize]} leading-relaxed text-foreground whitespace-pre-wrap break-words`}>
