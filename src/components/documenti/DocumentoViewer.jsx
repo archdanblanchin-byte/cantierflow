@@ -36,6 +36,7 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -45,11 +46,23 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
     setNumPages(0);
     setFullText("");
     setPdfError(false);
+    setFullscreen(false);
   }, [documento?.id]);
 
   useEffect(() => {
     if (documento && scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [documento?.id, view, scale]);
+
+  // Misura la larghezza del contenuto per adattare la pagina PDF (fit-to-width all'apertura)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setContainerWidth(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [documento?.id, fullscreen]);
 
   if (!documento) return null;
   const isPdf = documento.tipo_file === "pdf";
@@ -77,7 +90,7 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
 
   return (
     <Dialog open={!!documento} onOpenChange={(v) => { if (!v) onSegnalazione?.(null); }}>
-      <DialogContent className={`overflow-hidden flex flex-col p-0 gap-0 ${fullscreen ? "fixed inset-0 max-w-none max-h-none w-full h-full rounded-none" : "max-w-3xl max-h-[92vh]"}`}>
+      <DialogContent className={`overflow-hidden flex flex-col p-0 gap-0 ${fullscreen ? "!fixed !inset-0 !left-0 !top-0 max-w-none max-h-none w-full h-full !rounded-none !translate-x-0 !translate-y-0" : "max-w-3xl max-h-[92vh]"}`}>
         <DialogHeader className="px-4 pt-4 pb-2 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 pr-16">
             <FileText className="w-5 h-5 shrink-0" />
@@ -157,7 +170,14 @@ export default function DocumentoViewer({ documento, searchTerm, canManage, onSe
                   loading={<div className="py-16 flex items-center gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Caricamento documento...</div>}
                 >
                   {Array.from({ length: numPages }, (_, i) => (
-                    <Page key={i} pageNumber={i + 1} scale={scale} className="shadow-md" renderTextLayer={false} renderAnnotationLayer={false} />
+                    <Page
+                      key={i}
+                      pageNumber={i + 1}
+                      width={containerWidth > 0 ? Math.max(80, Math.floor((containerWidth - 16) * scale)) : undefined}
+                      className="shadow-md bg-white"
+                      renderTextLayer={false}
+                      renderAnnotationLayer={false}
+                    />
                   ))}
                 </Document>
               )}
