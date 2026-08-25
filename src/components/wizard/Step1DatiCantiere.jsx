@@ -10,7 +10,7 @@ import FotoRapportino from "./FotoRapportino";
 import NewCantiereModal from "./NewCantiereModal";
 import { format } from "date-fns";
 
-export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieriRefresh }) {
+export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieriRefresh, canEditDate = false }) {
   const [showNewCantiere, setShowNewCantiere] = useState(false);
   const cantiereSelezionato = cantieri?.find((c) => c.id === data.cantiere_id);
 
@@ -60,12 +60,16 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Data</Label>
+          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Data{canEditDate && <span className="text-primary ml-1 normal-case tracking-normal">(modificabile come admin)</span>}</Label>
           <Input
             type="datetime-local"
             value={data.data ? format(new Date(data.data), "yyyy-MM-dd'T'HH:mm") : ""}
-            disabled
-            className="mt-1.5 bg-muted"
+            disabled={!canEditDate}
+            onChange={(e) => {
+              const v = e.target.value;
+              onChange({ data: v ? new Date(v).toISOString() : data.data });
+            }}
+            className={`mt-1.5 ${canEditDate ? "bg-background border-primary/40" : "bg-muted"}`}
           />
         </div>
         <div>
