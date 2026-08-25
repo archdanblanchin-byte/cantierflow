@@ -128,7 +128,14 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, canEdi
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">{format(new Date(t.data_ora), "HH:mm", { locale: it })}</span>
-                    {t.in_cantiere === false && <AlertTriangle className="w-3 h-3 text-amber-500" />}
+                    {t.in_cantiere === false && (
+                      <span className="inline-flex items-center gap-0.5 text-amber-600 text-[10px] font-medium" title="Timbratura fuori cantiere">
+                        <AlertTriangle className="w-3 h-3" />
+                        {t.distanza_metri != null
+                          ? `${(t.distanza_metri / 1000).toFixed(t.distanza_metri < 1000 ? 2 : 1)} km`
+                          : "Fuori"}
+                      </span>
+                    )}
                     {canEdit && (
                       <div className="flex items-center gap-1 ml-1">
                         <button onClick={() => onEdit?.(t)} className="p-1 rounded hover:bg-accent" title="Modifica"><Pencil className="w-3 h-3 text-muted-foreground" /></button>
