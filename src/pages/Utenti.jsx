@@ -21,6 +21,7 @@ export default function Utenti() {
   const { toast } = useToast();
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("collaboratore");
+  const [inviteCollaboratoreId, setInviteCollaboratoreId] = useState("none");
   const [inviting, setInviting] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
 
@@ -31,6 +32,18 @@ export default function Utenti() {
     queryFn: () => base44.entities.User.list(),
     enabled: isAdmin,
   });
+
+  const { data: collaboratori = [] } = useQuery({
+    queryKey: ["collaboratori"],
+    queryFn: () => base44.entities.Collaboratore.list(),
+    enabled: isAdmin,
+  });
+
+  // Trova il collaboratore collegato a un utente tramite user_email
+  const findCollabByEmail = (email) =>
+    (collaboratori || []).find(
+      (c) => (c.user_email || "").toLowerCase() === (email || "").toLowerCase()
+    );
 
   if (!isAdmin) {
     return (
@@ -73,8 +86,24 @@ export default function Utenti() {
         }
       }
 
+      // Collega il collaboratore selezionato (o quello con email corrispondente)
+      const selectedId = inviteCollaboratoreId !== "none" ? inviteCollaboratoreId : null;
+      const collabId = selectedId || findCollabByEmail(inviteEmail)?.id;
+      if (collabId) {
+        try {
+          await base44.entities.Collaboratore.update(collabId, {
+            user_email: inviteEmail,
+            ruolo: getRuoloLabel(inviteRole),
+          });
+          queryClient.invalidateQueries({ queryKey: ["collaboratori"] });
+        } catch (err) {
+          console.warn("Collegamento collaboratore non riuscito:", err.message);
+        }
+      }
+
       toast({ title: "Invito inviato", description: `${inviteEmail} invitato come ${getRuoloLabel(inviteRole)}` });
       setInviteEmail("");
+      setInviteCollaboratoreId("none");
       queryClient.invalidateQueries({ queryKey: ["users"] });
     } catch (e) {
       toast({ title: "Errore invito", description: e.message, variant: "destructive" });
@@ -83,10 +112,20 @@ export default function Utenti() {
     }
   };
 
-  const handleRoleChange = async (userId, newRole) => {
-    setUpdatingId(userId);
+  const handleRoleChange = async (userObj, newRole) => {
+    setUpdatingId(userObj.id);
     try {
-      await base44.entities.User.update(userId, { role: newRole });
+      await base44.entities.User.update(userObj.id, { role: newRole });
+      // Sincronizza il ruolo sul collaboratore collegato (tramite user_email)
+      const linked = findCollabByEmail(userObj.email);
+      if (linked) {
+        try {
+          await base44.entities.Collaboratore.update(linked.id, { ruolo: getRuoloLabel(newRole) });
+          queryClient.invalidateQueries({ queryKey: ["collaboratori"] });
+        } catch (err) {
+          console.warn("Sincronizzazione collaboratore non riuscita:", err.message);
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast({ title: "Ruolo aggiornato", description: `Assegnato: ${getRuoloLabel(newRole)}` });
     } catch (e) {
@@ -145,6 +184,23 @@ export default function Utenti() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={inviteCollaboratoreId} onValueChange={setInviteCollaboratoreId}>
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder="Collega a collaboratore (opzionale)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Nessuno / crea nuovo</SelectItem>
+              {collaboratori.map(c => (
+                <SelectItem
+                  key={c.id}
+                  value={c.id}
+                  disabled={!!c.user_email && c.user_email.toLowerCase() !== inviteEmail.toLowerCase()}
+                >
+                  {c.nome}{c.user_email ? ` · ${c.user_email}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button onClick={handleInvite} disabled={inviting || !inviteEmail} className="w-full gap-2">
             {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
             Invia invito
@@ -175,11 +231,15 @@ export default function Utenti() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{u.full_name || "Senza nome"}</p>
                     <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                    {(() => {
+                      const c = findCollabByEmail(u.email);
+                      return c ? <p className="text-[11px] text-primary truncate">↳ {c.nome} ({c.ruolo || "—"})</p> : null;
+                    })()}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Select
                       value={u.role}
-                      onValueChange={(v) => handleRoleChange(u.id, v)}
+                      onValueChange={(v) => handleRoleChange(u, v)}
                       disabled={updatingId === u.id || u.id === currentUser?.id}
                     >
                       <SelectTrigger className="h-8 w-[140px] text-xs">

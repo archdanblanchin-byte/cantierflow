@@ -10,6 +10,7 @@ const SEZIONI = [
   { key: "collaboratori", label: "Collaboratori", icon: Users, color: "bg-blue-500", entity: "Collaboratore", fields: [
     { key: "nome", label: "Nome", required: true },
     { key: "ruolo", label: "Ruolo" },
+    { key: "user_email", label: "Email utente app (collegamento)" },
   ]},
   { key: "furgoni", label: "Furgoni", icon: Truck, color: "bg-yellow-500", entity: "Furgone", fields: [
     { key: "nome", label: "Nome / Targa", required: true },
