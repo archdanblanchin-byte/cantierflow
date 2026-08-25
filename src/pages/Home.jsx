@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -69,6 +70,15 @@ function RapportiniList() {
     queryKey: ["rapportini"],
     queryFn: () => base44.entities.Rapportino.list("-created_date", 50),
   });
+  const { data: cantieri = [] } = useQuery({
+    queryKey: ["cantieri"],
+    queryFn: () => base44.entities.Cantiere.list(),
+  });
+  const chiusiIds = useMemo(
+    () => new Set(cantieri.filter((c) => c.stato === "chiuso" || (!c.stato && c.attivo === false)).map((c) => c.id)),
+    [cantieri]
+  );
+  const visibili = rapportini.filter((r) => !chiusiIds.has(r.cantiere_id));
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["rapportini"] });
@@ -83,7 +93,7 @@ function RapportiniList() {
               <div>
                 <h1 className="font-bold text-lg">Rapportini</h1>
                 <p className="text-xs text-muted-foreground">
-                  {isLoading ? "..." : `${rapportini.length} rapportin${rapportini.length === 1 ? "o" : "i"}`}
+                  {isLoading ? "..." : `${visibili.length} rapportin${visibili.length === 1 ? "o" : "i"}`}
                 </p>
               </div>
             </div>
@@ -103,7 +113,7 @@ function RapportiniList() {
           <div className="space-y-3">
             {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
           </div>
-        ) : rapportini.length === 0 ? (
+        ) : visibili.length === 0 ? (
           <div className="text-center py-16">
             <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-muted-foreground font-medium">Nessun rapportino</p>
@@ -114,7 +124,7 @@ function RapportiniList() {
           </div>
         ) : (
           <div className="space-y-3">
-            {rapportini.map((r) => <ReportCard key={r.id} report={r} />)}
+            {visibili.map((r) => <ReportCard key={r.id} report={r} />)}
           </div>
         )}
         </PullToRefresh>

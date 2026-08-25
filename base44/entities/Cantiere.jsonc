@@ -46,6 +46,10 @@
       "format": "date",
       "description": "Data di chiusura del cantiere"
     },
+    "pdf_url": {
+      "type": "string",
+      "description": "URL del PDF riepilogo generato automaticamente alla chiusura del cantiere"
+    },
     "ore_stimate": {
       "type": "number",
       "description": "Ore stimate per il cantiere"

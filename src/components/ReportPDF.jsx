@@ -449,8 +449,7 @@ export function ReportPDFContent({ cantiere, rapportini = [], foto = [], trasfer
   );
 }
 
-export async function captureAndSavePdf(rootEl, nomeCantiere) {
-  if (!rootEl) { toast.error("Contenuto non trovato"); throw new Error("Contenuto non trovato"); }
+async function renderNodeToCanvas(rootEl) {
   const wrap = document.createElement("div");
   wrap.style.position = "fixed";
   wrap.style.left = "-99999px";
@@ -477,7 +476,10 @@ export async function captureAndSavePdf(rootEl, nomeCantiere) {
     logging: false,
   });
   document.body.removeChild(wrap);
+  return canvas;
+}
 
+function canvasToPdfFile(canvas, nomeCantiere) {
   const imgData = canvas.toDataURL("image/jpeg", 0.95);
   const pdf = new jsPDF("p", "mm", "a4");
   const pageW = pdf.internal.pageSize.getWidth();
@@ -496,7 +498,25 @@ export async function captureAndSavePdf(rootEl, nomeCantiere) {
   }
 
   const nome = (nomeCantiere || "cantiere").replace(/[^a-zA-Z0-9-_ ]/g, "").trim() || "cantiere";
-  pdf.save(`Report_${nome}.pdf`);
+  return new File([pdf.output("blob")], `Report_${nome}.pdf`, { type: "application/pdf" });
+}
+
+export async function captureToPdfFile(rootEl, nomeCantiere) {
+  if (!rootEl) { toast.error("Contenuto non trovato"); throw new Error("Contenuto non trovato"); }
+  const canvas = await renderNodeToCanvas(rootEl);
+  return canvasToPdfFile(canvas, nomeCantiere);
+}
+
+export async function captureAndSavePdf(rootEl, nomeCantiere) {
+  const file = await captureToPdfFile(rootEl, nomeCantiere);
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 export default function ReportPDFButton({ cantiere, rapportini, foto, contentId = "pdf-content" }) {

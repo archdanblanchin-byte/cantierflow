@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, MapPin, Clock, ChevronRight, Building2, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Plus, MapPin, Clock, ChevronRight, Building2, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -14,6 +14,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import CantiereListPdfButton from "@/components/cantiere/CantiereListPdfButton";
+import CantierePdfGenerator from "@/components/cantiere/CantierePdfGenerator";
 
 const STATO_TABS = [
   { key: "aperto", label: "Aperti", color: "default" },
@@ -42,19 +43,39 @@ export default function Cantieri() {
   const qc = useQueryClient();
   const [tab, setTab] = useState("aperto");
   const [closeTarget, setCloseTarget] = useState(null);
+  const [pdfCloseTarget, setPdfCloseTarget] = useState(null);
+  const [generating, setGenerating] = useState(false);
 
-  const chiudiCantiere = async (c) => {
+  const startClose = (c) => {
+    setCloseTarget(null);
+    setPdfCloseTarget(c);
+    setGenerating(true);
+  };
+
+  const handlePdfDone = async (fileUrl) => {
+    const c = pdfCloseTarget;
+    if (!c) return;
     try {
       await base44.entities.Cantiere.update(c.id, {
         stato: "chiuso",
         attivo: false,
         data_chiusura: c.data_chiusura || new Date().toISOString().slice(0, 10),
+        pdf_url: fileUrl,
       });
       qc.invalidateQueries({ queryKey: ["cantieri"] });
-      toast.success(`Cantiere "${c.nome}" chiuso`);
+      toast.success(`Cantiere "${c.nome}" chiuso e PDF generato`);
     } catch (e) {
       toast.error("Errore: " + (e?.message || e));
+    } finally {
+      setPdfCloseTarget(null);
+      setGenerating(false);
     }
+  };
+
+  const handlePdfError = (msg) => {
+    toast.error("Errore generazione PDF: " + msg);
+    setPdfCloseTarget(null);
+    setGenerating(false);
   };
 
   const { data: cantieri = [], isLoading } = useQuery({
@@ -226,17 +247,32 @@ export default function Cantieri() {
           <AlertDialogHeader>
             <AlertDialogTitle>Chiudere il cantiere?</AlertDialogTitle>
             <AlertDialogDescription>
-              Confermi la chiusura di "{closeTarget?.nome}"? Puoi riaprirlo dal dettaglio cantiere in qualsiasi momento.
+              Confermi la chiusura di "{closeTarget?.nome}"? Verrà generato automaticamente il PDF riepilogo e il cantiere passerà nell'archivio. Puoi riaprirlo dal dettaglio in qualsiasi momento.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { if (closeTarget) chiudiCantiere(closeTarget); setCloseTarget(null); }}>
-              Chiudi cantiere
+            <AlertDialogAction onClick={() => { if (closeTarget) startClose(closeTarget); }}>
+              Chiudi e genera PDF
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CantierePdfGenerator
+        cantiere={pdfCloseTarget}
+        active={!!pdfCloseTarget}
+        onComplete={handlePdfDone}
+        onError={handlePdfError}
+      />
+      {generating && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Generazione PDF e chiusura cantiere…</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

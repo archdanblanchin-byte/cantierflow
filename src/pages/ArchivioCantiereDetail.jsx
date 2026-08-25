@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import ReportPDFButton, { ReportPDFContent } from "@/components/ReportPDF";
 
 export default function ArchivioCantiereDetail() {
@@ -76,7 +76,16 @@ export default function ArchivioCantiereDetail() {
               <p className="text-xs text-muted-foreground">Archivio · sola lettura</p>
             </div>
           </div>
-          <ReportPDFButton cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
+          <div className="flex items-center gap-2">
+            {cantiere.pdf_url && (
+              <a href={cantiere.pdf_url} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" className="gap-2">
+                  <FileText className="w-4 h-4" /> Apri PDF
+                </Button>
+              </a>
+            )}
+            <ReportPDFButton cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
+          </div>
         </div>
       </div>
 

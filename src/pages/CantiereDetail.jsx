@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, MapPin, Pencil, FileText, Shield, Truck, Calculator, Camera,
-  Pause, Play, CheckCircle2, Trash2,
+  Pause, Play, CheckCircle2, Trash2, Loader2,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import FotoCard from "@/components/foto/FotoCard";
-import ReportPDFButton, { ReportPDFContent } from "@/components/ReportPDF";
+import ReportPDFButton, { ReportPDFContent, captureToPdfFile } from "@/components/ReportPDF";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -52,6 +52,7 @@ export default function CantiereDetail() {
   const qc = useQueryClient();
   const [cantiere, setCantiere] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const { data: rapportini = [] } = useQuery({
     queryKey: ["rapportini_cantiere", id],
@@ -89,16 +90,31 @@ export default function CantiereDetail() {
 
   const cambiaStato = async (nuovo) => {
     try {
+      let pdf_url = cantiere.pdf_url;
+      if (nuovo === "chiuso" && !pdf_url) {
+        const tId = toast.loading("Generazione PDF del cantiere…");
+        setGeneratingPdf(true);
+        const el = document.getElementById("pdf-content");
+        if (el) {
+          const file = await captureToPdfFile(el, cantiere.nome);
+          const res = await base44.integrations.Core.UploadFile({ file });
+          pdf_url = res.file_url;
+        }
+        toast.success("PDF generato", { id: tId });
+        setGeneratingPdf(false);
+      }
       const payload = {
         stato: nuovo,
         attivo: nuovo === "aperto",
         data_chiusura: nuovo === "chiuso" ? (cantiere.data_chiusura || new Date().toISOString().slice(0, 10)) : cantiere.data_chiusura,
       };
+      if (nuovo === "chiuso" && pdf_url) payload.pdf_url = pdf_url;
       await base44.entities.Cantiere.update(id, payload);
       setCantiere((prev) => ({ ...prev, ...payload }));
       qc.invalidateQueries({ queryKey: ["cantieri"] });
       toast.success(`Stato aggiornato: ${STATO_BADGE[nuovo].label}`);
     } catch (e) {
+      setGeneratingPdf(false);
       toast.error("Errore: " + (e?.message || e));
     }
   };
@@ -379,6 +395,15 @@ export default function CantiereDetail() {
       <div className="hidden">
         <ReportPDFContent cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
       </div>
+
+      {generatingPdf && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Generazione PDF del cantiere…</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
