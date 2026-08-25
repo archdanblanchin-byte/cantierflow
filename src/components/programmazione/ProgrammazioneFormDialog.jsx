@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [errore, setErrore] = useState(null);
+  const qc = useQueryClient();
 
   const { data: cantieri = [] } = useQuery({
     queryKey: ["cantieri-attivi"],
@@ -197,6 +198,7 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
         await base44.entities.Programmazione.create(payload);
         toast.success("Programmazione creata");
       }
+      qc.invalidateQueries({ queryKey: ["programmazione-giorno"] });
       onSaved?.();
       onClose?.();
     } catch (e) {

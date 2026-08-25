@@ -61,6 +61,7 @@ export default function Programma() {
   const reload = () => {
     qc.invalidateQueries({ queryKey: ["programma", dataSelezionata] });
     qc.invalidateQueries({ queryKey: ["programmazioni", dataSelezionata] });
+    qc.invalidateQueries({ queryKey: ["programmazione-giorno"] });
   };
 
   const handleEdit = (item) => { setEditing(item); setDialogOpen(true); };
