@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, StickyNote, PenLine, Inbox, Send, User, Share2 } from "lucide-react";
+import { ArrowLeft, StickyNote, PenLine, Inbox, Send, User, Share2, MapPin } from "lucide-react";
 import NotaVocaleRecorder from "@/components/note/NotaVocaleRecorder";
 import NotaFormDialog from "@/components/note/NotaFormDialog";
 import NotaReviewDialog from "@/components/note/NotaReviewDialog";
@@ -15,7 +15,7 @@ export default function Note() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
-  const [tab, setTab] = useState("personali"); // personali | comunicazione
+  const [tab, setTab] = useState("personali"); // personali | colleghi | cantieri
   const [subCom, setSubCom] = useState("tutte"); // tutte | inviate | ricevute
   const [recorderMode, setRecorderMode] = useState(null); // null | "personale" | "comunicazione"
   const [formOpen, setFormOpen] = useState(false);
@@ -40,14 +40,16 @@ export default function Note() {
     enabled: !!user
   });
 
-  // Personali: nessun destinatario (visibili solo all'autore)
-  const personali = note.filter((n) => (n.destinatari_email || []).length === 0);
-  // Comunicazione: hanno almeno un destinatario (inviate o ricevute)
-  const comunic = note.filter((n) => (n.destinatari_email || []).length > 0);
-  const comunicInviate = comunic.filter((n) => n.created_by === user?.email);
-  const comunicRicevute = comunic.filter((n) => (n.destinatari_email || []).includes(user?.email));
-  const comunicFiltered =
-  subCom === "inviate" ? comunicInviate : subCom === "ricevute" ? comunicRicevute : comunic;
+  // Personali: nessun destinatario e nessun cantiere (visibili solo all'autore)
+  const personali = note.filter((n) => !n.cantiere_id && (n.destinatari_email || []).length === 0);
+  // Condivise con colleghi: hanno destinatari, nessun cantiere
+  const noteColleghi = note.filter((n) => !n.cantiere_id && (n.destinatari_email || []).length > 0);
+  // Condivise con cantiere: collegate a un cantiere
+  const noteCantieri = note.filter((n) => !!n.cantiere_id);
+  const colleghiInviate = noteColleghi.filter((n) => n.created_by === user?.email);
+  const colleghiRicevute = noteColleghi.filter((n) => (n.destinatari_email || []).includes(user?.email));
+  const colleghiFiltered =
+  subCom === "inviate" ? colleghiInviate : subCom === "ricevute" ? colleghiRicevute : noteColleghi;
 
   const sortByCompletato = (arr) => [...arr].sort((a, b) => {
     const ca = a.completato ? 1 : 0;
@@ -55,7 +57,8 @@ export default function Note() {
     if (ca !== cb) return ca - cb;
     return new Date(b.created_date) - new Date(a.created_date);
   });
-  const list = sortByCompletato(tab === "personali" ? personali : comunicFiltered);
+  const activeList = tab === "personali" ? personali : tab === "colleghi" ? colleghiFiltered : noteCantieri;
+  const list = sortByCompletato(activeList);
   const listAperte = list.filter((n) => !n.completato);
   const listCompletate = list.filter((n) => n.completato);
 
@@ -68,6 +71,7 @@ export default function Note() {
   const onSaved = () => {
     queryClient.invalidateQueries({ queryKey: ["note"] });
     queryClient.invalidateQueries({ queryKey: ["note-ricevute"] });
+    queryClient.invalidateQueries({ queryKey: ["note-cantiere"] });
   };
 
   return (
@@ -82,7 +86,7 @@ export default function Note() {
           </div>
           <div>
             <h1 className="text-lg font-bold leading-tight">Note</h1>
-            <p className="text-[11px] text-muted-foreground">Personali o di comunicazione, anche più in una registrazione</p>
+            <p className="text-[11px] text-muted-foreground">Personali, colleghi o cantiere, anche più in una registrazione</p>
           </div>
           <div className="ml-auto"><NotificationsBell /></div>
         </div>
@@ -130,20 +134,23 @@ export default function Note() {
           </div>
         }
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant={tab === "personali" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setTab("personali")}>
             <User className="w-3.5 h-3.5" /> Personali ({personali.length})
           </Button>
-          
-
-          
+          <Button variant={tab === "colleghi" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setTab("colleghi")}>
+            <Share2 className="w-3.5 h-3.5" /> Colleghi ({noteColleghi.length})
+          </Button>
+          <Button variant={tab === "cantieri" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setTab("cantieri")}>
+            <MapPin className="w-3.5 h-3.5" /> Cantiere ({noteCantieri.length})
+          </Button>
         </div>
 
-        {tab === "comunicazione" &&
+        {tab === "colleghi" &&
         <div className="flex gap-2 -mt-1">
-            <Button variant={subCom === "tutte" ? "secondary" : "ghost"} size="sm" onClick={() => setSubCom("tutte")}>Tutte ({comunic.length})</Button>
-            <Button variant={subCom === "inviate" ? "secondary" : "ghost"} size="sm" className="gap-1" onClick={() => setSubCom("inviate")}><Send className="w-3 h-3" /> Inviate ({comunicInviate.length})</Button>
-            <Button variant={subCom === "ricevute" ? "secondary" : "ghost"} size="sm" className="gap-1" onClick={() => setSubCom("ricevute")}><Inbox className="w-3 h-3" /> Ricevute ({comunicRicevute.length})</Button>
+            <Button variant={subCom === "tutte" ? "secondary" : "ghost"} size="sm" onClick={() => setSubCom("tutte")}>Tutte ({noteColleghi.length})</Button>
+            <Button variant={subCom === "inviate" ? "secondary" : "ghost"} size="sm" className="gap-1" onClick={() => setSubCom("inviate")}><Send className="w-3 h-3" /> Inviate ({colleghiInviate.length})</Button>
+            <Button variant={subCom === "ricevute" ? "secondary" : "ghost"} size="sm" className="gap-1" onClick={() => setSubCom("ricevute")}><Inbox className="w-3 h-3" /> Ricevute ({colleghiRicevute.length})</Button>
           </div>
         }
 
@@ -152,7 +159,7 @@ export default function Note() {
         list.length === 0 ?
         <div className="text-center py-12 text-muted-foreground">
             <StickyNote className="w-10 h-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Nessuna nota {tab === "personali" ? "personale" : "di comunicazione"}</p>
+            <p className="text-sm">Nessuna nota {tab === "personali" ? "personale" : tab === "colleghi" ? "di comunicazione" : "di cantiere"}</p>
           </div> :
 
         <div className="space-y-2.5">
