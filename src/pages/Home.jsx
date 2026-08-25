@@ -69,7 +69,7 @@ function RapportiniList() {
   const queryClient = useQueryClient();
   const { data: rapportini = [], isLoading } = useQuery({
     queryKey: ["rapportini"],
-    queryFn: () => base44.entities.Rapportino.list("-created_date", 50),
+    queryFn: () => base44.entities.Rapportino.list("-data", 50),
   });
   const { data: cantieri = [] } = useQuery({
     queryKey: ["cantieri"],
@@ -79,7 +79,13 @@ function RapportiniList() {
     () => new Set(cantieri.filter((c) => c.stato === "chiuso" || (!c.stato && c.attivo === false)).map((c) => c.id)),
     [cantieri]
   );
-  const visibili = rapportini.filter((r) => !chiusiIds.has(r.cantiere_id));
+  const visibili = useMemo(
+    () =>
+      rapportini
+        .filter((r) => !chiusiIds.has(r.cantiere_id))
+        .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0)),
+    [rapportini, chiusiIds]
+  );
   const [query, setQuery] = useState("");
   const filtrati = useMemo(() => {
     const q = query.trim().toLowerCase();
