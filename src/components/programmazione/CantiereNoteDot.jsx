@@ -26,11 +26,14 @@ export default function CantiereNoteDot({ cantiereNome, notes, currentUser }) {
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(true); }}
-        className="relative inline-flex items-center justify-center"
+        className="relative inline-flex items-center gap-1.5"
         title={`${attive.length} nota/e di cantiere`}
         aria-label={`${attive.length} nota/e di cantiere`}
       >
-        <span className="w-3 h-3 rounded-full bg-pink-500 ring-2 ring-card animate-pulse" />
+        <span className="w-3 h-3 rounded-full bg-pink-500 ring-2 ring-card animate-pulse shrink-0" />
+        <span className="text-[11px] leading-tight text-pink-700 dark:text-pink-300 max-w-[150px] truncate text-left">
+          {attive[0]?.testo}{attive.length > 1 ? ` (+${attive.length - 1})` : ""}
+        </span>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
