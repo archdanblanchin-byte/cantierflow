@@ -155,7 +155,7 @@ export default function EditReport() {
 
   const stepContent = {
     1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} canEditDate={isAdmin} />,
-    2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} showErrors={showErrors} canEditOre={isAdmin} />,
+    2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} showErrors={showErrors} canEditOre={isAdmin} canEditCollab={isAdmin} />,
     3: <Step3Lavorazioni data={formData} onChange={updateForm} tipiLavorazione={tipiLavorazione} />,
     4: <Step4Materiali data={formData} onChange={updateForm} materialiBase={materialiBase} />,
     5: <Step5Riepilogo data={formData} />,

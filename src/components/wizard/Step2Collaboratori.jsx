@@ -84,7 +84,7 @@ function OreInput({ value, onChange }) {
   );
 }
 
-export default function Step2Collaboratori({ data, onChange, collaboratoriList, showErrors, canEditOre = true }) {
+export default function Step2Collaboratori({ data, onChange, collaboratoriList, showErrors, canEditOre = true, canEditCollab = false }) {
   const [showPicker, setShowPicker] = useState(false);
   const [selected, setSelected] = useState([]);
   const collaboratori = data.collaboratori || [];
@@ -115,6 +115,15 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
 
   const removeCollaboratore = (index) => {
     onChange({ collaboratori: collaboratori.filter((_, i) => i !== index) });
+  };
+
+  // Solo admin: cambia il collaboratore assegnato a una riga esistente (mantiene ore/note)
+  const changePersona = (index, newId) => {
+    const found = collaboratoriList.find((c) => c.id === newId);
+    if (!found) return;
+    const updated = [...collaboratori];
+    updated[index] = { ...updated[index], collaboratore_id: newId, nome: found.nome };
+    onChange({ collaboratori: updated });
   };
 
   const available = collaboratoriList
@@ -180,6 +189,20 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
+              {canEditCollab && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Cambia collaboratore</Label>
+                  <SheetSelect
+                    value={coll.collaboratore_id}
+                    onValueChange={(v) => changePersona(i, v)}
+                    options={[
+                      { value: coll.collaboratore_id, label: coll.nome },
+                      ...available.map((c) => ({ value: c.id, label: c.nome })),
+                    ]}
+                    placeholder="Seleziona collaboratore..."
+                  />
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-muted-foreground">Ore lavorate</Label>
