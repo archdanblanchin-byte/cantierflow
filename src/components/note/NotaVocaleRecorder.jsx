@@ -60,9 +60,9 @@ REGOLE:
 - Se l'utente elenca materiale/attrezzi da caricare o cose da fare, crea una nota "lista" con items.
 - Se l'utente chiede un promemoria/sveglia con una data, crea una nota "promemoria" con data_promemoria.
 - data_promemoria: se dice "domani", "oggi", "lunedì", "alle 14", "tra 3 giorni", calcola ISO 8601. Oggi è ${oggiStr} (timezone Europe/Rome). Se non dice un'ora, usa le 09:00.
-- testo: riassunto breve e chiaro del contenuto/azione.
+- testo: usa SOLO le parole e le informazioni dette dall'utente. NON aggiungere macchine, macchinari, materiali, cantieri, orari o dettagli non citati. Non indovinare, non completare, non inferire.
 - priorita: "alta" se "urgente/subito/importante", "bassa" se "quando puoi", altrimenti "media".
-- Non inventare dati non detti. Se il resoconto è vuoto o incomprensibile, restituisci un array vuoto.
+- Non inventare MAI dati non detti: se l'utente non ha citato qualcosa, non inserirla. Se il resoconto è vuoto o incomprensibile, restituisci un array vuoto.
 
 Cantieri conosciuti (usa cantiere_nome solo se esplicitamente citato): ${cantieriStr}
 Furgoni conosciuti (usa furgone_nome solo se esplicitamente citato): ${furgoniStr}
@@ -84,9 +84,9 @@ REGOLE:
 - Se l'utente segnala un problema al furgone ("il furgone non va", "anomalia"), crea un messaggio per il "responsabile" o "amministrazione" e collega furgone_nome.
 - cantiere_nome / furgone_nome: scegli dalle liste solo se esplicitamente citati.
 - data_promemoria: ISO 8601 se dice una data/ora. Oggi è ${oggiStr} (Europe/Rome). Senza ora usa 09:00.
-- testo: spiega CHIARAMENTE cosa deve fare il destinatario (il "cosa" e il "dove"), usando le parole dell'utente. Il destinatario deve capire l'azione richiesta.
+- testo: spiega cosa deve fare il destinatario usando SOLO le parole e le informazioni dette dall'utente. NON aggiungere macchine, macchinari, materiali, cantieri, furgoni, orari o dettagli non citati. Non indovinare, non completare, non inferire dal contesto.
 - priorita: "alta" se "urgente/subito", "bassa" se "quando puoi", altrimenti "media".
-- Non inventare dati non detti. Se il resoconto è vuoto o incomprensibile, restituisci un array vuoto.
+- Non inventare MAI dati non detti: se l'utente non ha citato qualcosa, non inserirla. Se il resoconto è vuoto o incomprensibile, restituisci un array vuoto.
 
 Cantieri conosciuti: ${cantieriStr}
 Furgoni conosciuti: ${furgoniStr}

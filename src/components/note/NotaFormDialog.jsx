@@ -121,12 +121,12 @@ export default function NotaFormDialog({ open, onOpenChange, initial, onSaved })
       const furgoniStr = furgoni.map((f) => f.nome).filter(Boolean).join(", ") || "(nessuno)";
       const collStr = destOptions.map((o) => o.nome).join(", ") || "(nessuno)";
       const prompt = `Sei un assistente che aiuta a scrivere note chiare e ben strutturate per un'azienda edile. Dal testo grezzo dell'utente, estrai e restituisci in JSON:
-- testo_migliorato: riscrivi in modo chiaro, corretto e conciso in italiano, mantenendo ogni dettaglio (chi, cosa, dove, quando). Non aggiungere informazioni non presenti.
+- testo_migliorato: riscrivi in modo chiaro e corretto in italiano usando SOLO le informazioni esplicitamente dette dall'utente. NON aggiungere MAI dettagli non presenti: se l'utente NON ha citato macchine, macchinari, materiali, cantieri, furgoni, persone, orari o quantità, NON inserirli. Non indovinare, non completare, non inferire dal contesto.
 - tipo: "promemoria" se cita una data/ora, "lista" se è un elenco di materiale/attrezzi/cose da fare, "messaggio" se è rivolto a qualcuno, "personale" negli altri casi.
 - data_promemoria: data/ora ISO 8601 se citata. Oggi è ${oggi} (timezone Europe/Rome). Se dice "domani"/"lunedì"/"alle 14" calcola la data; senza ora usa le 09:00. Stringa vuota se non citata.
-- cantiere_nome: cantiere citato scelto SOLO tra: ${cantieriStr}. Vuoto se non citato o non in lista.
-- furgone_nome: furgone citato scelto SOLO tra: ${furgoniStr}. Vuoto se non citato.
-- destinatari_nomi: nomi/ruoli citati come destinatari tra: ${collStr}. Se cita un ruolo generico (magazziniere, titolare, responsabile, amministrazione) usa quel ruolo testuale. Array vuoto se è una nota personale.
+- cantiere_nome: scegli SOLO se l'utente nomina esplicitamente un cantiere tra: ${cantieriStr}. Non dedurlo dal contesto. Vuoto se non citato o non in lista.
+- furgone_nome: scegli SOLO se l'utente nomina esplicitamente un furgone tra: ${furgoniStr}. Non dedurlo. Vuoto se non citato.
+- destinatari_nomi: nomi/ruoli citati ESPPLICITAMENTE come destinatari tra: ${collStr}. Se cita un ruolo generico (magazziniere, titolare, responsabile, amministrazione) usa quel ruolo testuale. Non inventare destinatari. Array vuoto se è una nota personale.
 - priorita: "alta" se "urgente/subito/importante", "bassa" se "quando puoi", "media" altrimenti.
 - dubbio: se c'è AMBIGUITÀ su data, ora, luogo, destinatario o sull'azione da fare, scrivi una BREVE domanda in italiano per chiarire. Stringa vuota se tutto è chiaro.
 
