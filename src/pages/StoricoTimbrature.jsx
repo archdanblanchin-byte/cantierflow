@@ -333,6 +333,7 @@ export default function StoricoTimbrature() {
         timbratura={editTarget}
         onOpenChange={setEditOpen}
         onSave={handleSaveEdit}
+        canEditTime={isAdmin}
       />
 
       {/* Barra azione multipla (solo admin, modalità selezione) */}

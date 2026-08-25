@@ -216,14 +216,17 @@ export default function Timbratura() {
   };
   const handleSalvaEdit = async () => {
     try {
-      if (!editForm.cantiere_id || !editForm.data_ora) {toast.error("Cantiere e orario obbligatori");return;}
-      const cantiere = cantieri.find((c) => c.id === editForm.cantiere_id);
-      await base44.entities.Timbratura.update(editando.id, {
-        tipo_evento: editForm.tipo_evento,
-        data_ora: new Date(editForm.data_ora).toISOString(),
-        cantiere_id: editForm.cantiere_id,
-        cantiere_nome: cantiere?.nome || editando.cantiere_nome
-      });
+      // I non-admin possono modificare solo il tipo evento (es. correggere chiusura->spostamento),
+      // non l'orario né il cantiere.
+      const payload = { tipo_evento: editForm.tipo_evento };
+      if (isAdmin) {
+        if (!editForm.cantiere_id || !editForm.data_ora) {toast.error("Cantiere e orario obbligatori");return;}
+        const cantiere = cantieri.find((c) => c.id === editForm.cantiere_id);
+        payload.data_ora = new Date(editForm.data_ora).toISOString();
+        payload.cantiere_id = editForm.cantiere_id;
+        payload.cantiere_nome = cantiere?.nome || editando.cantiere_nome;
+      }
+      await base44.entities.Timbratura.update(editando.id, payload);
       queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
       // Ricalcola le ore del rapportino per il cantiere di origine e quello di destinazione
       const cantieriDaSync = new Set([editando.cantiere_id, editForm.cantiere_id].filter(Boolean));
@@ -570,12 +573,13 @@ export default function Timbratura() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label>Cantiere</Label>
+              <Label>Cantiere {!isAdmin && <span className="text-[10px] text-muted-foreground">(non modificabile)</span>}</Label>
               <SheetSelect
                 value={editForm.cantiere_id}
                 onValueChange={(v) => setEditForm((f) => ({ ...f, cantiere_id: v }))}
                 options={cantieri.map((c) => ({ value: c.id, label: c.nome }))}
                 placeholder="Seleziona cantiere"
+                disabled={!isAdmin}
               />
             </div>
             <div className="space-y-1">
@@ -594,8 +598,8 @@ export default function Timbratura() {
               />
             </div>
             <div className="space-y-1">
-              <Label>Data e ora</Label>
-              <Input type="datetime-local" value={editForm.data_ora} onChange={(e) => setEditForm((f) => ({ ...f, data_ora: e.target.value }))} />
+              <Label>Data e ora {!isAdmin && <span className="text-[10px] text-muted-foreground">(non modificabile)</span>}</Label>
+              <Input type="datetime-local" value={editForm.data_ora} onChange={(e) => setEditForm((f) => ({ ...f, data_ora: e.target.value }))} disabled={!isAdmin} />
             </div>
           </div>
           <DialogFooter>

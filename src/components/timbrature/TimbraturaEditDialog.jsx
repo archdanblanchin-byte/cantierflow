@@ -24,7 +24,7 @@ function toLocalInput(iso) {
   return local.toISOString().slice(0, 16);
 }
 
-export default function TimbraturaEditDialog({ open, timbratura, onOpenChange, onSave }) {
+export default function TimbraturaEditDialog({ open, timbratura, onOpenChange, onSave, canEditTime = true }) {
   const [tipo, setTipo] = useState("ingresso");
   const [dataOra, setDataOra] = useState("");
   const [cantiereNome, setCantiereNome] = useState("");
@@ -43,12 +43,12 @@ export default function TimbraturaEditDialog({ open, timbratura, onOpenChange, o
   const handleSave = async () => {
     setSaving(true);
     try {
-      const payload = {
-        tipo_evento: tipo,
-        data_ora: new Date(dataOra).toISOString(),
-        cantiere_nome: cantiereNome,
-        note,
-      };
+      // Se canEditTime è false (utente non admin), si modifica solo il tipo evento
+      const payload = { tipo_evento: tipo, note };
+      if (canEditTime) {
+        payload.data_ora = new Date(dataOra).toISOString();
+        payload.cantiere_nome = cantiereNome;
+      }
       await onSave(payload);
       onOpenChange(false);
     } finally {
@@ -76,16 +76,17 @@ export default function TimbraturaEditDialog({ open, timbratura, onOpenChange, o
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label>Data e ora</Label>
+            <Label>Data e ora {!canEditTime && <span className="text-[10px] text-muted-foreground">(non modificabile)</span>}</Label>
             <Input
               type="datetime-local"
               value={dataOra}
               onChange={(e) => setDataOra(e.target.value)}
+              disabled={!canEditTime}
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Cantiere</Label>
-            <Input value={cantiereNome} onChange={(e) => setCantiereNome(e.target.value)} />
+            <Label>Cantiere {!canEditTime && <span className="text-[10px] text-muted-foreground">(non modificabile)</span>}</Label>
+            <Input value={cantiereNome} onChange={(e) => setCantiereNome(e.target.value)} disabled={!canEditTime} />
           </div>
           <div className="space-y-1.5">
             <Label>Note</Label>
