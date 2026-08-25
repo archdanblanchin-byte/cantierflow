@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Sun, CloudRain, ClipboardCheck, Trash2, CheckSquare, X } from "lucide-react";
+import { ArrowLeft, Sun, CloudRain, ClipboardCheck, Trash2, CheckSquare, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { usePermessi } from "@/hooks/usePermessi";
 import ProgrammazioneCard from "@/components/programmazione/ProgrammazioneCard";
@@ -16,8 +16,14 @@ export default function Programma() {
   const embed = params.get("embed") === "1";
   const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
-  const [dataSelezionata, setDataSelezionata] = useState(today);
+  const domani = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const [dataSelezionata, setDataSelezionata] = useState(domani);
   const { isGestore } = usePermessi();
+  const shiftDay = (delta) => {
+    const d = new Date(dataSelezionata + "T00:00:00");
+    d.setDate(d.getDate() + delta);
+    setDataSelezionata(d.toISOString().slice(0, 10));
+  };
 
   const { data: programmi = [], isLoading } = useQuery({
     queryKey: ["programma", dataSelezionata],
@@ -150,8 +156,14 @@ export default function Programma() {
             </Button>
           )}
         </div>
-        <div className="max-w-2xl mx-auto px-4 pb-3">
-          <Input type="date" value={dataSelezionata} onChange={(e) => setDataSelezionata(e.target.value)} />
+        <div className="max-w-2xl mx-auto px-4 pb-3 flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={() => shiftDay(-1)} title="Giorno precedente">
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Input type="date" value={dataSelezionata} onChange={(e) => setDataSelezionata(e.target.value)} className="flex-1 text-center" />
+          <Button variant="outline" size="icon" onClick={() => shiftDay(1)} title="Giorno successivo">
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
