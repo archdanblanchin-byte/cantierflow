@@ -6,6 +6,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { base44 } from "@/api/base44Client";
 import { Upload, X, Edit3, MessageSquare, Loader2 } from "lucide-react";
 import FotoEditor from "@/components/foto/FotoEditor";
+import { useImageDrop } from "@/lib/useImageDrop";
 
 // foto = [{ url, url_annotata, nota, annotazioni }]
 export default function FotoRapportino({ foto = [], onChange }) {
@@ -13,8 +14,7 @@ export default function FotoRapportino({ foto = [], onChange }) {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingNota, setEditingNota] = useState(null); // index nota aperta
 
-  const handleUpload = async (e) => {
-    const files = Array.from(e.target.files);
+  const uploadFiles = async (files) => {
     if (!files.length) return;
     setUploading(true);
     const nuove = [];
@@ -25,6 +25,8 @@ export default function FotoRapportino({ foto = [], onChange }) {
     onChange([...foto, ...nuove]);
     setUploading(false);
   };
+  const handleUpload = async (e) => uploadFiles(Array.from(e.target.files));
+  const { isDragging, handlers } = useImageDrop(uploadFiles);
 
   const remove = (i) => onChange(foto.filter((_, idx) => idx !== i));
 
@@ -44,7 +46,7 @@ export default function FotoRapportino({ foto = [], onChange }) {
   return (
     <div>
       <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Foto</Label>
-      <div className="mt-1.5 grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div {...handlers} className={`mt-1.5 grid grid-cols-2 sm:grid-cols-3 gap-3 rounded-xl transition-colors ${isDragging ? "ring-2 ring-primary bg-primary/5" : ""}`}>
         {foto.map((f, i) => (
           <div key={i} className="rounded-xl border border-border overflow-hidden bg-card">
             {/* Anteprima */}
@@ -103,13 +105,13 @@ export default function FotoRapportino({ foto = [], onChange }) {
         ))}
 
         {/* Upload */}
-        <label className="rounded-xl border-2 border-dashed border-border hover:border-primary/50 aspect-video flex flex-col items-center justify-center cursor-pointer transition-colors">
+        <label className={`rounded-xl border-2 border-dashed ${isDragging ? "border-primary bg-primary/10" : "border-border"} hover:border-primary/50 aspect-video flex flex-col items-center justify-center cursor-pointer transition-colors`}>
           {uploading ? (
             <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
           ) : (
             <>
               <Upload className="w-5 h-5 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground mt-1">Carica foto</span>
+              <span className="text-[10px] text-muted-foreground mt-1">{isDragging ? "Rilascia qui" : "Carica foto"}</span>
             </>
           )}
           <input type="file" multiple accept="image/*" className="hidden" onChange={handleUpload} />

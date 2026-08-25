@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { base44 } from "@/api/base44Client";
 import { Upload, Camera, Palette, Loader2, ArrowRight, Edit3 } from "lucide-react";
 import FotoEditor from "./FotoEditor";
+import { useImageDrop } from "@/lib/useImageDrop";
 
 export default function AggiungiFotoModal({ open, onClose, cantieri = [], onSaved }) {
   const [step, setStep] = useState("upload"); // upload | annotate | done
@@ -41,6 +42,15 @@ export default function AggiungiFotoModal({ open, onClose, cantieri = [], onSave
     setImageUrl(file_url);
     setUploading(false);
   };
+  const handleDropFile = async (files) => {
+    const file = files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setImageUrl(file_url);
+    setUploading(false);
+  };
+  const { isDragging: dragFoto, handlers: dropFotoHandlers } = useImageDrop(handleDropFile);
 
   const handleSaveAnnotations = ({ annotazioni: ann, url_annotata }) => {
     setAnnotazioni(ann);
@@ -152,17 +162,18 @@ export default function AggiungiFotoModal({ open, onClose, cantieri = [], onSave
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div {...dropFotoHandlers} className={`grid grid-cols-2 gap-3 rounded-xl transition-colors ${dragFoto ? "ring-2 ring-primary bg-primary/5" : ""}`}>
                     <label className="cursor-pointer rounded-xl border-2 border-dashed border-border hover:border-primary/50 p-6 flex flex-col items-center gap-2 transition-colors">
                       <Camera className="w-6 h-6 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground text-center">Scatta foto</span>
                       <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
                     </label>
-                    <label className="cursor-pointer rounded-xl border-2 border-dashed border-border hover:border-primary/50 p-6 flex flex-col items-center gap-2 transition-colors">
+                    <label className={`cursor-pointer rounded-xl border-2 border-dashed ${dragFoto ? "border-primary bg-primary/10" : "border-border"} hover:border-primary/50 p-6 flex flex-col items-center gap-2 transition-colors`}>
                       <Upload className="w-6 h-6 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground text-center">Carica da galleria</span>
+                      <span className="text-sm text-muted-foreground text-center">{dragFoto ? "Rilascia qui" : "Carica da galleria"}</span>
                       <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
                     </label>
+                    {dragFoto && <p className="col-span-2 text-[11px] text-primary font-medium text-center">Rilascia la foto per caricarla</p>}
                   </div>
                 )}
                 {uploading && (
@@ -220,17 +231,18 @@ export default function AggiungiFotoModal({ open, onClose, cantieri = [], onSave
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-3 mt-2">
+                    <div {...dropFotoHandlers} className={`grid grid-cols-2 gap-3 mt-2 rounded-xl transition-colors ${dragFoto ? "ring-2 ring-primary bg-primary/5" : ""}`}>
                       <label className="cursor-pointer rounded-xl border-2 border-dashed border-border hover:border-primary/50 p-4 flex flex-col items-center gap-2 transition-colors">
                         <Camera className="w-5 h-5 text-muted-foreground" />
                         <span className="text-xs text-muted-foreground text-center">Scatta foto</span>
                         <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
                       </label>
-                      <label className="cursor-pointer rounded-xl border-2 border-dashed border-border hover:border-primary/50 p-4 flex flex-col items-center gap-2 transition-colors">
+                      <label className={`cursor-pointer rounded-xl border-2 border-dashed ${dragFoto ? "border-primary bg-primary/10" : "border-border"} hover:border-primary/50 p-4 flex flex-col items-center gap-2 transition-colors`}>
                         <Upload className="w-5 h-5 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground text-center">Carica da galleria</span>
+                        <span className="text-xs text-muted-foreground text-center">{dragFoto ? "Rilascia qui" : "Carica da galleria"}</span>
                         <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
                       </label>
+                      {dragFoto && <p className="col-span-2 text-[11px] text-primary font-medium text-center">Rilascia la foto per caricarla</p>}
                     </div>
                   )}
                   {uploading && (
