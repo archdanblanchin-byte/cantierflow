@@ -111,6 +111,7 @@ export default function StoricoTimbrature() {
   };
 
   const isAdmin = user?.role === "admin";
+  const todayKey = format(new Date(), "yyyy-MM-dd");
 
   const { data: timbrature = [], isLoading } = useQuery({
     queryKey: ["storico-timbrature", user?.email, isAdmin],
@@ -287,7 +288,12 @@ export default function StoricoTimbrature() {
               {aperto && (
                 <div className="px-3.5 pb-3.5 pt-1 space-y-4 border-t border-border">
                   {!isAdmin ? (
-                    <TimbraturaTimeline timbrature={giorno.list} />
+                    <TimbraturaTimeline
+                      timbrature={giorno.list}
+                      canEdit={giorno.key === todayKey}
+                      onEdit={(t) => { setEditTarget(t); setEditOpen(true); }}
+                      onDelete={(t) => setDeleteTarget(t)}
+                    />
                   ) : (
                     Object.entries(perUtente).map(([email, timbs]) => {
                       const u = timbs[0];

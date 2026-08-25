@@ -6,7 +6,7 @@ import { MapPin, Clock, AlertTriangle, Navigation, Pencil, Trash2 } from "lucide
 import { STEP_CONFIG, fmtOre } from "@/lib/timbratureUtils";
 import { calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
 
-export default function TimbraturaTimeline({ timbrature, isAdmin = false, onEdit, onDelete }) {
+export default function TimbraturaTimeline({ timbrature, isAdmin = false, canEdit = isAdmin, onEdit, onDelete }) {
   const timbratureOrd = (timbrature || []).slice().sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
 
   if (timbratureOrd.length === 0) {
@@ -89,7 +89,7 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, onEdit
                   <Badge variant="outline" className="text-orange-700 border-orange-300">{t.km_spostamento} km</Badge>
                 )}
                 <span className="text-muted-foreground">{format(new Date(t.data_ora), "HH:mm", { locale: it })}</span>
-                {isAdmin && (
+                {canEdit && (
                   <div className="flex items-center gap-1 ml-1">
                     <button onClick={() => onEdit?.(t)} className="p-1 rounded hover:bg-accent" title="Modifica"><Pencil className="w-3 h-3 text-muted-foreground" /></button>
                     <button onClick={() => onDelete?.(t)} className="p-1 rounded hover:bg-destructive/10" title="Elimina"><Trash2 className="w-3 h-3 text-destructive" /></button>
@@ -129,7 +129,7 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, onEdit
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">{format(new Date(t.data_ora), "HH:mm", { locale: it })}</span>
                     {t.in_cantiere === false && <AlertTriangle className="w-3 h-3 text-amber-500" />}
-                    {isAdmin && (
+                    {canEdit && (
                       <div className="flex items-center gap-1 ml-1">
                         <button onClick={() => onEdit?.(t)} className="p-1 rounded hover:bg-accent" title="Modifica"><Pencil className="w-3 h-3 text-muted-foreground" /></button>
                         <button onClick={() => onDelete?.(t)} className="p-1 rounded hover:bg-destructive/10" title="Elimina"><Trash2 className="w-3 h-3 text-destructive" /></button>
