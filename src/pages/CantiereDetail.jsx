@@ -81,6 +81,18 @@ export default function CantiereDetail() {
     enabled: !!id,
   });
 
+  // Statistiche aggregate del cantiere (funzione backend in ruolo servizio):
+  // visibili a tutti gli utenti autenticati, anche a chi non partecipa ai
+  // singoli rapportini. I rapportini individuali restano filtrati dai permessi.
+  const { data: stats } = useQuery({
+    queryKey: ["cantiere_stats", id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("get_cantiere_stats", { cantiere_id: id });
+      return res.data;
+    },
+    enabled: !!id,
+  });
+
   useEffect(() => {
     base44.entities.Cantiere.filter({ id }).then((res) => {
       setCantiere(res[0] || null);
@@ -146,24 +158,12 @@ export default function CantiereDetail() {
     </div>
   );
 
-  // Calcoli automatici dai rapportini
-  const oreTotali = rapportini.reduce((sum, r) => {
-    const oreCollab = (r.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0);
-    return sum + (oreCollab || r.ore_totali_squadra || 0);
-  }, 0);
-
-  const oreExtra = rapportini.reduce((sum, r) => {
-    if (!r.has_lavorazioni_extra) return sum;
-    return sum + (r.lavorazioni_extra || []).reduce((s, l) => s + (l.ore || 0), 0);
-  }, 0);
-
-  const oreNormali = rapportini.reduce((sum, r) => {
-    return sum + (r.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
-  }, 0);
-
-  const orePiattaforma = rapportini.reduce((sum, r) => sum + (r.ore_utilizzo_piattaforma || 0), 0);
-  const oreMezzi = rapportini.reduce((sum, r) => sum + (r.ore_noleggio_mezzi || 0), 0);
-  const oreAttrezzi = rapportini.reduce((sum, r) => sum + (r.ore_noleggio_plexi || 0), 0);
+  const oreTotali = stats?.oreTotali ?? 0;
+  const oreExtra = stats?.oreExtra ?? 0;
+  const oreNormali = stats?.oreNormali ?? 0;
+  const orePiattaforma = stats?.orePiattaforma ?? 0;
+  const oreMezzi = stats?.oreMezzi ?? 0;
+  const oreAttrezzi = stats?.oreAttrezzi ?? 0;
 
   // Rapportini ordinati dal più recente al più vecchio
   const rapportiniSorted = [...rapportini].sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
