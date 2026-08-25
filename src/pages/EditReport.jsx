@@ -37,8 +37,9 @@ export default function EditReport() {
       const results = await base44.entities.Rapportino.filter({ id });
       const report = results[0];
       if (!report) { navigate("/"); return; }
-      // Controllo sicurezza: solo chi ha compilato e solo oggi
-      if (report.user_email !== user?.email || !isToday(new Date(report.data))) {
+      // Controllo sicurezza: solo l'autore (entro la giornata) oppure un admin
+      const admin = user?.role === "admin";
+      if (!admin && (report.user_email !== user?.email || !isToday(new Date(report.data)))) {
         toast.error("Non puoi modificare questo rapportino");
         navigate(`/report/${id}`);
         return;

@@ -39,9 +39,9 @@ export default function ReportDetail() {
     });
   }, [id]);
 
+  const isAdmin = currentUser?.role === "admin";
   const canEdit = report && currentUser &&
-    report.user_email === currentUser.email &&
-    isToday(new Date(report.data));
+    (isAdmin || (report.user_email === currentUser.email && isToday(new Date(report.data))));
 
   const handleDelete = async () => {
     await base44.entities.Rapportino.delete(id);
