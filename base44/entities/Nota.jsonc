@@ -115,6 +115,11 @@
           "data.destinatari_email": "{{user.email}}"
         },
         {
+          "data.cantiere_id": {
+            "$ne": null
+          }
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
@@ -131,6 +136,11 @@
             "$in": [
               "{{user.email}}"
             ]
+          }
+        },
+        {
+          "data.cantiere_id": {
+            "$ne": null
           }
         },
         {
