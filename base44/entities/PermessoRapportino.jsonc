@@ -1,0 +1,60 @@
+{
+  "name": "PermessoRapportino",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email dell'utente autorizzato a creare un rapportino senza timbro"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome dell'utente (denormalizzato)"
+    },
+    "data": {
+      "type": "string",
+      "format": "date",
+      "description": "Giorno di validit\u00e0 del permesso (yyyy-MM-dd). Il permesso vale solo per questa data."
+    },
+    "granted_by_email": {
+      "type": "string",
+      "description": "Email dell'amministratore che ha concesso il permesso"
+    },
+    "note": {
+      "type": "string",
+      "description": "Nota opzionale"
+    }
+  },
+  "required": [
+    "user_email",
+    "data"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

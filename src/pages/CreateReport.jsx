@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,6 +15,7 @@ import Step3Lavorazioni from "@/components/wizard/Step3Lavorazioni";
 import Step4Materiali from "@/components/wizard/Step5Materiali";
 import Step5Riepilogo from "@/components/wizard/Step6Riepilogo";
 import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
+import { usePermessoRapportinoManuale } from "@/hooks/usePermessoRapportinoManuale";
 
 const TOTAL_STEPS = 5;
 const AUTOSAVE_INTERVAL = 30000; // 30 secondi
@@ -22,6 +23,7 @@ const AUTOSAVE_INTERVAL = 30000; // 30 secondi
 export default function CreateReport() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { canCreate, isLoading: isLoadingPermesso } = usePermessoRapportinoManuale();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
@@ -57,6 +59,14 @@ export default function CreateReport() {
       if (user) setFormData((prev) => ({ ...prev, user_email: user.email }));
     });
   }, []);
+
+  // Accesso riservato: solo l'amministratore o utenti autorizzati per oggi.
+  useEffect(() => {
+    if (!isLoadingPermesso && !canCreate) {
+      toast.error("Non hai il permesso per creare un rapportino. Richiedi l'autorizzazione all'amministratore per oggi.");
+      navigate("/");
+    }
+  }, [canCreate, isLoadingPermesso, navigate]);
 
   // Autosave ogni 30 secondi
   useEffect(() => {
@@ -199,6 +209,15 @@ export default function CreateReport() {
     const oreNormali = (formData.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
     return Math.abs(oreLavoratori - oreExtra - oreNormali) < 0.01;
   })();
+
+  if (isLoadingPermesso) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  if (!canCreate) return null;
 
   const stepContent = {
     1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} />,

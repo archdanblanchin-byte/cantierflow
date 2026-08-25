@@ -13,6 +13,7 @@ import { ArrowLeft, UserPlus, Trash2, Loader2, Mail, ShieldAlert } from "lucide-
 import BottomNav from "@/components/BottomNav";
 import { RUOLI, getRuoloLabel, getRuoloColor } from "@/lib/permissions";
 import { useToast } from "@/components/ui/use-toast";
+import PermessiRapportinoAdmin from "@/components/utenti/PermessiRapportinoAdmin";
 
 export default function Utenti() {
   const navigate = useNavigate();
@@ -211,6 +212,9 @@ export default function Utenti() {
             Finché non accetta, vedrà una schermata di accesso bloccato.
           </p>
         </Card>
+
+        {/* Permessi rapportino manuale (solo admin) */}
+        <PermessiRapportinoAdmin users={users} />
 
         {/* Lista utenti */}
         <div>

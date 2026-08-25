@@ -14,6 +14,7 @@ import SyncButton from "@/components/SyncButton";
 import NotificationsBell from "@/components/NotificationsBell";
 import { SEZIONI_APP } from "@/lib/permissions";
 import { usePermessi } from "@/hooks/usePermessi";
+import { usePermessoRapportinoManuale } from "@/hooks/usePermessoRapportinoManuale";
 
 function MenuGrid() {
   const { puoVedere } = usePermessi();
@@ -69,6 +70,7 @@ function MenuGrid() {
 function RapportiniList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { canCreate } = usePermessoRapportinoManuale();
   const { data: rapportini = [], isLoading } = useQuery({
     queryKey: ["rapportini"],
     queryFn: () => base44.entities.Rapportino.list("-data", 50),
@@ -121,12 +123,14 @@ function RapportiniList() {
                 </p>
               </div>
             </div>
-            <Link to="/nuovo">
-              <Button className="gap-2 shadow-lg shadow-primary/20">
-                <Plus className="w-4 h-4" />
-                Nuovo
-              </Button>
-            </Link>
+            {canCreate && (
+              <Link to="/nuovo">
+                <Button className="gap-2 shadow-lg shadow-primary/20">
+                  <Plus className="w-4 h-4" />
+                  Nuovo
+                </Button>
+              </Link>
+            )}
           </div>
           <div className="relative mt-3">
             <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
@@ -146,9 +150,11 @@ function RapportiniList() {
             <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-muted-foreground font-medium">Nessun rapportino</p>
             <p className="text-sm text-muted-foreground mt-1">Crea il tuo primo rapportino di cantiere</p>
-            <Link to="/nuovo">
-              <Button className="mt-4 gap-2"><Plus className="w-4 h-4" />Crea Rapportino</Button>
-            </Link>
+            {canCreate && (
+              <Link to="/nuovo">
+                <Button className="mt-4 gap-2"><Plus className="w-4 h-4" />Crea Rapportino</Button>
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-5">
