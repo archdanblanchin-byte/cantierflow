@@ -193,7 +193,13 @@ export default function Cantieri() {
                 const badge = STATO_BADGE[sd];
                 return (
                   <div key={c.id} className="rounded-xl border border-border bg-card p-4 hover:shadow-lg hover:border-primary/20 transition-all duration-200">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      {(() => {
+                        const foto = (c.foto_cantiere && c.foto_cantiere[0]) || null;
+                        return foto
+                          ? <img src={foto} alt="" className="w-16 h-16 rounded-lg object-cover border flex-shrink-0" />
+                          : <div className="w-16 h-16 rounded-lg bg-muted border flex items-center justify-center flex-shrink-0"><Building2 className="w-6 h-6 text-muted-foreground/40" /></div>;
+                      })()}
                       {isAdmin && (
                         <div className="flex flex-col gap-1 flex-shrink-0 pt-0.5">
                           {sd !== "chiuso" && (

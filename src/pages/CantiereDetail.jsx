@@ -221,6 +221,13 @@ export default function CantiereDetail() {
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
 
+        {/* Foto facciata (riferimento) */}
+        {(cantiere.foto_cantiere || []).length > 0 && (
+          <div className="rounded-xl overflow-hidden border border-border">
+            <img src={cantiere.foto_cantiere[0]} alt="Facciata cantiere" className="w-full h-44 object-cover" />
+          </div>
+        )}
+
         {/* Info base */}
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
@@ -293,18 +300,32 @@ export default function CantiereDetail() {
           {rapportini.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">Nessun rapportino collegato</p>
           ) : (
-            <div className="space-y-2">
-              {rapportiniSorted.map((r) => (
-                <Link key={r.id} to={`/report/${r.id}`} className="flex items-center justify-between rounded-xl border border-border bg-card p-3 hover:border-primary/20 transition-colors">
-                  <div className="text-sm">
-                    <p className="font-medium">{r.data ? format(new Date(r.data), "d MMM yyyy", { locale: it }) : "—"}</p>
-                    <p className="text-xs text-muted-foreground">{(r.collaboratori || []).length} collaboratori</p>
+            <div className="space-y-4">
+              {(() => {
+                const map = {};
+                rapportiniSorted.forEach((r) => {
+                  const key = r.data ? format(new Date(r.data), "yyyy-MM-dd") : "senza-data";
+                  (map[key] = map[key] || []).push(r);
+                });
+                return Object.keys(map).sort((a, b) => b.localeCompare(a)).map((key) => (
+                  <div key={key} className="space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground capitalize sticky top-[56px] bg-background/90 backdrop-blur py-0.5 z-[5]">
+                      {key === "senza-data" ? "Senza data" : format(new Date(key), "EEEE d MMMM yyyy", { locale: it })}
+                    </p>
+                    {map[key].map((r) => (
+                      <Link key={r.id} to={`/report/${r.id}`} className="flex items-center justify-between rounded-xl border border-border bg-card p-3 hover:border-primary/20 transition-colors">
+                        <div className="text-sm">
+                          <p className="font-medium">{(r.collaboratori || []).length} collaboratori</p>
+                          <p className="text-xs text-muted-foreground">{r.ore_totali_squadra ? `${r.ore_totali_squadra}h` : ""}</p>
+                        </div>
+                        <Badge variant={r.stato === "inviato" ? "default" : "secondary"} className="text-[10px] uppercase">
+                          {r.stato === "inviato" ? "Inviato" : "Bozza"}
+                        </Badge>
+                      </Link>
+                    ))}
                   </div>
-                  <Badge variant={r.stato === "inviato" ? "default" : "secondary"} className="text-[10px] uppercase">
-                    {r.stato === "inviato" ? "Inviato" : "Bozza"}
-                  </Badge>
-                </Link>
-              ))}
+                ));
+              })()}
             </div>
           )}
         </div>

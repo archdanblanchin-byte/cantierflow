@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Plus, FileText, UserCircle, Search } from "lucide-react";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
 import ReportCard from "@/components/home/ReportCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import SyncButton from "@/components/SyncButton";
@@ -93,6 +95,15 @@ function RapportiniList() {
     return visibili.filter((r) => [r.cantiere_nome, r.note_generali].filter(Boolean).some((v) => v.toLowerCase().includes(q)));
   }, [visibili, query]);
 
+  const gruppi = useMemo(() => {
+    const map = {};
+    filtrati.forEach((r) => {
+      const key = r.data ? format(new Date(r.data), "yyyy-MM-dd") : "senza-data";
+      (map[key] = map[key] || []).push(r);
+    });
+    return Object.keys(map).sort((a, b) => b.localeCompare(a)).map((k) => ({ key: k, items: map[k] }));
+  }, [filtrati]);
+
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["rapportini"] });
   };
@@ -140,8 +151,19 @@ function RapportiniList() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filtrati.map((r) => <ReportCard key={r.id} report={r} />)}
+          <div className="space-y-5">
+            {gruppi.map((g) => (
+              <div key={g.key} className="space-y-2">
+                <div className="sticky top-[120px] z-[5] bg-background/90 backdrop-blur py-1">
+                  <p className="text-xs font-semibold text-muted-foreground capitalize">
+                    {g.key === "senza-data" ? "Senza data" : format(new Date(g.key), "EEEE d MMMM yyyy", { locale: it })}
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {g.items.map((r) => <ReportCard key={r.id} report={r} />)}
+                </div>
+              </div>
+            ))}
           </div>
         )}
         </PullToRefresh>
