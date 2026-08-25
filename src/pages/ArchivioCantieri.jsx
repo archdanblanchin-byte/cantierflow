@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Archive, MapPin, Clock, ChevronRight, Search, Building2 } from "lucide-react";
+import { Archive, MapPin, Clock, ChevronRight, Search, Building2, RotateCcw } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 function statoOf(c) {
   if (c.stato) return c.stato;
@@ -15,8 +18,28 @@ function statoOf(c) {
 
 export default function ArchivioCantieri() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [annoFilter, setAnnoFilter] = useState("tutti");
   const [query, setQuery] = useState("");
+  const [reopenId, setReopenId] = useState(null);
+  const [riaprendo, setRiaprendo] = useState(false);
+
+  const riapriCantiere = async (id) => {
+    setRiaprendo(true);
+    try {
+      await base44.entities.Cantiere.update(id, { stato: "aperto", attivo: true, data_chiusura: null });
+      await queryClient.invalidateQueries({ queryKey: ["cantieri"] });
+      toast({ title: "Cantiere riaperto" });
+      setReopenId(null);
+    } catch (e) {
+      toast({ title: "Errore", description: String(e?.message || e), variant: "destructive" });
+    } finally {
+      setRiaprendo(false);
+    }
+  };
 
   const { data: cantieri = [], isLoading } = useQuery({
     queryKey: ["cantieri"],
@@ -136,10 +159,10 @@ export default function ArchivioCantieri() {
               {g.items.map((c) => {
                 const ore = orePerCantiere(c.id);
                 return (
-                  <button
+                  <div
                     key={c.id}
                     onClick={() => navigate(`/archivio-cantieri/${c.id}`)}
-                    className="w-full text-left rounded-xl border border-border bg-card p-4 hover:shadow-lg hover:border-primary/20 transition-all duration-200"
+                    className="w-full text-left rounded-xl border border-border bg-card p-4 hover:shadow-lg hover:border-primary/20 transition-all duration-200 cursor-pointer"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0 space-y-1.5">
@@ -162,15 +185,45 @@ export default function ArchivioCantieri() {
                           </span>
                         </div>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        {isAdmin && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 h-7 text-xs"
+                            disabled={riaprendo && reopenId === c.id}
+                            onClick={(e) => { e.stopPropagation(); setReopenId(c.id); }}
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" /> Riapri
+                          </Button>
+                        )}
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
           ))
         )}
       </div>
+
+      <AlertDialog open={!!reopenId} onOpenChange={(o) => !o && setReopenId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Riaprire il cantiere?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Il cantiere tornerà nello stato "aperto" e sarà di nuovo selezionabile nei rapportini.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={riaprendo}>Annulla</AlertDialogCancel>
+            <AlertDialogAction disabled={riaprendo} onClick={() => reopenId && riapriCantiere(reopenId)}>
+              {riaprendo ? "Riapro..." : "Riapri"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
