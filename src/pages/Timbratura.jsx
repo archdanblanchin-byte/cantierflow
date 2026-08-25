@@ -505,16 +505,14 @@ export default function Timbratura() {
                     {t.in_cantiere === true &&
                   <Badge className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-300 hidden">OK</Badge>
                   }
-                    {(isAdmin || canUndo(t)) &&
-                  <>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => apriEdit(t)} title="Modifica timbratura">
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setEliminando(t)} title="Elimina timbratura">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </>
-                  }
+                    <>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => apriEdit(t)} title="Modifica timbratura">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setEliminando(t)} title="Elimina timbratura">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </>
                   </div>
                 </div>);
 
