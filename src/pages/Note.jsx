@@ -134,9 +134,9 @@ export default function Note() {
           <Button variant={tab === "personali" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setTab("personali")}>
             <User className="w-3.5 h-3.5" /> Personali ({personali.length})
           </Button>
-          <Button variant={tab === "comunicazione" ? "default" : "outline"} size="sm" className="gap-1.5 hidden" onClick={() => setTab("comunicazione")}>
-            <Share2 className="w-3.5 h-3.5" /> Comunicazione ({comunic.length})
-          </Button>
+          
+
+          
         </div>
 
         {tab === "comunicazione" &&
