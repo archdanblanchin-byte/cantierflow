@@ -111,12 +111,14 @@ export default function StoricoTimbrature() {
   };
 
   const isAdmin = user?.role === "admin";
+  // Admin e responsabile tecnico possono vedere le timbrature di tutti (sola lettura per RT)
+  const canSeeAll = isAdmin || user?.role === "responsabile_tecnico";
   const todayKey = format(new Date(), "yyyy-MM-dd");
 
   const { data: timbrature = [], isLoading } = useQuery({
-    queryKey: ["storico-timbrature", user?.email, isAdmin],
+    queryKey: ["storico-timbrature", user?.email, canSeeAll],
     queryFn: async () => {
-      if (isAdmin) return base44.entities.Timbratura.list("-data_ora", 1000);
+      if (canSeeAll) return base44.entities.Timbratura.list("-data_ora", 1000);
       return base44.entities.Timbratura.filter({ user_email: user.email }, "-data_ora", 1000);
     },
     enabled: !!user,
@@ -165,7 +167,7 @@ export default function StoricoTimbrature() {
             <div>
               <h1 className="text-lg font-bold leading-tight">Storico timbri</h1>
               <p className="text-[11px] text-muted-foreground">
-                {isAdmin ? "Tutti gli utenti" : "I tuoi timbri"}
+                {canSeeAll ? "Tutti gli utenti" : "I tuoi timbri"}
               </p>
             </div>
           </div>
@@ -211,16 +213,16 @@ export default function StoricoTimbrature() {
             giorno.list.map((t) => t.cantiere_id).filter(Boolean)
           ).size;
           const nTimbri = giorno.list.length;
-          const nUtenti = isAdmin
+          const nUtenti = canSeeAll
             ? new Set(giorno.list.map((t) => t.user_email).filter(Boolean)).size
             : 1;
           const dataLabel = format(new Date(giorno.key + "T00:00:00"), "EEEE d MMMM yyyy", {
             locale: it,
           });
 
-          // Per admin: raggruppa i timbri del giorno per utente
+          // Per admin/responsabile tecnico: raggruppa i timbri del giorno per utente
           const perUtente = {};
-          if (isAdmin) {
+          if (canSeeAll) {
             giorno.list.forEach((t) => {
               const k = t.user_email || "—";
               (perUtente[k] ||= []).push(t);
@@ -270,7 +272,7 @@ export default function StoricoTimbrature() {
                     <Badge variant="secondary" className="text-[10px] gap-1 font-medium">
                       {nTimbri} timbri
                     </Badge>
-                    {isAdmin && nUtenti > 1 && (
+                    {canSeeAll && nUtenti > 1 && (
                       <Badge className="text-[10px] gap-1 bg-primary/10 text-primary border-primary/20">
                         <Users className="w-2.5 h-2.5" />
                         {nUtenti} utenti
@@ -287,7 +289,7 @@ export default function StoricoTimbrature() {
 
               {aperto && (
                 <div className="px-3.5 pb-3.5 pt-1 space-y-4 border-t border-border">
-                  {!isAdmin ? (
+                  {!canSeeAll ? (
                     <TimbraturaTimeline
                       timbrature={giorno.list}
                       canEdit={giorno.key === todayKey}
@@ -312,9 +314,9 @@ export default function StoricoTimbrature() {
                           </div>
                           <TimbraturaTimeline
                             timbrature={timbs}
-                            isAdmin
-                            onEdit={(t) => { setEditTarget(t); setEditOpen(true); }}
-                            onDelete={(t) => setDeleteTarget(t)}
+                            isAdmin={isAdmin}
+                            onEdit={isAdmin ? (t) => { setEditTarget(t); setEditOpen(true); } : undefined}
+                            onDelete={isAdmin ? (t) => setDeleteTarget(t) : undefined}
                           />
                         </div>
                       );

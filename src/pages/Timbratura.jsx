@@ -42,6 +42,8 @@ export default function Timbratura() {
   const [editando, setEditando] = useState(null);
   const [editForm, setEditForm] = useState({ cantiere_id: "", tipo_evento: "ingresso", data_ora: "" });
   const isAdmin = user?.role === "admin";
+  // Admin e responsabile tecnico possono vedere le timbrature di tutti (sola lettura per RT)
+  const canSeeAll = isAdmin || user?.role === "responsabile_tecnico";
   const [lastTimbro, setLastTimbro] = useState(null);
   const [selectedCantiereId, setSelectedCantiereId] = useState("");
   const [showNewCantiere, setShowNewCantiere] = useState(false);
@@ -73,7 +75,7 @@ export default function Timbratura() {
     queryFn: () => base44.entities.Timbratura.filter({
       data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
     }, "-data_ora", 1000),
-    enabled: !!user && isAdmin
+    enabled: !!user && canSeeAll
   });
 
   const timbratureOrd = (timbrature || []).slice().sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
@@ -523,8 +525,8 @@ export default function Timbratura() {
           </div>
         }
 
-        {/* Admin: tutte le timbrature della giornata di tutti gli utenti */}
-        {isAdmin && tutteTimbrature.length > 0 && (
+        {/* Admin/Responsabile tecnico: tutte le timbrature della giornata di tutti gli utenti */}
+        {canSeeAll && tutteTimbrature.length > 0 && (
           <TimbratureOggiTutti timbrature={tutteTimbrature} />
         )}
 
