@@ -8,6 +8,7 @@ import { format, isToday } from "date-fns";
 import { it } from "date-fns/locale";
 import {
   ArrowLeft, MapPin, Truck, Users, Zap, Wrench, Package, Calendar, User, Trash2, Pencil,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import DetailSection, { DetailRow } from "@/components/detail/DetailSection";
 import { fmtOre } from "@/lib/timbratureUtils";
@@ -25,10 +26,20 @@ export default function ReportDetail() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [usersList, setUsersList] = useState([]);
+  const [allReports, setAllReports] = useState([]);
+  const [touchStart, setTouchStart] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then((u) => setCurrentUser(u));
     base44.entities.User.list().then(setUsersList).catch(() => {});
+  }, []);
+
+  // Lista di tutti i rapportini visibili (più recenti in alto) per navigazione swipe
+  useEffect(() => {
+    base44.entities.Rapportino.list("-data", 500).then((list) => {
+      const sorted = [...list].sort((a, b) => new Date(b.data) - new Date(a.data));
+      setAllReports(sorted);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -38,6 +49,27 @@ export default function ReportDetail() {
       setLoading(false);
     });
   }, [id]);
+
+  const currentIndex = allReports.findIndex((r) => r.id === id);
+  const goPrev = () => {
+    if (currentIndex > 0) navigate(`/report/${allReports[currentIndex - 1].id}`);
+  };
+  const goNext = () => {
+    if (currentIndex >= 0 && currentIndex < allReports.length - 1) navigate(`/report/${allReports[currentIndex + 1].id}`);
+  };
+
+  const onTouchStart = (e) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+  const onTouchEnd = (e) => {
+    if (touchStart == null) return;
+    const dx = e.changedTouches[0].clientX - touchStart;
+    setTouchStart(null);
+    // Ignora swipe troppo piccoli (scroll verticale)
+    if (Math.abs(dx) < 60) return;
+    if (dx > 0) goPrev();
+    else goNext();
+  };
 
   const isAdmin = currentUser?.role === "admin";
   const canEdit = report && currentUser &&
@@ -88,6 +120,16 @@ export default function ReportDetail() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {currentIndex > 0 && (
+                <Button variant="ghost" size="icon" onClick={goPrev}>
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+              )}
+              {currentIndex >= 0 && currentIndex < allReports.length - 1 && (
+                <Button variant="ghost" size="icon" onClick={goNext}>
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              )}
               <Badge variant={d.stato === "inviato" ? "default" : "secondary"} className="text-xs uppercase">
                 {d.stato === "inviato" ? "Inviato" : "Bozza"}
               </Badge>
@@ -125,7 +167,11 @@ export default function ReportDetail() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div
+        className="max-w-2xl mx-auto px-4 py-6"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="rounded-xl border border-border bg-card divide-y divide-border">
           <DetailSection icon={MapPin} title="Cantiere">
             <DetailRow label="Cantiere" value={d.cantiere_nome} />
