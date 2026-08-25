@@ -21,7 +21,7 @@ export default function Splash() {
           <img
             src={LOGO_URL}
             alt="Blanchin"
-            className="w-[80vw] h-[80vw] sm:w-[60vw] sm:h-[60vw] max-w-[672px] max-h-[672px] object-contain"
+            className="w-[92vw] h-[92vw] sm:w-[88vw] sm:h-[88vw] object-contain"
             draggable={false}
           />
         </motion.div>
