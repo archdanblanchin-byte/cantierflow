@@ -64,8 +64,6 @@ export default function PermessiRapportinoAdmin({ users = [] }) {
     }
   };
 
-  const nonAdmin = users.filter((u) => u.role !== "admin");
-
   return (
     <Card className="p-4 space-y-3">
       <div className="flex items-center gap-2 border-b pb-2">
@@ -117,7 +115,7 @@ export default function PermessiRapportinoAdmin({ users = [] }) {
         <p className="text-[10px] font-semibold text-muted-foreground uppercase">
           Utenti
         </p>
-        {nonAdmin.map((u) => {
+        {users.map((u) => {
           const auth = isAutorizzato(u.email);
           return (
             <div
@@ -154,9 +152,9 @@ export default function PermessiRapportinoAdmin({ users = [] }) {
             </div>
           );
         })}
-        {nonAdmin.length === 0 && (
+        {users.length === 0 && (
           <p className="text-[11px] text-muted-foreground py-2">
-            Nessun utente non-admin.
+            Nessun utente.
           </p>
         )}
       </div>

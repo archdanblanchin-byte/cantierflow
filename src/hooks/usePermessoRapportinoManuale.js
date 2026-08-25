@@ -26,7 +26,9 @@ export function usePermessoRapportinoManuale() {
       p.data === today
   );
 
-  const canCreate = isAdmin || !!permessoOggi;
+  // Nessuno (nemmeno l'admin) crea un rapportino manuale di default:
+  // serve un'autorizzazione valida per oggi concessa dall'amministratore.
+  const canCreate = !!permessoOggi;
 
   return { canCreate, isAdmin, permessoOggi, isLoading };
 }
