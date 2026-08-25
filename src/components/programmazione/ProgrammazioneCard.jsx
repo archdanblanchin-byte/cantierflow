@@ -8,7 +8,7 @@ const TIPO_META = {
   pioggia: { label: "Giornata di pioggia", icon: CloudRain, color: "bg-blue-100 text-blue-700" },
 };
 
-export default function ProgrammazioneCard({ item, onEdit, onDelete, onPublish, readonly, cantiereNotes, currentUser }) {
+export default function ProgrammazioneCard({ item, onEdit, onDelete, onPublish, canManage, selectable, selected, onToggleSelect, readonly, cantiereNotes, currentUser }) {
   const meta = TIPO_META[item.tipo_giornata] || TIPO_META.normale;
   const Icon = meta.icon;
 
@@ -16,6 +16,14 @@ export default function ProgrammazioneCard({ item, onEdit, onDelete, onPublish, 
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
+          {selectable && (
+            <input
+              type="checkbox"
+              checked={!!selected}
+              onChange={onToggleSelect}
+              className="w-4 h-4 accent-primary shrink-0"
+            />
+          )}
           <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${meta.color}`}>
             <Icon className="w-5 h-5" />
           </div>
@@ -66,18 +74,18 @@ export default function ProgrammazioneCard({ item, onEdit, onDelete, onPublish, 
         )}
       </div>
 
-      {!readonly && (
+      {canManage && !selectable && (
         <div className="mt-3 flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => onEdit?.(item)}>
             <Pencil className="w-3.5 h-3.5" />Modifica
           </Button>
-          {item.stato !== "pubblicato" && (
+          {!readonly && item.stato !== "pubblicato" && (
             <Button size="sm" onClick={() => onPublish?.(item)}>
               <Send className="w-3.5 h-3.5" />Pubblica
             </Button>
           )}
           <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive ml-auto" onClick={() => onDelete?.(item)}>
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-3.5 h-3.5" />Elimina
           </Button>
         </div>
       )}

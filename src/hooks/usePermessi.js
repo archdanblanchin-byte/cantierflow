@@ -9,6 +9,7 @@ export function usePermessi() {
   const ruoloRaw = user?.role || "collaboratore";
   const ruolo = ruoloRaw === "user" ? "collaboratore" : ruoloRaw;
   const isAdmin = ruolo === "admin";
+  const isGestore = isAdmin || ruolo === "responsabile_tecnico";
 
   const { data: permessiRaw = [], isLoading } = useQuery({
     queryKey: ["permessi-sezione"],
@@ -30,5 +31,5 @@ export function usePermessi() {
     return sezioniPermesse.includes(key);
   };
 
-  return { ruolo, isAdmin, sezioniPermesse, puoVedere, isLoading };
+  return { ruolo, isAdmin, isGestore, sezioniPermesse, puoVedere, isLoading };
 }

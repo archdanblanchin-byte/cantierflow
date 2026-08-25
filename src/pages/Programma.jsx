@@ -1,18 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Sun, CloudRain, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, Sun, CloudRain, ClipboardCheck, Trash2, CheckSquare, X } from "lucide-react";
+import { toast } from "sonner";
+import { usePermessi } from "@/hooks/usePermessi";
 import ProgrammazioneCard from "@/components/programmazione/ProgrammazioneCard";
+import ProgrammazioneFormDialog from "@/components/programmazione/ProgrammazioneFormDialog";
 
 export default function Programma() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const embed = params.get("embed") === "1";
+  const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
   const [dataSelezionata, setDataSelezionata] = useState(today);
+  const { isGestore } = usePermessi();
 
   const { data: programmi = [], isLoading } = useQuery({
     queryKey: ["programma", dataSelezionata],
@@ -36,6 +41,55 @@ export default function Programma() {
     return map;
   }, [noteCantiere]);
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
+  const reload = () => {
+    qc.invalidateQueries({ queryKey: ["programma", dataSelezionata] });
+    qc.invalidateQueries({ queryKey: ["programmazioni", dataSelezionata] });
+  };
+
+  const handleEdit = (item) => { setEditing(item); setDialogOpen(true); };
+
+  const handleDelete = async (item) => {
+    if (!confirm("Eliminare questo programma?")) return;
+    try {
+      await base44.entities.Programmazione.delete(item.id);
+      toast.success("Programma eliminato");
+      reload();
+    } catch {
+      toast.error("Errore nell'eliminazione");
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const enterSelect = () => { setSelectMode(true); setSelectedIds(new Set()); };
+  const exitSelect = () => { setSelectMode(false); setSelectedIds(new Set()); };
+
+  const handleDeleteGroup = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Eliminare ${selectedIds.size} programmi selezionati?`)) return;
+    try {
+      for (const id of selectedIds) {
+        await base44.entities.Programmazione.delete(id);
+      }
+      toast.success(`${selectedIds.size} programmi eliminati`);
+      exitSelect();
+      reload();
+    } catch {
+      toast.error("Errore nell'eliminazione di gruppo");
+    }
+  };
+
   const normali = programmi.filter((p) => p.tipo_giornata === "normale");
   const pioggia = programmi.filter((p) => p.tipo_giornata === "pioggia");
 
@@ -57,6 +111,12 @@ export default function Programma() {
               key={p.id}
               item={p}
               readonly
+              canManage={isGestore}
+              selectable={selectMode}
+              selected={selectedIds.has(p.id)}
+              onToggleSelect={() => toggleSelect(p.id)}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
               cantiereNotes={noteByCantiere[p.cantiere_id] || []}
               currentUser={user}
             />
@@ -79,6 +139,16 @@ export default function Programma() {
             <h1 className="font-bold text-lg">Programma</h1>
             <p className="text-xs text-muted-foreground">Programmazioni pubblicate</p>
           </div>
+          {isGestore && !selectMode && (
+            <Button variant="outline" size="icon" onClick={enterSelect} title="Seleziona multipla">
+              <CheckSquare className="w-4 h-4" />
+            </Button>
+          )}
+          {isGestore && selectMode && (
+            <Button variant="ghost" size="sm" onClick={exitSelect}>
+              <X className="w-4 h-4" />Annulla
+            </Button>
+          )}
         </div>
         <div className="max-w-2xl mx-auto px-4 pb-3">
           <Input type="date" value={dataSelezionata} onChange={(e) => setDataSelezionata(e.target.value)} />
@@ -86,6 +156,20 @@ export default function Programma() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {selectMode && (
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card p-3 shadow-sm sticky top-[120px] z-10">
+            <span className="text-sm font-medium">{selectedIds.size} selezionate</span>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-2"
+              disabled={selectedIds.size === 0}
+              onClick={handleDeleteGroup}
+            >
+              <Trash2 className="w-4 h-4" />Elimina selezionate
+            </Button>
+          </div>
+        )}
         {isLoading ? (
           <p className="text-center text-sm text-muted-foreground py-8">Caricamento...</p>
         ) : programmi.length === 0 ? (
@@ -101,6 +185,14 @@ export default function Programma() {
           </>
         )}
       </div>
+
+      <ProgrammazioneFormDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSaved={reload}
+        editing={editing}
+        defaultData={dataSelezionata}
+      />
     </div>
   );
 }

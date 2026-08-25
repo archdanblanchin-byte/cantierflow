@@ -4,10 +4,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Plus, Sun, CloudRain } from "lucide-react";
+import { ArrowLeft, Plus, Sun, CloudRain, Trash2, CheckSquare, X } from "lucide-react";
 import { toast } from "sonner";
 import ProgrammazioneCard from "@/components/programmazione/ProgrammazioneCard";
 import ProgrammazioneFormDialog from "@/components/programmazione/ProgrammazioneFormDialog";
+import { usePermessi } from "@/hooks/usePermessi";
 
 export default function Programmazione() {
   const navigate = useNavigate();
@@ -18,6 +19,9 @@ export default function Programmazione() {
   const [dataSelezionata, setDataSelezionata] = useState(today);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const { isGestore } = usePermessi();
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
   const { data: programmi = [], isLoading } = useQuery({
     queryKey: ["programmazioni", dataSelezionata],
@@ -56,6 +60,32 @@ export default function Programmazione() {
     }
   };
 
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const enterSelect = () => { setSelectMode(true); setSelectedIds(new Set()); };
+  const exitSelect = () => { setSelectMode(false); setSelectedIds(new Set()); };
+
+  const handleDeleteGroup = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Eliminare ${selectedIds.size} programmazioni selezionate?`)) return;
+    try {
+      for (const id of selectedIds) {
+        await base44.entities.Programmazione.delete(id);
+      }
+      toast.success(`${selectedIds.size} programmazioni eliminate`);
+      exitSelect();
+      reload();
+    } catch {
+      toast.error("Errore nell'eliminazione di gruppo");
+    }
+  };
+
   const renderGroup = (items, label, Icon, color) => (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -73,6 +103,10 @@ export default function Programmazione() {
             <ProgrammazioneCard
               key={p.id}
               item={p}
+              canManage={isGestore}
+              selectable={selectMode}
+              selected={selectedIds.has(p.id)}
+              onToggleSelect={() => toggleSelect(p.id)}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onPublish={handlePublish}
@@ -96,9 +130,19 @@ export default function Programmazione() {
             <h1 className="font-bold text-lg">Programmazione</h1>
             <p className="text-xs text-muted-foreground">Pianifica e pubblica le giornate</p>
           </div>
+          {isGestore && !selectMode && (
+            <Button variant="outline" size="icon" onClick={enterSelect} title="Seleziona multipla">
+              <CheckSquare className="w-4 h-4" />
+            </Button>
+          )}
           <Button className="gap-2" onClick={handleNew}>
             <Plus className="w-4 h-4" />Nuova
           </Button>
+          {isGestore && selectMode && (
+            <Button variant="ghost" size="sm" onClick={exitSelect}>
+              <X className="w-4 h-4" />Annulla
+            </Button>
+          )}
         </div>
         <div className="max-w-2xl mx-auto px-4 pb-3">
           <Input type="date" value={dataSelezionata} onChange={(e) => setDataSelezionata(e.target.value)} />
@@ -106,6 +150,20 @@ export default function Programmazione() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {selectMode && (
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card p-3 shadow-sm sticky top-[120px] z-10">
+            <span className="text-sm font-medium">{selectedIds.size} selezionate</span>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-2"
+              disabled={selectedIds.size === 0}
+              onClick={handleDeleteGroup}
+            >
+              <Trash2 className="w-4 h-4" />Elimina selezionate
+            </Button>
+          </div>
+        )}
         {isLoading ? (
           <p className="text-center text-sm text-muted-foreground py-8">Caricamento...</p>
         ) : (
