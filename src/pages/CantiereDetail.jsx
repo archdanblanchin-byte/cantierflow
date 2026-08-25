@@ -56,7 +56,7 @@ export default function CantiereDetail() {
 
   const { data: rapportini = [] } = useQuery({
     queryKey: ["rapportini_cantiere", id],
-    queryFn: () => base44.entities.Rapportino.filter({ cantiere_id: id }, "data"),
+    queryFn: () => base44.entities.Rapportino.filter({ cantiere_id: id }, "-data"),
     enabled: !!id,
   });
 
@@ -165,8 +165,8 @@ export default function CantiereDetail() {
   const oreMezzi = rapportini.reduce((sum, r) => sum + (r.ore_noleggio_mezzi || 0), 0);
   const oreAttrezzi = rapportini.reduce((sum, r) => sum + (r.ore_noleggio_plexi || 0), 0);
 
-  // Rapportini ordinati dal più vecchio al più recente
-  const rapportiniSorted = [...rapportini].sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0));
+  // Rapportini ordinati dal più recente al più vecchio
+  const rapportiniSorted = [...rapportini].sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((cantiere.indirizzo || "") + " " + (cantiere.citta || ""))}`;
 
