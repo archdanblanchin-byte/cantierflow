@@ -64,7 +64,21 @@ export default function SheetSelect({
         </span>
         <ChevronDown className="w-4 h-4 opacity-50" />
       </Button>
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) {
+            // Fix bug di Vaul: a volte body.pointerEvents resta "none" dopo la chiusura,
+            // bloccando l'intera pagina (non si può più andare avanti).
+            requestAnimationFrame(() => {
+              if (document.body.style.pointerEvents === "none") {
+                document.body.style.pointerEvents = "";
+              }
+            });
+          }
+        }}
+      >
         <DrawerContent className="max-h-[70vh]">
           <DrawerHeader className="text-left">
             <DrawerTitle>{placeholder}</DrawerTitle>
