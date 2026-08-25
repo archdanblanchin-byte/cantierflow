@@ -179,13 +179,13 @@ export default function Programmazione() {
             </Button>
           </div>
         )}
-        <AnimatePresence mode="wait" custom={dir}>
+        <AnimatePresence mode="popLayout" custom={dir}>
           <motion.div
             key={dataSelezionata}
-            initial={dir === 0 ? { opacity: 0 } : dir > 0 ? { x: 80, opacity: 0 } : { x: -80, opacity: 0 }}
+            initial={dir === 0 ? { opacity: 0 } : dir > 0 ? { x: 60, opacity: 0 } : { x: -60, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={dir === 0 ? { opacity: 0 } : dir > 0 ? { x: -80, opacity: 0 } : { x: 80, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
+            exit={dir === 0 ? { opacity: 0 } : dir > 0 ? { x: -60, opacity: 0 } : { x: 60, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
           >
             {isLoading ? (
               <p className="text-center text-sm text-muted-foreground py-8">Caricamento...</p>
