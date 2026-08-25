@@ -40,8 +40,10 @@ const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
   const p = location.pathname;
-  // BottomNav persistente su tutte le schermate (le 4 finestre principali sempre disponibili).
-  const showBottomNav = true;
+  // BottomNav nascosta durante la compilazione del rapportino (wizard a tutto schermo)
+  // per non coprire i bottoni Avanti/Indietro della barra di navigazione del wizard.
+  const isWizardRoute = p.startsWith("/nuovo") || p.startsWith("/modifica-report");
+  const showBottomNav = !isWizardRoute;
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (

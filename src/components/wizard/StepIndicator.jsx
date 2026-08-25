@@ -9,7 +9,7 @@ const STEPS = [
   "Riepilogo",
 ];
 
-export default function StepIndicator({ currentStep, totalSteps }) {
+export default function StepIndicator({ currentStep, totalSteps, onStepClick }) {
   return (
     <div className="w-full px-2">
       <div className="flex items-center justify-between">
@@ -17,19 +17,24 @@ export default function StepIndicator({ currentStep, totalSteps }) {
           const step = i + 1;
           const isCompleted = step < currentStep;
           const isCurrent = step === currentStep;
+          const clickable = !!onStepClick;
+          const Tag = clickable ? "button" : "div";
           return (
             <div key={step} className="flex items-center flex-1 last:flex-none">
               <div className="flex flex-col items-center">
-                <div
+                <Tag
+                  type={clickable ? "button" : undefined}
+                  onClick={clickable ? () => onStepClick(step) : undefined}
                   className={cn(
                     "w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300",
+                    clickable && "cursor-pointer hover:scale-110 active:scale-95",
                     isCompleted && "bg-primary text-primary-foreground shadow-md shadow-primary/30",
                     isCurrent && "bg-primary text-primary-foreground ring-4 ring-primary/20 shadow-lg shadow-primary/20",
                     !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
                   )}
                 >
                   {isCompleted ? <Check className="w-4 h-4" /> : step}
-                </div>
+                </Tag>
                 <span
                   className={cn(
                     "text-[10px] mt-1.5 font-medium text-center leading-tight hidden sm:block",

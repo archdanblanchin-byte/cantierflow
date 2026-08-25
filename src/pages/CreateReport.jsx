@@ -111,20 +111,20 @@ export default function CreateReport() {
     setFormData((prev) => ({ ...prev, ...updates }));
   };
 
-  const validateStep = () => {
-    if (step === 1 && !formData.cantiere_id) {
+  const validateStepFor = (s) => {
+    if (s === 1 && !formData.cantiere_id) {
       toast.error("Seleziona un cantiere");
       return false;
     }
-    if (step === 2 && (formData.collaboratori || []).length === 0) {
+    if (s === 2 && (formData.collaboratori || []).length === 0) {
       toast.error("Aggiungi almeno un collaboratore per continuare");
       return false;
     }
-    if (step === 2 && (!formData.ore_totali_squadra || formData.ore_totali_squadra <= 0)) {
+    if (s === 2 && (!formData.ore_totali_squadra || formData.ore_totali_squadra <= 0)) {
       toast.error("Inserisci le ore totali squadra");
       return false;
     }
-    if (step === 4) {
+    if (s === 4) {
       const oreLavoratori = (formData.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0) || (formData.ore_totali_squadra || 0);
       const oreExtra = formData.has_lavorazioni_extra ? (formData.lavorazioni_extra || []).reduce((s, l) => s + (l.ore || 0), 0) : 0;
       const oreNormali = (formData.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
@@ -136,6 +136,27 @@ export default function CreateReport() {
       }
     }
     return true;
+  };
+  const validateStep = () => validateStepFor(step);
+
+  const goToStep = (target) => {
+    if (target === step) return;
+    if (target < step) {
+      setShowErrors(false);
+      setStep(target);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    // Avanza validando ogni step intermedio
+    for (let s = step; s < target; s++) {
+      if (!validateStepFor(s)) {
+        setShowErrors(true);
+        return;
+      }
+    }
+    setShowErrors(false);
+    setStep(target);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleNext = () => {
@@ -205,7 +226,7 @@ export default function CreateReport() {
               </div>
             )}
           </div>
-          <StepIndicator currentStep={step} totalSteps={TOTAL_STEPS} />
+          <StepIndicator currentStep={step} totalSteps={TOTAL_STEPS} onStepClick={goToStep} />
         </div>
       </div>
 
