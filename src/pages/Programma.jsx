@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -20,6 +21,7 @@ export default function Programma() {
   const [dataSelezionata, setDataSelezionata] = useState(domani);
   const { isGestore } = usePermessi();
   const shiftDay = (delta) => {
+    setDir(delta);
     const d = new Date(dataSelezionata + "T00:00:00");
     d.setDate(d.getDate() + delta);
     setDataSelezionata(d.toISOString().slice(0, 10));
@@ -51,6 +53,7 @@ export default function Programma() {
   const [editing, setEditing] = useState(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [dir, setDir] = useState(0);
 
   const reload = () => {
     qc.invalidateQueries({ queryKey: ["programma", dataSelezionata] });
@@ -182,20 +185,30 @@ export default function Programma() {
             </Button>
           </div>
         )}
-        {isLoading ? (
-          <p className="text-center text-sm text-muted-foreground py-8">Caricamento...</p>
-        ) : programmi.length === 0 ? (
-          <div className="text-center py-16">
-            <ClipboardCheck className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground font-medium">Nessun programma pubblicato</p>
-            <p className="text-sm text-muted-foreground mt-1">Crea e pubblica una programmazione</p>
-          </div>
-        ) : (
-          <>
-            {renderGroup(normali, "Giornata normale", Sun, "bg-amber-500")}
-            {renderGroup(pioggia, "Giornata di pioggia", CloudRain, "bg-blue-500")}
-          </>
-        )}
+        <AnimatePresence mode="wait" custom={dir}>
+          <motion.div
+            key={dataSelezionata}
+            initial={dir === 0 ? { opacity: 0 } : dir > 0 ? { x: 80, opacity: 0 } : { x: -80, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={dir === 0 ? { opacity: 0 } : dir > 0 ? { x: -80, opacity: 0 } : { x: 80, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+          >
+            {isLoading ? (
+              <p className="text-center text-sm text-muted-foreground py-8">Caricamento...</p>
+            ) : programmi.length === 0 ? (
+              <div className="text-center py-16">
+                <ClipboardCheck className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground font-medium">Nessun programma pubblicato</p>
+                <p className="text-sm text-muted-foreground mt-1">Crea e pubblica una programmazione</p>
+              </div>
+            ) : (
+              <>
+                {renderGroup(normali, "Giornata normale", Sun, "bg-amber-500")}
+                {renderGroup(pioggia, "Giornata di pioggia", CloudRain, "bg-blue-500")}
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <ProgrammazioneFormDialog
