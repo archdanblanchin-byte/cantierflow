@@ -24,7 +24,10 @@ export default function Programma() {
     setDir(delta);
     const d = new Date(dataSelezionata + "T00:00:00");
     d.setDate(d.getDate() + delta);
-    setDataSelezionata(d.toISOString().slice(0, 10));
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    setDataSelezionata(`${y}-${m}-${day}`);
   };
 
   const { data: programmi = [], isLoading } = useQuery({
