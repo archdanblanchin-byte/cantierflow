@@ -4,8 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, FileText, Download } from "lucide-react";
-import ReportPDFButton, { ReportPDFContent } from "@/components/ReportPDF";
+import { ArrowLeft, FileText } from "lucide-react";
+import { ReportPDFContent } from "@/components/ReportPDF";
 import CantierePdfViewer from "@/components/cantiere/CantierePdfViewer";
 
 export default function ArchivioCantiereDetail() {
@@ -80,18 +80,10 @@ export default function ArchivioCantiereDetail() {
           </div>
           <div className="flex items-center gap-2">
             {cantiere.pdf_url && (
-              <>
-                <Button className="gap-2" onClick={() => setShowPdf(true)}>
-                  <FileText className="w-4 h-4" /> Vedi PDF
-                </Button>
-                <a href={cantiere.pdf_url} download>
-                  <Button variant="outline" className="gap-2">
-                    <Download className="w-4 h-4" /> Scarica
-                  </Button>
-                </a>
-              </>
+              <Button className="gap-2" onClick={() => setShowPdf(true)}>
+                <FileText className="w-4 h-4" /> Vedi PDF
+              </Button>
             )}
-            <ReportPDFButton cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
           </div>
         </div>
       </div>
