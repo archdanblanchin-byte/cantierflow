@@ -56,7 +56,7 @@ export default function CantiereDetail() {
 
   const { data: rapportini = [] } = useQuery({
     queryKey: ["rapportini_cantiere", id],
-    queryFn: () => base44.entities.Rapportino.filter({ cantiere_id: id }),
+    queryFn: () => base44.entities.Rapportino.filter({ cantiere_id: id }, "data"),
     enabled: !!id,
   });
 
@@ -165,6 +165,9 @@ export default function CantiereDetail() {
   const oreMezzi = rapportini.reduce((sum, r) => sum + (r.ore_noleggio_mezzi || 0), 0);
   const oreAttrezzi = rapportini.reduce((sum, r) => sum + (r.ore_noleggio_plexi || 0), 0);
 
+  // Rapportini ordinati dal più vecchio al più recente
+  const rapportiniSorted = [...rapportini].sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0));
+
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((cantiere.indirizzo || "") + " " + (cantiere.citta || ""))}`;
 
   return (
@@ -182,7 +185,7 @@ export default function CantiereDetail() {
           </div>
           <div className="flex gap-2">
             {canManage && (
-              <ReportPDFButton cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
+              <ReportPDFButton cantiere={cantiere} rapportini={rapportiniSorted} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
             )}
             <Link to={`/cantieri/${id}/modifica`}>
               <Button variant="outline" size="sm" className="gap-2">
@@ -291,7 +294,7 @@ export default function CantiereDetail() {
             <p className="text-sm text-muted-foreground italic">Nessun rapportino collegato</p>
           ) : (
             <div className="space-y-2">
-              {rapportini.map((r) => (
+              {rapportiniSorted.map((r) => (
                 <Link key={r.id} to={`/report/${r.id}`} className="flex items-center justify-between rounded-xl border border-border bg-card p-3 hover:border-primary/20 transition-colors">
                   <div className="text-sm">
                     <p className="font-medium">{r.data ? format(new Date(r.data), "d MMM yyyy", { locale: it }) : "—"}</p>
@@ -393,7 +396,7 @@ export default function CantiereDetail() {
 
       {/* Contenuto PDF nascosto usato per la stampa */}
       <div className="hidden">
-        <ReportPDFContent cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
+        <ReportPDFContent cantiere={cantiere} rapportini={rapportiniSorted} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
       </div>
 
       {generatingPdf && (
