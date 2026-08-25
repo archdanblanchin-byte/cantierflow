@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Upload, Search, FolderOpen, FileText } from "lucide-react";
-import DocumentoCard from "@/components/documenti/DocumentoCard";
+import DocumentoBookCard from "@/components/documenti/DocumentoBookCard";
 import DocumentoUploadDialog from "@/components/documenti/DocumentoUploadDialog";
 import DocumentoViewer from "@/components/documenti/DocumentoViewer";
 import SegnalazioneDialog from "@/components/documenti/SegnalazioneDialog";
@@ -102,11 +102,11 @@ export default function Documenti() {
         <p className="text-xs text-muted-foreground mt-2">{filtered.length} documenti{search.trim() ? " trovati" : ""}</p>
       </div>
 
-      {/* Lista */}
-      <div className="max-w-3xl mx-auto px-4 pt-3 space-y-2">
+      {/* Libreria */}
+      <div className="max-w-3xl mx-auto px-4 pt-4">
         {isLoading && (
-          <div className="space-y-2">
-            {[0, 1, 2].map((i) => <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />)}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="aspect-[3/4] rounded-xl bg-muted animate-pulse" />)}
           </div>
         )}
         {!isLoading && filtered.length === 0 && (
@@ -116,14 +116,18 @@ export default function Documenti() {
             <p className="text-xs mt-1">{search.trim() ? "Prova con un altro termine" : canManage ? "Carica il primo documento" : "I documenti appariranno qui"}</p>
           </div>
         )}
-        {filtered.map((d) => (
-          <DocumentoCard
-            key={d.id}
-            documento={d}
-            searchTerm={search.trim()}
-            onClick={() => setSelected(d)}
-          />
-        ))}
+        {!isLoading && filtered.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {filtered.map((d) => (
+              <DocumentoBookCard
+                key={d.id}
+                documento={d}
+                searchTerm={search.trim()}
+                onClick={() => setSelected(d)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Dialogs */}
