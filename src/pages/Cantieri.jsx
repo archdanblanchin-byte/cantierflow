@@ -6,7 +6,14 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, MapPin, Clock, ChevronRight, Building2, ArrowLeft } from "lucide-react";
+import { Plus, MapPin, Clock, ChevronRight, Building2, ArrowLeft, CheckCircle2 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import CantiereListPdfButton from "@/components/cantiere/CantiereListPdfButton";
 
 const STATO_TABS = [
   { key: "aperto", label: "Aperti", color: "default" },
@@ -31,8 +38,24 @@ export default function Cantieri() {
   const { user } = useAuth();
   const ruolo = user?.role === "user" ? "collaboratore" : user?.role;
   const canManage = ruolo === "admin" || ruolo === "responsabile_tecnico";
-
+  const isAdmin = ruolo === "admin";
+  const qc = useQueryClient();
   const [tab, setTab] = useState("aperto");
+  const [closeTarget, setCloseTarget] = useState(null);
+
+  const chiudiCantiere = async (c) => {
+    try {
+      await base44.entities.Cantiere.update(c.id, {
+        stato: "chiuso",
+        attivo: false,
+        data_chiusura: c.data_chiusura || new Date().toISOString().slice(0, 10),
+      });
+      qc.invalidateQueries({ queryKey: ["cantieri"] });
+      toast.success(`Cantiere "${c.nome}" chiuso`);
+    } catch (e) {
+      toast.error("Errore: " + (e?.message || e));
+    }
+  };
 
   const { data: cantieri = [], isLoading } = useQuery({
     queryKey: ["cantieri"],
@@ -140,6 +163,16 @@ export default function Cantieri() {
                 return (
                   <div key={c.id} className="rounded-xl border border-border bg-card p-4 hover:shadow-lg hover:border-primary/20 transition-all duration-200">
                     <div className="flex items-start justify-between gap-3">
+                      {isAdmin && (
+                        <div className="flex flex-col gap-1 flex-shrink-0 pt-0.5">
+                          {sd !== "chiuso" && (
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary" title="Chiudi cantiere" onClick={() => setCloseTarget(c)}>
+                              <CheckCircle2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <CantiereListPdfButton cantiere={c} rapportini={rapportini.filter((r) => r.cantiere_id === c.id)} />
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <div className="flex items-center gap-2">
                           <Badge
@@ -187,6 +220,23 @@ export default function Cantieri() {
           ))
         )}
       </div>
+
+      <AlertDialog open={!!closeTarget} onOpenChange={(o) => !o && setCloseTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Chiudere il cantiere?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Confermi la chiusura di "{closeTarget?.nome}"? Puoi riaprirlo dal dettaglio cantiere in qualsiasi momento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (closeTarget) chiudiCantiere(closeTarget); setCloseTarget(null); }}>
+              Chiudi cantiere
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
