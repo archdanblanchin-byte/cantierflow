@@ -1,13 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Truck, Clock, CloudRain, Sun, Pencil, Trash2, Send } from "lucide-react";
+import CantiereNoteDot from "./CantiereNoteDot";
 
 const TIPO_META = {
   normale: { label: "Giornata normale", icon: Sun, color: "bg-amber-100 text-amber-700" },
   pioggia: { label: "Giornata di pioggia", icon: CloudRain, color: "bg-blue-100 text-blue-700" },
 };
 
-export default function ProgrammazioneCard({ item, onEdit, onDelete, onPublish, readonly }) {
+export default function ProgrammazioneCard({ item, onEdit, onDelete, onPublish, readonly, cantiereNotes, currentUser }) {
   const meta = TIPO_META[item.tipo_giornata] || TIPO_META.normale;
   const Icon = meta.icon;
 
@@ -23,11 +24,16 @@ export default function ProgrammazioneCard({ item, onEdit, onDelete, onPublish, 
             <p className="text-xs text-muted-foreground">{meta.label}</p>
           </div>
         </div>
-        {item.stato === "pubblicato" ? (
-          <Badge className="bg-emerald-100 text-emerald-700 border-transparent">Pubblicato</Badge>
-        ) : (
-          <Badge variant="secondary">Bozza</Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {cantiereNotes && (
+            <CantiereNoteDot cantiereNome={item.cantiere_nome} notes={cantiereNotes} currentUser={currentUser} />
+          )}
+          {item.stato === "pubblicato" ? (
+            <Badge className="bg-emerald-100 text-emerald-700 border-transparent">Pubblicato</Badge>
+          ) : (
+            <Badge variant="secondary">Bozza</Badge>
+          )}
+        </div>
       </div>
 
       <div className="mt-3 space-y-2 text-sm">

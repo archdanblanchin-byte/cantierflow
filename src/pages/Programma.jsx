@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -19,6 +19,23 @@ export default function Programma() {
     queryFn: () => base44.entities.Programmazione.filter({ data: dataSelezionata, stato: "pubblicato" }, "tipo_giornata"),
   });
 
+  const [user, setUser] = useState(null);
+  useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
+
+  // Note condivise di cantiere (non completate) per mostrare la pallina rosa
+  const { data: noteCantiere = [] } = useQuery({
+    queryKey: ["note-cantiere"],
+    queryFn: () => base44.entities.Nota.list("-created_date", 500),
+  });
+  const noteByCantiere = useMemo(() => {
+    const map = {};
+    noteCantiere.forEach((n) => {
+      if (!n.cantiere_id || n.completato) return;
+      (map[n.cantiere_id] = map[n.cantiere_id] || []).push(n);
+    });
+    return map;
+  }, [noteCantiere]);
+
   const normali = programmi.filter((p) => p.tipo_giornata === "normale");
   const pioggia = programmi.filter((p) => p.tipo_giornata === "pioggia");
 
@@ -36,7 +53,13 @@ export default function Programma() {
       ) : (
         <div className="space-y-3">
           {items.map((p) => (
-            <ProgrammazioneCard key={p.id} item={p} readonly />
+            <ProgrammazioneCard
+              key={p.id}
+              item={p}
+              readonly
+              cantiereNotes={noteByCantiere[p.cantiere_id] || []}
+              currentUser={user}
+            />
           ))}
         </div>
       )}

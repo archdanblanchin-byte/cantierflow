@@ -1,0 +1,73 @@
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { MapPin } from "lucide-react";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
+
+// Pallina rosa che segnala note di cantiere non lette collegate al cantiere
+// della programmazione. Al click apre le note e le segna come lette (letto_da).
+export default function CantiereNoteDot({ cantiereNome, notes, currentUser }) {
+  const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+
+  if (!currentUser) return null;
+
+  const unread = (notes || []).filter(
+    (n) => !n.completato && !((n.letto_da || []).includes(currentUser.email))
+  );
+  if (unread.length === 0) return null;
+
+  const markRead = async () => {
+    await Promise.all(
+      unread.map((n) =>
+        base44.entities.Nota
+          .update(n.id, { letto_da: [...(n.letto_da || []), currentUser.email] })
+          .catch(() => {})
+      )
+    );
+    qc.invalidateQueries({ queryKey: ["note-cantiere"] });
+    qc.invalidateQueries({ queryKey: ["note"] });
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen(true); markRead(); }}
+        className="relative inline-flex items-center justify-center"
+        title={`${unread.length} nota/e di cantiere`}
+        aria-label={`${unread.length} nota/e di cantiere`}
+      >
+        <span className="w-3 h-3 rounded-full bg-pink-500 ring-2 ring-card animate-pulse" />
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <MapPin className="w-4 h-4 text-pink-500" /> Note cantiere: {cantiereNome}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {(notes || []).map((n) => (
+              <div key={n.id} className="rounded-lg border border-border bg-card p-3 space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px]">{n.tipo}</Badge>
+                  {n.priorita === "alta" && <Badge className="bg-rose-100 text-rose-700 text-[10px]">Alta</Badge>}
+                  <span className="text-[10px] text-muted-foreground ml-auto">
+                    {format(new Date(n.created_date), "d MMM HH:mm", { locale: it })}
+                  </span>
+                </div>
+                <p className="text-sm whitespace-pre-wrap">{n.testo}</p>
+                <p className="text-[11px] text-muted-foreground">da {n.created_by}</p>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
