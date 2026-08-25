@@ -6,7 +6,8 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, MapPin, Clock, ChevronRight, Building2, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { Plus, MapPin, Clock, ChevronRight, Building2, ArrowLeft, CheckCircle2, Loader2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -42,6 +43,7 @@ export default function Cantieri() {
   const isAdmin = ruolo === "admin";
   const qc = useQueryClient();
   const [tab, setTab] = useState("aperto");
+  const [query, setQuery] = useState("");
   const [closeTarget, setCloseTarget] = useState(null);
   const [pdfCloseTarget, setPdfCloseTarget] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -99,9 +101,11 @@ export default function Cantieri() {
 
   // Filtra per tab
   const filtrati = useMemo(() => {
-    if (tab === "tutti") return cantieri;
-    return cantieri.filter((c) => statoOf(c) === tab);
-  }, [cantieri, tab]);
+    const q = query.trim().toLowerCase();
+    const matches = (c) => !q || [c.nome, c.cliente, c.codice, c.citta, c.indirizzo].filter(Boolean).some((v) => v.toLowerCase().includes(q));
+    const byTab = tab === "tutti" ? cantieri : cantieri.filter((c) => statoOf(c) === tab);
+    return byTab.filter(matches);
+  }, [cantieri, tab, query]);
 
   // Raggruppa per anno (decrescente)
   const grouped = useMemo(() => {
@@ -158,6 +162,12 @@ export default function Cantieri() {
               {t.label} <span className="opacity-70">({counts[t.key] || 0})</span>
             </button>
           ))}
+        </div>
+        <div className="max-w-2xl mx-auto px-4 pb-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cerca cantiere per nome, cliente, città..." className="pl-9" />
+          </div>
         </div>
       </div>
 

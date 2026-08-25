@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, FileText, UserCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, FileText, UserCircle, Search } from "lucide-react";
 import ReportCard from "@/components/home/ReportCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import SyncButton from "@/components/SyncButton";
@@ -79,6 +80,12 @@ function RapportiniList() {
     [cantieri]
   );
   const visibili = rapportini.filter((r) => !chiusiIds.has(r.cantiere_id));
+  const [query, setQuery] = useState("");
+  const filtrati = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return visibili;
+    return visibili.filter((r) => [r.cantiere_nome, r.note_generali].filter(Boolean).some((v) => v.toLowerCase().includes(q)));
+  }, [visibili, query]);
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["rapportini"] });
@@ -93,7 +100,7 @@ function RapportiniList() {
               <div>
                 <h1 className="font-bold text-lg">Rapportini</h1>
                 <p className="text-xs text-muted-foreground">
-                  {isLoading ? "..." : `${visibili.length} rapportin${visibili.length === 1 ? "o" : "i"}`}
+                  {isLoading ? "..." : `${filtrati.length} rapportin${filtrati.length === 1 ? "o" : "i"}`}
                 </p>
               </div>
             </div>
@@ -104,6 +111,10 @@ function RapportiniList() {
               </Button>
             </Link>
           </div>
+          <div className="relative mt-3">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cerca per cantiere..." className="pl-9" />
+          </div>
         </div>
       </div>
 
@@ -113,7 +124,7 @@ function RapportiniList() {
           <div className="space-y-3">
             {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
           </div>
-        ) : visibili.length === 0 ? (
+        ) : filtrati.length === 0 ? (
           <div className="text-center py-16">
             <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-muted-foreground font-medium">Nessun rapportino</p>
@@ -124,7 +135,7 @@ function RapportiniList() {
           </div>
         ) : (
           <div className="space-y-3">
-            {visibili.map((r) => <ReportCard key={r.id} report={r} />)}
+            {filtrati.map((r) => <ReportCard key={r.id} report={r} />)}
           </div>
         )}
         </PullToRefresh>

@@ -4,14 +4,16 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, Download } from "lucide-react";
 import ReportPDFButton, { ReportPDFContent } from "@/components/ReportPDF";
+import CantierePdfViewer from "@/components/cantiere/CantierePdfViewer";
 
 export default function ArchivioCantiereDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [cantiere, setCantiere] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showPdf, setShowPdf] = useState(false);
 
   const { data: rapportini = [] } = useQuery({
     queryKey: ["rapportini_cantiere", id],
@@ -78,11 +80,16 @@ export default function ArchivioCantiereDetail() {
           </div>
           <div className="flex items-center gap-2">
             {cantiere.pdf_url && (
-              <a href={cantiere.pdf_url} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" className="gap-2">
-                  <FileText className="w-4 h-4" /> Apri PDF
+              <>
+                <Button className="gap-2" onClick={() => setShowPdf(true)}>
+                  <FileText className="w-4 h-4" /> Vedi PDF
                 </Button>
-              </a>
+                <a href={cantiere.pdf_url} download>
+                  <Button variant="outline" className="gap-2">
+                    <Download className="w-4 h-4" /> Scarica
+                  </Button>
+                </a>
+              </>
             )}
             <ReportPDFButton cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
           </div>
@@ -95,6 +102,8 @@ export default function ArchivioCantiereDetail() {
           <ReportPDFContent cantiere={cantiere} rapportini={rapportini} foto={fotoCantiere} trasferte={trasferte} spostamenti={spostamenti} />
         </div>
       </div>
+
+      <CantierePdfViewer cantiere={showPdf ? cantiere : null} onClose={() => setShowPdf(false)} />
     </div>
   );
 }

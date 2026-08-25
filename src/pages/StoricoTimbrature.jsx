@@ -5,8 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users, Loader2, Navigation, CheckSquare, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users, Loader2, Navigation, CheckSquare, Trash2, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { fmtOre } from "@/lib/timbratureUtils";
@@ -37,6 +38,7 @@ export default function StoricoTimbrature() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
+  const [query, setQuery] = useState("");
   const [selectedDays, setSelectedDays] = useState(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -121,8 +123,11 @@ export default function StoricoTimbrature() {
 
   // Raggruppa per giorno (chiave locale yyyy-MM-dd)
   const giorni = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const matches = (t) => !q || [t.cantiere_nome, t.user_nome, t.user_email].filter(Boolean).some((v) => v.toLowerCase().includes(q));
     const perGiorno = {};
     (timbrature || []).forEach((t) => {
+      if (!matches(t)) return;
       const key = format(new Date(t.data_ora), "yyyy-MM-dd");
       (perGiorno[key] ||= []).push(t);
     });
@@ -132,7 +137,7 @@ export default function StoricoTimbrature() {
         list: list.slice().sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora)),
       }))
       .sort((a, b) => (a.key < b.key ? 1 : -1));
-  }, [timbrature]);
+  }, [timbrature, query]);
 
   const selectedCount = giorni
     .filter((g) => selectedDays.has(g.key))
@@ -177,6 +182,12 @@ export default function StoricoTimbrature() {
               <CheckSquare className="w-5 h-5" />
             </button>
           )}
+        </div>
+        <div className="max-w-2xl mx-auto px-4 pb-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cerca per cantiere o persona..." className="pl-9" />
+          </div>
         </div>
       </div>
 
