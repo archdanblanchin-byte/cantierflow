@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import SheetSelect from "@/components/ui/sheet-select";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, Trash2, Users, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Minus, Trash2, Users, Clock, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 
 const NOTE_OPTIONS = [
   "Uscita anticipata dal cantiere concordata",
@@ -117,7 +117,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
     onChange({ collaboratori: collaboratori.filter((_, i) => i !== index) });
   };
 
-  // Solo admin: cambia il collaboratore assegnato a una riga esistente (mantiene ore/note)
+  // Solo admin: sostituisce il collaboratore di una riga con un altro (mantiene ore/note)
   const changePersona = (index, newId) => {
     const found = collaboratoriList.find((c) => c.id === newId);
     if (!found) return;
@@ -125,6 +125,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
     updated[index] = { ...updated[index], collaboratore_id: newId, nome: found.nome };
     onChange({ collaboratori: updated });
   };
+  const [editingPersona, setEditingPersona] = useState(null);
 
   const available = collaboratoriList
     .filter((c) => c.attivo !== false && !collaboratori.some((sel) => sel.collaboratore_id === c.id))
@@ -185,23 +186,30 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
                   </div>
                   <span className="font-medium text-sm">{coll.nome}</span>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeCollaboratore(i)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-              {canEditCollab && (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Cambia collaboratore</Label>
-                  <SheetSelect
-                    value={coll.collaboratore_id}
-                    onValueChange={(v) => changePersona(i, v)}
-                    options={[
-                      { value: coll.collaboratore_id, label: coll.nome },
-                      ...available.map((c) => ({ value: c.id, label: c.nome })),
-                    ]}
-                    placeholder="Seleziona collaboratore..."
-                  />
+                <div className="flex items-center gap-1">
+                  {canEditCollab && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingPersona(editingPersona === i ? null : i)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeCollaboratore(i)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
+              </div>
+              {canEditCollab && editingPersona === i && (
+                <SheetSelect
+                  value={coll.collaboratore_id}
+                  onValueChange={(v) => {
+                    if (v !== coll.collaboratore_id) changePersona(i, v);
+                    setEditingPersona(null);
+                  }}
+                  options={[
+                    { value: coll.collaboratore_id, label: coll.nome },
+                    ...available.map((c) => ({ value: c.id, label: c.nome })),
+                  ]}
+                  placeholder="Scegli il nuovo collaboratore..."
+                />
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
