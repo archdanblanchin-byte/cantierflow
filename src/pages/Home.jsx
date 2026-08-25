@@ -75,20 +75,13 @@ function RapportiniList() {
     queryKey: ["rapportini"],
     queryFn: () => base44.entities.Rapportino.list("-data", 50),
   });
-  const { data: cantieri = [] } = useQuery({
-    queryKey: ["cantieri"],
-    queryFn: () => base44.entities.Cantiere.list(),
-  });
-  const chiusiIds = useMemo(
-    () => new Set(cantieri.filter((c) => c.stato === "chiuso" || (!c.stato && c.attivo === false)).map((c) => c.id)),
-    [cantieri]
-  );
+  // I rapportini dei cantieri chiusi restano visibili: rappresentano le ore
+  // lavorate dei collaboratori e devono restare consultabili anche dopo la
+  // chiusura del cantiere (le ore non "spariscono").
   const visibili = useMemo(
     () =>
-      rapportini
-        .filter((r) => !chiusiIds.has(r.cantiere_id))
-        .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0)),
-    [rapportini, chiusiIds]
+      [...rapportini].sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0)),
+    [rapportini]
   );
   const [query, setQuery] = useState("");
   const filtrati = useMemo(() => {
