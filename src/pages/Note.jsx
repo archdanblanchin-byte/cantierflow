@@ -22,7 +22,7 @@ export default function Note() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewNotes, setReviewNotes] = useState([]);
 
-  useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
+  useEffect(() => {base44.auth.me().then(setUser).catch(() => {});}, []);
 
   const { data: cantieri = [] } = useQuery({ queryKey: ["cantieri"], queryFn: () => base44.entities.Cantiere.list() });
   const { data: furgoni = [] } = useQuery({ queryKey: ["furgoni"], queryFn: () => base44.entities.Furgone.list() });
@@ -30,14 +30,14 @@ export default function Note() {
   const { data: collaboratori = [] } = useQuery({ queryKey: ["collaboratori"], queryFn: () => base44.entities.Collaboratore.list() });
 
   const colleghi = [
-    ...users.map((u) => ({ nome: u.full_name || u.email })),
-    ...collaboratori.map((c) => ({ nome: c.nome })),
-  ];
+  ...users.map((u) => ({ nome: u.full_name || u.email })),
+  ...collaboratori.map((c) => ({ nome: c.nome }))];
+
 
   const { data: note = [], isLoading } = useQuery({
     queryKey: ["note"],
     queryFn: () => base44.entities.Nota.list("-created_date", 200),
-    enabled: !!user,
+    enabled: !!user
   });
 
   // Personali: nessun destinatario (visibili solo all'autore)
@@ -47,7 +47,7 @@ export default function Note() {
   const comunicInviate = comunic.filter((n) => n.created_by === user?.email);
   const comunicRicevute = comunic.filter((n) => (n.destinatari_email || []).includes(user?.email));
   const comunicFiltered =
-    subCom === "inviate" ? comunicInviate : subCom === "ricevute" ? comunicRicevute : comunic;
+  subCom === "inviate" ? comunicInviate : subCom === "ricevute" ? comunicRicevute : comunic;
 
   const sortByCompletato = (arr) => [...arr].sort((a, b) => {
     const ca = a.completato ? 1 : 0;
@@ -89,32 +89,32 @@ export default function Note() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
-        {!recorderMode ? (
-          <div className="space-y-2">
+        {!recorderMode ?
+        <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => setRecorderMode("personale")}
-                className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-4 hover:shadow-md hover:border-teal-500/30 transition-all"
-              >
+              onClick={() => setRecorderMode("personale")}
+              className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-4 hover:shadow-md hover:border-teal-500/30 transition-all">
+              
                 <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center"><User className="w-5 h-5 text-teal-600" /></div>
                 <span className="text-sm font-semibold">Personale</span>
                 <span className="text-[11px] text-muted-foreground text-center">Solo tu le vedi</span>
               </button>
               <button
-                onClick={() => setRecorderMode("comunicazione")}
-                className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-4 hover:shadow-md hover:border-violet-500/30 transition-all"
-              >
+              onClick={() => setRecorderMode("comunicazione")}
+              className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-4 hover:shadow-md hover:border-violet-500/30 transition-all">
+              
                 <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center"><Share2 className="w-5 h-5 text-violet-600" /></div>
                 <span className="text-sm font-semibold">Comunicazione</span>
                 <span className="text-[11px] text-muted-foreground text-center">Collegate a colleghi/ruoli</span>
               </button>
             </div>
-            <Button variant="outline" className="gap-2 h-10 w-full" onClick={() => { setReviewNotes([]); setFormOpen(true); }}>
+            <Button variant="outline" className="gap-2 h-10 w-full" onClick={() => {setReviewNotes([]);setFormOpen(true);}}>
               <PenLine className="w-4 h-4" /> Scrivi manualmente una nota
             </Button>
-          </div>
-        ) : (
-          <div className="space-y-2">
+          </div> :
+
+        <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {recorderMode === "personale" ? "Nota personale" : "Nota di comunicazione"}
@@ -122,43 +122,43 @@ export default function Note() {
               <Button variant="ghost" size="sm" onClick={() => setRecorderMode(null)}>Annulla</Button>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              {recorderMode === "personale"
-                ? "Parla liberamente: l'IA crea una o più note personali (promemoria, liste)."
-                : "Parla liberamente: l'IA crea uno o più messaggi/liste per le persone citate."}
+              {recorderMode === "personale" ?
+            "Parla liberamente: l'IA crea una o più note personali (promemoria, liste)." :
+            "Parla liberamente: l'IA crea uno o più messaggi/liste per le persone citate."}
             </p>
             <NotaVocaleRecorder mode={recorderMode} cantieri={cantieri} furgoni={furgoni} colleghi={colleghi} onResult={handleResult} />
           </div>
-        )}
+        }
 
         <div className="flex gap-2">
           <Button variant={tab === "personali" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setTab("personali")}>
             <User className="w-3.5 h-3.5" /> Personali ({personali.length})
           </Button>
-          <Button variant={tab === "comunicazione" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setTab("comunicazione")}>
+          <Button variant={tab === "comunicazione" ? "default" : "outline"} size="sm" className="gap-1.5 hidden" onClick={() => setTab("comunicazione")}>
             <Share2 className="w-3.5 h-3.5" /> Comunicazione ({comunic.length})
           </Button>
         </div>
 
-        {tab === "comunicazione" && (
-          <div className="flex gap-2 -mt-1">
+        {tab === "comunicazione" &&
+        <div className="flex gap-2 -mt-1">
             <Button variant={subCom === "tutte" ? "secondary" : "ghost"} size="sm" onClick={() => setSubCom("tutte")}>Tutte ({comunic.length})</Button>
             <Button variant={subCom === "inviate" ? "secondary" : "ghost"} size="sm" className="gap-1" onClick={() => setSubCom("inviate")}><Send className="w-3 h-3" /> Inviate ({comunicInviate.length})</Button>
             <Button variant={subCom === "ricevute" ? "secondary" : "ghost"} size="sm" className="gap-1" onClick={() => setSubCom("ricevute")}><Inbox className="w-3 h-3" /> Ricevute ({comunicRicevute.length})</Button>
           </div>
-        )}
+        }
 
-        {isLoading ? (
-          <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
-        ) : list.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
+        {isLoading ?
+        <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div> :
+        list.length === 0 ?
+        <div className="text-center py-12 text-muted-foreground">
             <StickyNote className="w-10 h-10 mx-auto mb-2 opacity-30" />
             <p className="text-sm">Nessuna nota {tab === "personali" ? "personale" : "di comunicazione"}</p>
-          </div>
-        ) : (
-          <div className="space-y-2.5">
+          </div> :
+
+        <div className="space-y-2.5">
             {listAperte.map((n) => <NotaCard key={n.id} nota={n} currentUser={user} />)}
-            {listCompletate.length > 0 && (
-              <div className="pt-2">
+            {listCompletate.length > 0 &&
+          <div className="pt-2">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-px flex-1 bg-border" />
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Completate</span>
@@ -168,13 +168,13 @@ export default function Note() {
                   {listCompletate.map((n) => <NotaCard key={n.id} nota={n} currentUser={user} />)}
                 </div>
               </div>
-            )}
+          }
           </div>
-        )}
+        }
       </div>
 
       <NotaFormDialog open={formOpen} onOpenChange={setFormOpen} initial={null} onSaved={onSaved} />
       <NotaReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} notes={reviewNotes} onSaved={onSaved} />
-    </div>
-  );
+    </div>);
+
 }
