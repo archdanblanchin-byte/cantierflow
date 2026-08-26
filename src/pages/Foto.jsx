@@ -18,12 +18,12 @@ export default function FotoPage() {
 
   const { data: foto = [], isLoading: loadingFoto } = useQuery({
     queryKey: ["foto"],
-    queryFn: () => base44.entities.Foto.list("-created_date", 100),
+    queryFn: () => base44.entities.Foto.list("-created_date", 100)
   });
 
   const { data: cantieri = [] } = useQuery({
     queryKey: ["cantieri"],
-    queryFn: () => base44.entities.Cantiere.list(),
+    queryFn: () => base44.entities.Cantiere.list()
   });
 
   const handleDelete = async (f) => {
@@ -32,9 +32,9 @@ export default function FotoPage() {
   };
 
   const handleEdit = async (f) => {
+
     // Apri editor — per ora naviga al dettaglio (futuro: inline edit)
   };
-
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-card border-b border-border sticky top-0 z-10 safe-area-top-pt">
@@ -51,11 +51,11 @@ export default function FotoPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isAdmin && (
-              <Button variant="outline" size="sm" onClick={() => navigate("/importa-foto")} className="gap-2">
+            {isAdmin &&
+            <Button variant="outline" size="sm" onClick={() => navigate("/importa-foto")} className="gap-2 hidden">
                 <Folder className="w-4 h-4" />Drive
               </Button>
-            )}
+            }
             <Button onClick={() => setShowModal(true)} className="gap-2 shadow-lg shadow-primary/20">
               <Plus className="w-4 h-4" />
               Aggiungi
@@ -65,34 +65,34 @@ export default function FotoPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {loadingFoto ? (
-          <div className="grid grid-cols-2 gap-3">
+        {loadingFoto ?
+        <div className="grid grid-cols-2 gap-3">
             {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="aspect-video rounded-xl" />)}
-          </div>
-        ) : foto.length === 0 ? (
-          <div className="text-center py-16">
+          </div> :
+        foto.length === 0 ?
+        <div className="text-center py-16">
             <Camera className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-muted-foreground font-medium">Nessuna foto</p>
             <p className="text-sm text-muted-foreground mt-1">Aggiungi la prima foto o codice colore</p>
             <Button className="mt-4 gap-2" onClick={() => setShowModal(true)}>
               <Plus className="w-4 h-4" />Aggiungi foto
             </Button>
+          </div> :
+
+        <div className="grid grid-cols-2 gap-3">
+            {foto.map((f) =>
+          <FotoCard key={f.id} foto={f} onDelete={handleDelete} />
+          )}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {foto.map((f) => (
-              <FotoCard key={f.id} foto={f} onDelete={handleDelete} />
-            ))}
-          </div>
-        )}
+        }
       </div>
 
       <AggiungiFotoModal
         open={showModal}
         onClose={() => setShowModal(false)}
         cantieri={cantieri}
-        onSaved={() => queryClient.invalidateQueries({ queryKey: ["foto"] })}
-      />
-    </div>
-  );
+        onSaved={() => queryClient.invalidateQueries({ queryKey: ["foto"] })} />
+      
+    </div>);
+
 }
