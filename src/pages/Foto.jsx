@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Plus, Camera, Image } from "lucide-react";
+import { ArrowLeft, Plus, Camera, Image, Folder } from "lucide-react";
 import FotoCard from "@/components/foto/FotoCard";
 import AggiungiFotoModal from "@/components/foto/AggiungiFotoModal";
 
 export default function FotoPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isAdmin = user?.role === "admin";
   const [showModal, setShowModal] = useState(false);
 
   const { data: foto = [], isLoading: loadingFoto } = useQuery({
@@ -47,10 +50,17 @@ export default function FotoPage() {
               </p>
             </div>
           </div>
-          <Button onClick={() => setShowModal(true)} className="gap-2 shadow-lg shadow-primary/20">
-            <Plus className="w-4 h-4" />
-            Aggiungi
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => navigate("/importa-foto")} className="gap-2">
+                <Folder className="w-4 h-4" />Drive
+              </Button>
+            )}
+            <Button onClick={() => setShowModal(true)} className="gap-2 shadow-lg shadow-primary/20">
+              <Plus className="w-4 h-4" />
+              Aggiungi
+            </Button>
+          </div>
         </div>
       </div>
 

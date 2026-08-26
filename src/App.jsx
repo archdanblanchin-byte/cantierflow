@@ -35,6 +35,7 @@ import Note from './pages/Note';
 import StoricoTimbrature from './pages/StoricoTimbrature';
 import WorkflowApp from './pages/WorkflowApp';
 import Documenti from './pages/Documenti';
+import ImportaFotoDrive from './pages/ImportaFotoDrive';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -106,6 +107,7 @@ const AuthenticatedApp = () => {
       <Route path="/corsi" element={<Corsi />} />
       <Route path="/note" element={<Note />} />
       <Route path="/workflow" element={<WorkflowApp />} />
+      <Route path="/importa-foto" element={<ImportaFotoDrive />} />
 
       <Route path="*" element={<PageNotFound />} />
     </AnimatedRoutes>
