@@ -25,7 +25,7 @@ export const SEZIONI_APP = [
   { key: "corsi", label: "Corsi", path: "/corsi", icon: GraduationCap, color: "bg-violet-500" },
   { key: "permessi_ferie", label: "Permessi", path: "/permessi-ferie", icon: CalendarDays, color: "bg-rose-600" },
   { key: "uso_furgoni", label: "Uso Furgoni", path: "/uso-furgoni", icon: Car, color: "bg-zinc-700" },
-  { key: "note", label: "Note", path: "/note", icon: StickyNote, color: "bg-teal-600" },
+  { key: "note", label: "NoteTask", path: "/note", icon: StickyNote, color: "bg-teal-600" },
   { key: "workflow", label: "WorkFlow", path: "/workflow", icon: Hammer, color: "bg-amber-700" },
   { key: "documenti", label: "Documenti", path: "/documenti", icon: FileText, color: "bg-indigo-600" },
   { key: "impostazioni", label: "Impostazioni", path: "/impostazioni", icon: Settings, color: "bg-slate-700", adminOnly: true },
