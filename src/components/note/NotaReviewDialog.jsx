@@ -14,7 +14,7 @@ import { maybeMirrorNotaToFurgone } from "@/lib/notaFurgoneMirror";
  * Revisione di più note estratte da una singola registrazione vocale.
  * Ogni nota è modificabile; si possono aggiungere/rimuovere note e salvare tutto.
  */
-export default function NotaReviewDialog({ open, onOpenChange, notes = [], onSaved }) {
+export default function NotaReviewDialog({ open, onOpenChange, notes = [], onSaved, mode = "personale" }) {
   const { data: cantieri = [] } = useQuery({ queryKey: ["cantieri"], queryFn: () => base44.entities.Cantiere.list() });
   const { data: furgoni = [] } = useQuery({ queryKey: ["furgoni"], queryFn: () => base44.entities.Furgone.list() });
   const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: () => base44.entities.User.list() });
@@ -26,13 +26,16 @@ export default function NotaReviewDialog({ open, onOpenChange, notes = [], onSav
 
   useEffect(() => {
     if (!open) return;
-    setList((notes || []).map((n) => resolveNota(n, { cantieri, furgoni, destOptions })));
+    setList((notes || []).map((n) => {
+      const r = resolveNota(n, { cantieri, furgoni, destOptions });
+      return mode === "comunicazione" ? { ...r, privata: false } : { ...r, privata: true };
+    }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, notes, cantieri, furgoni, users, collaboratori]);
 
   const update = (i, v) => setList((l) => l.map((x, idx) => (idx === i ? v : x)));
   const remove = (i) => setList((l) => l.filter((_, idx) => idx !== i));
-  const addEmpty = () => setList((l) => [...l, { tipo: "personale", testo: "", items: [], cantiere_id: "", furgone_id: "", destinatari_email: [], data_promemoria: "", priorita: "media", origine: "vocale" }]);
+  const addEmpty = () => setList((l) => [...l, { tipo: "personale", testo: "", items: [], privata: mode !== "comunicazione", cantiere_id: "", furgone_id: "", destinatari_email: [], data_promemoria: "", priorita: "media", origine: "vocale" }]);
 
   const handleSave = async () => {
     const valid = list.filter((n) => (n.testo || "").trim());

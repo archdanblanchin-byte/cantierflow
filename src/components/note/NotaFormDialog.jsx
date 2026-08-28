@@ -31,7 +31,8 @@ const toLocalInput = (iso) => {
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 };
 
-export default function NotaFormDialog({ open, onOpenChange, initial, onSaved }) {
+export default function NotaFormDialog({ open, onOpenChange, initial, onSaved, mode = "personale" }) {
+  const isPersonale = mode === "personale";
   const { data: cantieri = [] } = useQuery({ queryKey: ["cantieri"], queryFn: () => base44.entities.Cantiere.list() });
   const { data: furgoni = [] } = useQuery({ queryKey: ["furgoni"], queryFn: () => base44.entities.Furgone.list() });
   const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: () => base44.entities.User.list() });
@@ -45,6 +46,7 @@ export default function NotaFormDialog({ open, onOpenChange, initial, onSaved })
   const [destinatari, setDestinatari] = useState([]);
   const [dataPromemoria, setDataPromemoria] = useState("");
   const [priorita, setPriorita] = useState("media");
+  const [privata, setPrivata] = useState(true);
   const [saving, setSaving] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [dubbio, setDubbio] = useState("");
@@ -99,6 +101,7 @@ export default function NotaFormDialog({ open, onOpenChange, initial, onSaved })
     setDestinatari(destEmails);
     setDataPromemoria(toLocalInput(init.data_promemoria));
     setPriorita(init.priorita || "media");
+    setPrivata(init && init.privata !== undefined ? !!init.privata : isPersonale);
     setRevealCantiere(false);
     setRevealFurgone(false);
     setRevealDest(false);
@@ -193,12 +196,13 @@ Testo dell'utente:
         testo: testo.trim(),
         tipo,
         items: tipo === "lista" ? items.filter((i) => i.text.trim()).map((i) => ({ text: i.text.trim(), done: !!i.done })) : [],
+        privata: isPersonale ? true : privata,
         cantiere_id: cantiereId || null,
         cantiere_nome: cantiereId ? cantieri.find((c) => c.id === cantiereId)?.nome || null : null,
         furgone_id: furgoneId || null,
         furgone_nome: furgoneId ? furgoni.find((f) => f.id === furgoneId)?.nome || null : null,
-        destinatari_email: destinatari,
-        destinatari_nomi: destinatari.map((e) => destOptions.find((o) => o.email === e)?.nome || e),
+        destinatari_email: isPersonale ? [] : destinatari,
+        destinatari_nomi: isPersonale ? [] : destinatari.map((e) => destOptions.find((o) => o.email === e)?.nome || e),
         data_promemoria: dataPromemoria ? new Date(dataPromemoria).toISOString() : null,
         priorita,
         origine: initial?._vocale ? "vocale" : "manuale",
@@ -219,7 +223,7 @@ Testo dell'utente:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{initial?._vocale ? "Revisiona nota vocale" : "Nuova nota"}</DialogTitle>
+          <DialogTitle>{initial ? "Modifica nota" : isPersonale ? "Nuova nota personale" : "Nuova comunicazione"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1">
@@ -290,29 +294,34 @@ Testo dell'utente:
             )}
           </div>
 
-          {(tipo === "messaggio" || destinatari.length > 0 || revealDest) ? (
-            <div className="space-y-1">
-              <Label className="flex items-center justify-between">Destinatari (chi deve riceverla)
-                {tipo !== "messaggio" && <button type="button" onClick={() => { setRevealDest(false); setDestinatari([]); }} className="text-[11px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>}
-              </Label>
-              <div className="flex flex-wrap gap-1.5">
-                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setDestinatari(users.filter((u) => u.email).map((u) => u.email))}>Tutti gli utenti</Button>
-                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setDestinatari(collaboratori.filter((c) => c.user_email).map((c) => c.user_email))}>Tutti i collaboratori</Button>
-                <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setDestinatari([])}>Nessuno</Button>
+          {!isPersonale && (
+            (tipo === "messaggio" || destinatari.length > 0 || revealDest) ? (
+              <div className="space-y-1">
+                <Label className="flex items-center justify-between">Destinatari (chi deve riceverla)
+                  {tipo !== "messaggio" && <button type="button" onClick={() => { setRevealDest(false); setDestinatari([]); }} className="text-[11px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>}
+                </Label>
+                <div className="flex flex-wrap gap-1.5">
+                  <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setDestinatari(users.filter((u) => u.email).map((u) => u.email))}>Tutti gli utenti</Button>
+                  <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setDestinatari(collaboratori.filter((c) => c.user_email).map((c) => c.user_email))}>Tutti i collaboratori</Button>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setDestinatari([])}>Nessuno</Button>
+                </div>
+                <div className="max-h-40 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
+                  {destOptions.length === 0 && <p className="text-xs text-muted-foreground p-2">Nessun utente/collega con email disponibile.</p>}
+                  {destOptions.map((o) => (
+                    <label key={o.email} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent cursor-pointer">
+                      <Checkbox checked={destinatari.includes(o.email)} onCheckedChange={() => toggleDest(o.email)} />
+                      <span className="text-sm">{o.nome} <span className="text-xs text-muted-foreground">({o.email})</span></span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">Aggiungi destinatari o collega a cantiere/furgone per condividerla.</p>
               </div>
-              <div className="max-h-40 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
-                {destOptions.length === 0 && <p className="text-xs text-muted-foreground p-2">Nessun utente/collega con email disponibile.</p>}
-                {destOptions.map((o) => (
-                  <label key={o.email} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent cursor-pointer">
-                    <Checkbox checked={destinatari.includes(o.email)} onCheckedChange={() => toggleDest(o.email)} />
-                    <span className="text-sm">{o.nome} <span className="text-xs text-muted-foreground">({o.email})</span></span>
-                  </label>
-                ))}
-              </div>
-              <p className="text-[11px] text-muted-foreground">Senza destinatari la nota è personale (visibile solo a te).</p>
-            </div>
-          ) : (
-            <Button type="button" variant="ghost" size="sm" className="gap-1" onClick={() => setRevealDest(true)}><Plus className="w-4 h-4" /> Invia a qualcuno (comunicazione)</Button>
+            ) : (
+              <Button type="button" variant="ghost" size="sm" className="gap-1" onClick={() => setRevealDest(true)}><Plus className="w-4 h-4" /> Invia a qualcuno</Button>
+            )
+          )}
+          {isPersonale && (
+            <p className="text-[11px] text-muted-foreground">Nota personale: visibile solo a te. Puoi collegare un cantiere o un furgone come contesto.</p>
           )}
         </div>
         <DialogFooter>

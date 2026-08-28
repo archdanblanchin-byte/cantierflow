@@ -12,7 +12,7 @@ const WARNING_RE = /scadenz|scad|rinnova|revision|assicuraz|tagliando|chilometr|
 export async function maybeMirrorNotaToFurgone(nota) {
   try {
     if (!nota || !nota.furgone_id) return;
-    if (!(nota.destinatari_email || []).length) return; // solo comunicazioni condivise
+    if (nota.privata) return; // solo comunicazioni condivise (non note personali)
     const testo = nota.testo || "";
     const low = testo.toLowerCase();
     let tipo = "nota";

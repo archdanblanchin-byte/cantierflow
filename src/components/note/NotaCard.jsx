@@ -58,6 +58,7 @@ export default function NotaCard({ nota, currentUser }) {
           await base44.entities.Nota.create({
             testo: `✓ ${nome} ha completato il task: "${nota.testo}"`,
             tipo: "messaggio",
+            privata: false,
             destinatari_email: others,
             destinatari_nomi: others,
             cantiere_id: nota.cantiere_id || null,
