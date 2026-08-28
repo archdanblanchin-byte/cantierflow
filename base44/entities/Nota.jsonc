@@ -33,6 +33,11 @@
         }
       }
     },
+    "privata": {
+      "type": "boolean",
+      "default": true,
+      "description": "true = nota personale (visibile solo all'autore + admin). false = comunicazione condivisa: visibile a destinatari, oppure a tutti se collegata a cantiere/furgone."
+    },
     "cantiere_id": {
       "type": "string",
       "description": "ID cantiere collegato"
@@ -115,9 +120,28 @@
           "data.destinatari_email": "{{user.email}}"
         },
         {
-          "data.cantiere_id": {
-            "$ne": null
-          }
+          "$and": [
+            {
+              "data.privata": false
+            },
+            {
+              "data.cantiere_id": {
+                "$ne": null
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.privata": false
+            },
+            {
+              "data.furgone_id": {
+                "$ne": null
+              }
+            }
+          ]
         },
         {
           "user_condition": {
@@ -139,9 +163,28 @@
           }
         },
         {
-          "data.cantiere_id": {
-            "$ne": null
-          }
+          "$and": [
+            {
+              "data.privata": false
+            },
+            {
+              "data.cantiere_id": {
+                "$ne": null
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.privata": false
+            },
+            {
+              "data.furgone_id": {
+                "$ne": null
+              }
+            }
+          ]
         },
         {
           "user_condition": {
