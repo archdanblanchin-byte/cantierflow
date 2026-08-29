@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import {
   MapPin, Loader2, Clock, LogIn, Coffee, PlayCircle, LogOut, Navigation,
-  AlertTriangle, CheckCircle2, Plus, FileText, Trash2, Pencil, Calendar } from
+  AlertTriangle, CheckCircle2, Plus, FileText, Trash2, Pencil, Calendar, Warehouse, X } from
 "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -47,6 +47,7 @@ export default function Timbratura() {
   const [lastTimbro, setLastTimbro] = useState(null);
   const [selectedCantiereId, setSelectedCantiereId] = useState("");
   const [showNewCantiere, setShowNewCantiere] = useState(false);
+  const [menuSpostamento, setMenuSpostamento] = useState(false);
 
   useEffect(() => {base44.auth.me().then(setUser).catch(() => {});}, []);
 
@@ -125,14 +126,21 @@ export default function Timbratura() {
   const totLavorazione = orePerCantiereAll.reduce((s, c) => s + c.ore, 0);
   const totSpostamento = orePerCantiereAll.reduce((s, c) => s + (c.ore_spostamento || 0), 0);
   const totGiornaliero = totLavorazione + totSpostamento;
+  // Pausa pranzo totale giornaliera (NON conteggiata nelle ore lavorative, solo visibile)
+  const totPausa = (() => {
+    let ms = 0; let pIn = null;
+    timbratureOrd.forEach((t) => {
+      if (t.tipo_evento === "pausa_inizio") pIn = new Date(t.data_ora);
+      else if (t.tipo_evento === "pausa_fine" && pIn) { ms += new Date(t.data_ora) - pIn; pIn = null; }
+    });
+    if (inPausa && pIn) ms += new Date() - pIn;
+    return arrotondaQuarti(ms);
+  })();
 
-  const canIngresso = !activeSession;
-  const canPausa = !!activeSession;
-  const canClose = !!activeSession && !inPausa;
-  // Lo spostamento è consentito anche durante la pausa (si chiude il cantiere senza riprendere)
-  const canSpostamento = !!activeSession;
+
 
   const handleTimbra = async (tipoEvento) => {
+    setMenuSpostamento(false);
     setLoadingTipo(tipoEvento);
     setError(null);
     try {
@@ -176,6 +184,44 @@ export default function Timbratura() {
         cantiere_id: cantiere.id,
         giorno: inizio,
       }).then(() => queryClient.invalidateQueries({ queryKey: ["rapportini"] }))
+        .catch(() => {});
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoadingTipo(null);
+    }
+  };
+
+  // Spostamento verso il capannone: chiude la sessione in cantiere e ne apre subito
+  // una nuova sullo STESSO cantiere (lavorazione in capannone attribuita al cantiere
+  // di provenienza). Le ore continuano a conteggiarsi per quel cantiere.
+  const handleCapannone = async () => {
+    setLoadingTipo("capannone");
+    setError(null);
+    try {
+      if (!user) throw new Error("Utente non autenticato");
+      if (!activeCantiere) throw new Error("Nessun cantiere attivo");
+      const pos = await getPosizione();
+      await base44.entities.Timbratura.create({
+        cantiere_id: activeCantiere.id, cantiere_nome: activeCantiere.nome,
+        rapportino_id: null, user_email: user.email, user_nome: user.full_name || "",
+        tipo_evento: "spostamento", data_ora: new Date().toISOString(),
+        latitudine: pos.lat, longitudine: pos.lon, distanza_metri: null, in_cantiere: true,
+        note: "Spostamento verso capannone",
+      });
+      const rec = await base44.entities.Timbratura.create({
+        cantiere_id: activeCantiere.id, cantiere_nome: activeCantiere.nome,
+        rapportino_id: null, user_email: user.email, user_nome: user.full_name || "",
+        tipo_evento: "ingresso", data_ora: new Date().toISOString(),
+        latitudine: pos.lat, longitudine: pos.lon, distanza_metri: null, in_cantiere: true,
+        note: "Lavorazione in capannone",
+      });
+      setLastTimbro(rec);
+      setMenuSpostamento(false);
+      queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
+      queryClient.invalidateQueries({ queryKey: ["timbrature-giornaliere"] });
+      syncRapportinoOreDaTimbratura({ user_email: user.email, cantiere_id: activeCantiere.id, giorno: inizio })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["rapportini"] }))
         .catch(() => {});
     } catch (e) {
       setError(e.message);
@@ -262,10 +308,6 @@ export default function Timbratura() {
     }
   };
 
-  const pausaTipo = inPausa ? "pausa_fine" : "pausa_inizio";
-  const pausaLabel = inPausa ? "Riprendi lavoro" : "Inizio pausa pranzo";
-  const PausaIcon = inPausa ? PlayCircle : Coffee;
-
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="bg-card border-b border-border safe-area-top-pt">
@@ -348,52 +390,94 @@ export default function Timbratura() {
           </Card>
         }
 
-        {/* 4 Bottoni */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Pannello azioni — macchina a stati contestuale */}
+        {spostamentoInCorso ? (
+          <div className="space-y-2">
+            <Button
+              onClick={() => handleTimbra("ingresso")}
+              disabled={!!loadingTipo || !selectedCantiereId}
+              className="h-16 w-full text-base font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700">
+              {loadingTipo === "ingresso" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+              Arrivato · Inizia cantiere
+            </Button>
+            <p className="text-[11px] text-orange-700 text-center font-medium">
+              Sei in spostamento. Seleziona il nuovo cantiere sopra e premi «Arrivato».
+            </p>
+          </div>
+        ) : !activeSession ? (
           <Button
             onClick={() => handleTimbra("ingresso")}
-            disabled={!!loadingTipo || !canIngresso}
-            className="h-14 text-sm font-semibold gap-1.5 bg-emerald-600 hover:bg-emerald-700">
-            
+            disabled={!!loadingTipo || !selectedCantiereId}
+            className="h-16 w-full text-base font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700">
             {loadingTipo === "ingresso" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-            {spostamentoInCorso ? "Arrivato · Inizia cantiere" : "Inizia lavoro"}
+            Avvio lavorazione in cantiere
           </Button>
-          <Button
-            onClick={() => handleTimbra(pausaTipo)}
-            disabled={!!loadingTipo || !canPausa}
-            className={`h-14 text-sm font-semibold gap-1.5 ${inPausa ? "bg-blue-600 hover:bg-blue-700" : "bg-amber-500 hover:bg-amber-600"}`}>
-            
-            {loadingTipo === pausaTipo ? <Loader2 className="w-5 h-5 animate-spin" /> : <PausaIcon className="w-5 h-5" />}
-            {pausaLabel}
-          </Button>
-          <Button
-            onClick={() => handleTimbra("spostamento")}
-            disabled={!!loadingTipo || !canSpostamento}
-            className="h-14 text-sm font-semibold gap-1.5 bg-orange-500 hover:bg-orange-600">
-            
-            {loadingTipo === "spostamento" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />}
-            Vado in un altro cantiere
-          </Button>
-          <Button
-            onClick={() => handleTimbra("uscita")}
-            disabled={!!loadingTipo || !canClose}
-            className="h-14 text-sm font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700">
-            
-            {loadingTipo === "uscita" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}
-            Chiudi giornata
-          </Button>
-        </div>
-
-        {activeSession &&
-        <p className="text-[11px] text-muted-foreground text-center">
-            <span className="font-medium text-orange-600">Vado in un altro cantiere</span> chiude il cantiere attuale e ti mette in viaggio: una volta arrivato al nuovo cantiere premi <span className="font-medium text-emerald-600">Arrivato · Inizia cantiere</span>.
-          </p>
-        }
-        {spostamentoInCorso &&
-        <p className="text-[11px] text-orange-700 text-center font-medium">
-            Sei in spostamento. Quando arrivi al nuovo cantiere selezionalo sopra e premi «Arrivato · Inizia cantiere».
-          </p>
-        }
+        ) : menuSpostamento ? (
+          <div className="space-y-2">
+            <Button
+              onClick={() => handleTimbra("spostamento")}
+              disabled={!!loadingTipo}
+              className="h-14 w-full text-sm font-semibold gap-2 bg-orange-500 hover:bg-orange-600">
+              {loadingTipo === "spostamento" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />}
+              Spostamento per iniziare un altro cantiere
+            </Button>
+            <Button
+              onClick={handleCapannone}
+              disabled={!!loadingTipo}
+              className="h-14 w-full text-sm font-semibold gap-2 bg-indigo-500 hover:bg-indigo-600">
+              {loadingTipo === "capannone" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Warehouse className="w-5 h-5" />}
+              Vado in capannone e finire di lavorare
+            </Button>
+            <Button variant="ghost" onClick={() => setMenuSpostamento(false)} className="w-full gap-1 text-xs">
+              <X className="w-3.5 h-3.5" /> Annulla
+            </Button>
+            <p className="text-[11px] text-muted-foreground text-center">
+              Il <span className="font-medium text-indigo-600">capannone</span> continua a conteggiare le ore sul cantiere attuale. L'altro cantiere chiude la sessione e ti mette in viaggio.
+            </p>
+          </div>
+        ) : inPausa ? (
+          <div className="space-y-2">
+            <Button
+              onClick={() => handleTimbra("pausa_fine")}
+              disabled={!!loadingTipo}
+              className="h-14 w-full text-sm font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700">
+              {loadingTipo === "pausa_fine" ? <Loader2 className="w-5 h-5 animate-spin" /> : <PlayCircle className="w-5 h-5" />}
+              Riprendi la lavorazione in cantiere
+            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => setMenuSpostamento(true)} disabled={!!loadingTipo}
+                className="h-12 text-xs font-semibold gap-1.5 bg-orange-500 hover:bg-orange-600">
+                <Navigation className="w-4 h-4" /> Spostamenti
+              </Button>
+              <Button onClick={() => handleTimbra("uscita")} disabled={!!loadingTipo}
+                className="h-12 text-xs font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700">
+                {loadingTipo === "uscita" ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                Chiudi giornata
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Button
+              onClick={() => handleTimbra("pausa_inizio")}
+              disabled={!!loadingTipo}
+              className="h-14 w-full text-sm font-semibold gap-2 bg-amber-500 hover:bg-amber-600">
+              {loadingTipo === "pausa_inizio" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Coffee className="w-5 h-5" />}
+              Vado in pausa pranzo
+            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => setMenuSpostamento(true)} disabled={!!loadingTipo}
+                className="h-12 text-xs font-semibold gap-1.5 bg-orange-500 hover:bg-orange-600">
+                <Navigation className="w-4 h-4" /> Spostamenti
+              </Button>
+              <Button onClick={() => handleTimbra("uscita")} disabled={!!loadingTipo}
+                className="h-12 text-xs font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700">
+                {loadingTipo === "uscita" ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                Chiudi giornata
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Annulla ultimo timbro (entro 1 ora) */}
         {ultimoTimbro && canUndo(ultimoTimbro) &&
@@ -434,6 +518,11 @@ export default function Timbratura() {
                 <p className="text-[10px] text-primary/70 uppercase">Totale</p>
               </div>
             </div>
+            {totPausa > 0 && (
+              <p className="text-[11px] text-muted-foreground text-center">
+                Pausa pranzo: <span className="font-medium">{fmtOre(totPausa)}</span> (non conteggiata nelle ore lavorative)
+              </p>
+            )}
           </Card>
         }
 
