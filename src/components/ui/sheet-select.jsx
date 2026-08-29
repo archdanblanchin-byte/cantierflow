@@ -71,11 +71,12 @@ export default function SheetSelect({
           if (!o) {
             // Fix bug di Vaul: a volte body.pointerEvents resta "none" dopo la chiusura,
             // bloccando l'intera pagina (non si può più andare avanti).
-            requestAnimationFrame(() => {
-              if (document.body.style.pointerEvents === "none") {
-                document.body.style.pointerEvents = "";
-              }
-            });
+            const restore = () => {
+              if (document.body.style.pointerEvents === "none") document.body.style.pointerEvents = "";
+            };
+            requestAnimationFrame(restore);
+            setTimeout(restore, 120);
+            setTimeout(restore, 350);
           }
         }}
       >

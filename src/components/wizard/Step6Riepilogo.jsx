@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
-  MapPin, Truck, Users, Zap, Wrench, Package, FileText,
+  MapPin, Truck, Users, Zap, Wrench, Package, FileText, AlertTriangle,
 } from "lucide-react";
 import { fmtOre } from "@/lib/timbratureUtils";
 
@@ -32,6 +32,10 @@ function Row({ label, value }) {
 export default function Step6Riepilogo({ data }) {
   const sommaOreNormali = (data.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
   const sommaOreExtra = (data.lavorazioni_extra || []).reduce((s, l) => s + (l.ore || 0), 0);
+  const oreLavoratori = (data.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0) || (data.ore_totali_squadra || 0);
+  const oreExtra = data.has_lavorazioni_extra ? sommaOreExtra : 0;
+  const delta = oreLavoratori - oreExtra - sommaOreNormali;
+  const bilanciato = Math.abs(delta) < 0.01;
 
   return (
     <div className="space-y-6">
@@ -44,6 +48,16 @@ export default function Step6Riepilogo({ data }) {
           <p className="text-sm text-muted-foreground">Verifica tutti i dati prima dell'invio</p>
         </div>
       </div>
+
+      {!bilanciato && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-semibold">Ore non in pareggio: {delta > 0 ? "mancano" : "sforato di"} {Math.abs(delta).toFixed(2).replace(".", ",")}h</p>
+            <p className="text-xs mt-0.5">Torna allo step Lavorazioni e assegna tutte le ore dei collaboratori. Il pulsante «Invia» resta bloccato finché le ore non tornano.</p>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl border border-border bg-card divide-y divide-border">
         <div className="p-4">

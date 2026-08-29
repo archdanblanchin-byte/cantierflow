@@ -153,13 +153,22 @@ export default function Timbratura() {
         cantiere = cantieri.find((c) => c.id === selectedCantiereId);
       }
       if (!cantiere) throw new Error("Cantiere non valido");
-      const pos = await getPosizione();
+      // GPS best-effort: se non disponibile, registro comunque il timbro senza coordinate
+      let pos = { lat: null, lon: null };
+      let gpsDisponibile = true;
+      try {
+        pos = await getPosizione();
+      } catch (geoErr) {
+        gpsDisponibile = false;
+        pos = { lat: null, lon: null };
+      }
       let distanza = null;
       let inCantiere = true;
-      if (cantiere.latitudine && cantiere.longitudine) {
+      if (gpsDisponibile && pos.lat != null && cantiere.latitudine && cantiere.longitudine) {
         distanza = distanzaM(pos.lat, pos.lon, cantiere.latitudine, cantiere.longitudine);
         inCantiere = distanza <= (cantiere.raggio_metri || 150);
       }
+      if (!gpsDisponibile) toast.info("Posizione non disponibile: timbro registrato senza GPS.");
       const record = await base44.entities.Timbratura.create({
         cantiere_id: cantiere.id,
         cantiere_nome: cantiere.nome,
@@ -203,7 +212,8 @@ export default function Timbratura() {
     try {
       if (!user) throw new Error("Utente non autenticato");
       if (!activeCantiere) throw new Error("Nessun cantiere attivo");
-      const pos = await getPosizione();
+      let pos = { lat: null, lon: null };
+      try { pos = await getPosizione(); } catch (_) { pos = { lat: null, lon: null }; }
       await base44.entities.Timbratura.create({
         cantiere_id: activeCantiere.id, cantiere_nome: activeCantiere.nome,
         rapportino_id: null, user_email: user.email, user_nome: user.full_name || "",
