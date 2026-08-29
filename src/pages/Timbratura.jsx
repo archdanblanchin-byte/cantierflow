@@ -102,6 +102,8 @@ export default function Timbratura() {
   // True quando l'ultimo timbro è uno spostamento e non c'è sessione attiva:
   // l'utente è in viaggio verso un nuovo cantiere.
   const spostamentoInCorso = !activeSession && timbratureOrd.length > 0 && timbratureOrd[timbratureOrd.length - 1].tipo_evento === "spostamento";
+  // Pausa pranzo già fatta oggi: il bottone non deve comparire più di una volta al giorno
+  const pausaFatta = timbratureOrd.some((t) => t.tipo_evento === "pausa_inizio");
 
   // Ultimo timbro della giornata (per eventuale annullamento rapido)
   const ultimoTimbro = timbratureOrd.length > 0 ? timbratureOrd[timbratureOrd.length - 1] : null;
@@ -455,6 +457,18 @@ export default function Timbratura() {
                 Chiudi giornata
               </Button>
             </div>
+          </div>
+        ) : pausaFatta ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button onClick={() => setMenuSpostamento(true)} disabled={!!loadingTipo}
+              className="h-14 text-sm font-semibold gap-1.5 bg-orange-500 hover:bg-orange-600">
+              <Navigation className="w-5 h-5" /> Spostamenti
+            </Button>
+            <Button onClick={() => handleTimbra("uscita")} disabled={!!loadingTipo}
+              className="h-14 text-sm font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700">
+              {loadingTipo === "uscita" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}
+              Chiudi giornata
+            </Button>
           </div>
         ) : (
           <div className="space-y-2">
