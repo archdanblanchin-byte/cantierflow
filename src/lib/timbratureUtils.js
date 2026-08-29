@@ -52,6 +52,15 @@ export function arrotondaQuarti(ms) {
   return Math.round(ore * 4) / 4;
 }
 
+// Arrotonda un valore in ms al multiplo di `stepMin` minuti più vicino (default 5 min).
+// Da usare SOLO sul totale finale, non sulle singole sessioni (che vanno lasciate esatte).
+export function arrotondaMinuti(ms, stepMin = 5) {
+  if (!ms || ms < 0) return 0;
+  const totalMin = ms / 60000;
+  const roundedMin = Math.round(totalMin / stepMin) * stepMin;
+  return Math.round((roundedMin / 60) * 1000) / 1000;
+}
+
 export function fmtOre(oreQuarti) {
   if (!oreQuarti || oreQuarti <= 0) return "0h";
   const h = Math.floor(oreQuarti);

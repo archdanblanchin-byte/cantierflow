@@ -1,4 +1,4 @@
-import { arrotondaQuarti } from "./timbratureUtils";
+import { arrotondaMinuti } from "./timbratureUtils";
 import { base44 } from "@/api/base44Client";
 
 // Calcola le ore lavorate per ogni cantiere a partire dalle timbrature di una giornata.
@@ -17,7 +17,7 @@ export function calcolaOrePerCantiere(timbrature) {
         cantiere_nome: t.cantiere_nome,
         ingresso: null,
         timbri: [],
-        ore_spostamento: 0,
+        ore_spostamento_ms: 0,
       };
     }
     perCantiere[t.cantiere_id].timbri.push(t);
@@ -37,13 +37,13 @@ export function calcolaOrePerCantiere(timbrature) {
     if (!nextIng) return;
     const durataMs = new Date(nextIng.data_ora) - new Date(t.data_ora);
     if (durataMs <= 0) return;
-    const metaOre = arrotondaQuarti(durataMs / 2);
-    if (perCantiere[t.cantiere_id]) perCantiere[t.cantiere_id].ore_spostamento += metaOre;
-    if (perCantiere[nextIng.cantiere_id]) perCantiere[nextIng.cantiere_id].ore_spostamento += metaOre;
+    const metaMs = durataMs / 2;
+    if (perCantiere[t.cantiere_id]) perCantiere[t.cantiere_id].ore_spostamento_ms += metaMs;
+    if (perCantiere[nextIng.cantiere_id]) perCantiere[nextIng.cantiere_id].ore_spostamento_ms += metaMs;
   });
 
   return Object.values(perCantiere).map((g) => {
-    let ore = 0;
+    let oreMs = 0;
     const timbri = g.timbri;
     let i = 0;
     while (i < timbri.length) {
@@ -67,7 +67,7 @@ export function calcolaOrePerCantiere(timbrature) {
             pIn = null;
           }
         }
-        ore += arrotondaQuarti(sessione);
+        oreMs += sessione;
         i = endIdx >= 0 ? endIdx + 1 : timbri.length;
       } else {
         i++;
@@ -77,8 +77,8 @@ export function calcolaOrePerCantiere(timbrature) {
       cantiere_id: g.cantiere_id,
       cantiere_nome: g.cantiere_nome,
       ingresso: g.ingresso,
-      ore,
-      ore_spostamento: g.ore_spostamento,
+      ore: arrotondaMinuti(oreMs),
+      ore_spostamento: arrotondaMinuti(g.ore_spostamento_ms || 0),
     };
   });
 }
