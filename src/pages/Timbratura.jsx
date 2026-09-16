@@ -17,7 +17,7 @@ import {
 "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { distanzaM, getPosizione, STEP_CONFIG, arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
+import { getPosizioneEDistanza, STEP_CONFIG, arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
 import { calcolaOrePerCantiere, generaRapportiniDaGiornata, syncRapportinoOreDaTimbratura } from "@/lib/rapportiniFromTimbrature";
 import { getRuoloLabel } from "@/lib/permissions";
 import NewCantiereModal from "@/components/wizard/NewCantiereModal";
@@ -153,22 +153,8 @@ export default function Timbratura() {
         cantiere = cantieri.find((c) => c.id === selectedCantiereId);
       }
       if (!cantiere) throw new Error("Cantiere non valido");
-      // GPS best-effort: se non disponibile, registro comunque il timbro senza coordinate
-      let pos = { lat: null, lon: null };
-      let gpsDisponibile = true;
-      try {
-        pos = await getPosizione();
-      } catch (geoErr) {
-        gpsDisponibile = false;
-        pos = { lat: null, lon: null };
-      }
-      let distanza = null;
-      let inCantiere = true;
-      if (gpsDisponibile && pos.lat != null && cantiere.latitudine && cantiere.longitudine) {
-        distanza = distanzaM(pos.lat, pos.lon, cantiere.latitudine, cantiere.longitudine);
-        inCantiere = distanza <= (cantiere.raggio_metri || 150);
-      }
-      if (!gpsDisponibile) toast.info("Posizione non disponibile: timbro registrato senza GPS.");
+      const geo = await getPosizioneEDistanza(cantiere);
+      if (!geo.gpsDisponibile) toast.info("Posizione non disponibile: timbro registrato senza GPS.");
       const record = await base44.entities.Timbratura.create({
         cantiere_id: cantiere.id,
         cantiere_nome: cantiere.nome,
@@ -177,14 +163,14 @@ export default function Timbratura() {
         user_nome: user.full_name || "",
         tipo_evento: tipoEvento,
         data_ora: new Date().toISOString(),
-        latitudine: pos.lat,
-        longitudine: pos.lon,
-        distanza_metri: distanza,
-        in_cantiere: inCantiere
+        latitudine: geo.lat,
+        longitudine: geo.lon,
+        distanza_metri: geo.distanza,
+        in_cantiere: geo.inCantiere
       });
       setLastTimbro(record);
-      if (!inCantiere && cantiere.latitudine) {
-        setError(`Posizione fuori cantiere! Sei a ${distanza}m (massimo: ${cantiere.raggio_metri || 150}m).`);
+      if (!geo.inCantiere && cantiere.latitudine) {
+        setError(`Posizione fuori cantiere! Sei a ${geo.distanza}m (massimo: ${cantiere.raggio_metri || 150}m).`);
       }
       if (tipoEvento === "ingresso") setSelectedCantiereId("");
       queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
@@ -212,20 +198,20 @@ export default function Timbratura() {
     try {
       if (!user) throw new Error("Utente non autenticato");
       if (!activeCantiere) throw new Error("Nessun cantiere attivo");
-      let pos = { lat: null, lon: null };
-      try { pos = await getPosizione(); } catch (_) { pos = { lat: null, lon: null }; }
+      const geo = await getPosizioneEDistanza(activeCantiere);
+      if (!geo.gpsDisponibile) toast.info("Posizione non disponibile: timbro registrato senza GPS.");
       await base44.entities.Timbratura.create({
         cantiere_id: activeCantiere.id, cantiere_nome: activeCantiere.nome,
         rapportino_id: null, user_email: user.email, user_nome: user.full_name || "",
         tipo_evento: "spostamento", data_ora: new Date().toISOString(),
-        latitudine: pos.lat, longitudine: pos.lon, distanza_metri: null, in_cantiere: true,
+        latitudine: geo.lat, longitudine: geo.lon, distanza_metri: geo.distanza, in_cantiere: geo.inCantiere,
         note: "Spostamento verso capannone",
       });
       const rec = await base44.entities.Timbratura.create({
         cantiere_id: activeCantiere.id, cantiere_nome: activeCantiere.nome,
         rapportino_id: null, user_email: user.email, user_nome: user.full_name || "",
         tipo_evento: "ingresso", data_ora: new Date().toISOString(),
-        latitudine: pos.lat, longitudine: pos.lon, distanza_metri: null, in_cantiere: true,
+        latitudine: geo.lat, longitudine: geo.lon, distanza_metri: geo.distanza, in_cantiere: geo.inCantiere,
         note: "Lavorazione in capannone",
       });
       setLastTimbro(rec);

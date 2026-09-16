@@ -36,6 +36,31 @@ export function getPosizione() {
   });
 }
 
+// Acquisisce GPS (best-effort) e calcola distanza dal cantiere passato.
+// Restituisce { lat, lon, distanza, inCantiere, gpsDisponibile }.
+// Da usare per OGNI timbro così coordinate e distanza sono sempre presenti.
+export async function getPosizioneEDistanza(cantiere) {
+  let lat = null;
+  let lon = null;
+  let gpsDisponibile = true;
+  try {
+    const pos = await getPosizione();
+    lat = pos.lat;
+    lon = pos.lon;
+  } catch (e) {
+    gpsDisponibile = false;
+    lat = null;
+    lon = null;
+  }
+  let distanza = null;
+  let inCantiere = true;
+  if (gpsDisponibile && lat != null && cantiere?.latitudine && cantiere?.longitudine) {
+    distanza = distanzaM(lat, lon, cantiere.latitudine, cantiere.longitudine);
+    inCantiere = distanza <= (cantiere.raggio_metri || 150);
+  }
+  return { lat, lon, distanza, inCantiere, gpsDisponibile };
+}
+
 export const STEP_CONFIG = {
   ingresso: { label: "Ingresso", icon: LogIn, color: "bg-emerald-600 hover:bg-emerald-700" },
   pausa_inizio: { label: "Inizio pausa", icon: Coffee, color: "bg-amber-500 hover:bg-amber-600" },
