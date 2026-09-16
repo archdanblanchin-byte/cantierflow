@@ -83,6 +83,23 @@ export function calcolaOrePerCantiere(timbrature) {
   });
 }
 
+// Regola delle 8 ore: classifica gli spostamenti della giornata come
+// 'lavorative' (se il totale lavorato esclusi gli spostamenti è < 8h)
+// o 'trasferta' (se il totale lavorato raggiunge o supera le 8h).
+// Ritorna { totLavorazione, totSpostamento, spostamentoTipo, totGiornaliero }.
+export function classificaSpostamentiGiornata(timbrature) {
+  const perCantiere = calcolaOrePerCantiere(timbrature);
+  const totLavorazione = perCantiere.reduce((s, c) => s + (c.ore || 0), 0);
+  const totSpostamento = perCantiere.reduce((s, c) => s + (c.ore_spostamento || 0), 0);
+  const spostamentoTipo = totSpostamento > 0 && totLavorazione >= 8 ? "trasferta" : "lavorative";
+  return {
+    totLavorazione,
+    totSpostamento,
+    spostamentoTipo,
+    totGiornaliero: totLavorazione + totSpostamento,
+  };
+}
+
 function stessaGiornata(iso, giorno) {
   if (!iso) return false;
   return new Date(iso).toDateString() === giorno.toDateString();

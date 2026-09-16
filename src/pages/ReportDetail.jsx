@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import DetailSection, { DetailRow } from "@/components/detail/DetailSection";
 import { fmtOre } from "@/lib/timbratureUtils";
+import { useClassificazioneSpostamento } from "@/hooks/useClassificazioneSpostamento";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -74,6 +75,9 @@ export default function ReportDetail() {
   const isAdmin = currentUser?.role === "admin";
   const canEdit = report && currentUser &&
     (isAdmin || (report.user_email === currentUser.email && isToday(new Date(report.data))));
+  // Classificazione spostamenti secondo la regola delle 8 ore (calcolo giornaliero)
+  const { data: classificazione } = useClassificazioneSpostamento(report?.user_email, report?.data);
+  const spoTipo = classificazione?.spostamentoTipo;
 
   const handleDelete = async () => {
     await base44.entities.Rapportino.delete(id);
@@ -198,7 +202,17 @@ export default function ReportDetail() {
 
           <DetailSection icon={Users} title={`Collaboratori (${(d.collaboratori || []).length})`}>
             <DetailRow label="Ore lavorazione" value={fmtOre(d.ore_totali_squadra || 0)} />
-            <DetailRow label="Ore spostamento (auto)" value={fmtOre(d.ore_spostamento || 0)} />
+            <div className="flex justify-between items-center py-1 text-sm">
+              <span className="text-muted-foreground">Ore spostamento (auto)</span>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{fmtOre(d.ore_spostamento || 0)}</span>
+                {spoTipo && (d.ore_spostamento || 0) > 0 && (
+                  <Badge variant="outline" className={`text-[10px] ${spoTipo === "trasferta" ? "bg-amber-50 text-amber-700 border-amber-300" : "bg-emerald-50 text-emerald-700 border-emerald-300"}`}>
+                    {spoTipo === "trasferta" ? "Trasferta" : "Ore lavorative"}
+                  </Badge>
+                )}
+              </div>
+            </div>
             <DetailRow label="Totale ore cantiere" value={fmtOre((d.ore_totali_squadra || 0) + (d.ore_spostamento || 0))} />
             {(d.collaboratori || []).map((c, i) => (
               <div key={i} className="flex items-center justify-between py-1 text-sm">

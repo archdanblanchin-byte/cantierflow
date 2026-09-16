@@ -27,7 +27,7 @@ function oreGiornata(timbs) {
   return calcolaOrePerCantiere(timbs).reduce((s, c) => s + (c.ore || 0), 0);
 }
 
-export default function StoricoTimbrature() {
+export default function StoricoTimbrature({ mode = "own" }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -111,8 +111,9 @@ export default function StoricoTimbrature() {
   };
 
   const isAdmin = user?.role === "admin";
-  // Admin e responsabile tecnico possono vedere le timbrature di tutti (sola lettura per RT)
-  const canSeeAll = isAdmin || user?.role === "responsabile_tecnico";
+  // mode="all" forza la vista di tutti gli utenti (pagina "Tutte le timbrature");
+  // mode="own" (default) mostra sempre e solo le proprie timbrature.
+  const canSeeAll = mode === "all";
   const todayKey = format(new Date(), "yyyy-MM-dd");
 
   const { data: timbrature = [], isLoading } = useQuery({
@@ -165,7 +166,9 @@ export default function StoricoTimbrature() {
               <Calendar className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-tight">Storico timbri</h1>
+              <h1 className="text-lg font-bold leading-tight">
+                {canSeeAll ? "Tutte le timbrature" : "Storico timbri"}
+              </h1>
               <p className="text-[11px] text-muted-foreground">
                 {canSeeAll ? "Tutti gli utenti" : "I tuoi timbri"}
               </p>

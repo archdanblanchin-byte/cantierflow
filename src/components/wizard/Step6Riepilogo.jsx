@@ -6,6 +6,7 @@ import {
   MapPin, Truck, Users, Zap, Wrench, Package, FileText, AlertTriangle,
 } from "lucide-react";
 import { fmtOre } from "@/lib/timbratureUtils";
+import { useClassificazioneSpostamento } from "@/hooks/useClassificazioneSpostamento";
 
 function Section({ icon: Icon, title, children }) {
   return (
@@ -36,6 +37,9 @@ export default function Step6Riepilogo({ data }) {
   const oreExtra = data.has_lavorazioni_extra ? sommaOreExtra : 0;
   const delta = oreLavoratori - oreExtra - sommaOreNormali;
   const bilanciato = Math.abs(delta) < 0.01;
+  // Classificazione spostamenti secondo la regola delle 8 ore (calcolo giornaliero)
+  const { data: classificazione } = useClassificazioneSpostamento(data.user_email, data.data);
+  const spoTipo = classificazione?.spostamentoTipo;
 
   return (
     <div className="space-y-6">
@@ -89,7 +93,17 @@ export default function Step6Riepilogo({ data }) {
         <div className="p-4">
           <Section icon={Users} title={`Collaboratori (${(data.collaboratori || []).length})`}>
             <Row label="Ore lavorazione" value={fmtOre(data.ore_totali_squadra || 0)} />
-            <Row label="Ore spostamento (auto)" value={fmtOre(data.ore_spostamento || 0)} />
+            <div className="flex justify-between text-sm py-1 items-center">
+              <span className="text-muted-foreground">Ore spostamento (auto)</span>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{fmtOre(data.ore_spostamento || 0)}</span>
+                {spoTipo && (
+                  <Badge variant="outline" className={`text-[10px] ${spoTipo === "trasferta" ? "bg-amber-50 text-amber-700 border-amber-300" : "bg-emerald-50 text-emerald-700 border-emerald-300"}`}>
+                    {spoTipo === "trasferta" ? "Trasferta" : "Ore lavorative"}
+                  </Badge>
+                )}
+              </div>
+            </div>
             <Row label="Totale ore cantiere" value={fmtOre((data.ore_totali_squadra || 0) + (data.ore_spostamento || 0))} />
             {(data.collaboratori || []).map((c, i) => (
               <div key={i} className="flex items-center justify-between py-1 text-sm">

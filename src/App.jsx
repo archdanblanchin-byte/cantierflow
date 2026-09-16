@@ -33,6 +33,7 @@ import UsoFurgoni from './pages/UsoFurgoni';
 import Corsi from './pages/Corsi';
 import Note from './pages/Note';
 import StoricoTimbrature from './pages/StoricoTimbrature';
+import TutteTimbrature from './pages/TutteTimbrature';
 import WorkflowApp from './pages/WorkflowApp';
 import Documenti from './pages/Documenti';
 import ImportaFotoDrive from './pages/ImportaFotoDrive';
@@ -103,6 +104,7 @@ const AuthenticatedApp = () => {
       <Route path="/ore-lavoratori" element={<OreLavoratori />} />
       <Route path="/timbratura" element={<TabLayout />} />
       <Route path="/storico-timbrature" element={<StoricoTimbrature />} />
+      <Route path="/tutte-timbrature" element={<TutteTimbrature />} />
       <Route path="/account" element={<Account />} />
       <Route path="/corsi" element={<Corsi />} />
       <Route path="/note" element={<Note />} />
