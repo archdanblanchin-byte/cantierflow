@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import {
   MapPin, Loader2, Clock, LogIn, Coffee, PlayCircle, LogOut, Navigation,
-  AlertTriangle, CheckCircle2, Plus, FileText, Trash2, Pencil, Calendar, Warehouse, Users } from
+  AlertTriangle, CheckCircle2, FileText, Trash2, Pencil, Calendar, Warehouse, Users } from
 "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -21,6 +21,7 @@ import { getPosizioneEDistanza, STEP_CONFIG, arrotondaQuarti, fmtOre } from "@/l
 import { calcolaOrePerCantiere, generaRapportiniDaGiornata, syncRapportinoOreDaTimbratura, classificaSpostamentiGiornata } from "@/lib/rapportiniFromTimbrature";
 import { getRuoloLabel } from "@/lib/permissions";
 import NewCantiereModal from "@/components/wizard/NewCantiereModal";
+import CantierePickerDialog from "@/components/timbrature/CantierePickerDialog";
 
 // Finestra di tempo entro cui un utente può annullare/modificare un timbro accidentale (1 ora)
 const UNDO_WINDOW_MS = 60 * 60 * 1000;
@@ -45,8 +46,10 @@ export default function Timbratura() {
   // in una pagina separata (non mischiata con la vista personale del giorno).
   const canAccessTutte = isAdmin || user?.role === "responsabile_tecnico";
   const [lastTimbro, setLastTimbro] = useState(null);
-  const [selectedCantiereId, setSelectedCantiereId] = useState("");
   const [showNewCantiere, setShowNewCantiere] = useState(false);
+  // Azione in attesa della scelta del cantiere nel picker dialog.
+  // Valori: "ingresso" | "arrivo_nuovo_cantiere" | "arrivo_capannone_altro"
+  const [pendingCantiereAction, setPendingCantiereAction] = useState(null);
 
   useEffect(() => {base44.auth.me().then(setUser).catch(() => {});}, []);
 
@@ -143,16 +146,13 @@ export default function Timbratura() {
 
 
 
-  const handleTimbra = async (tipoEvento) => {
+  const handleTimbra = async (tipoEvento, cantiereOverride) => {
     setLoadingTipo(tipoEvento);
     setError(null);
     try {
       if (!user) throw new Error("Utente non autenticato");
-      let cantiere = activeCantiere;
-      if (tipoEvento === "ingresso") {
-        if (!selectedCantiereId) {setError("Seleziona un cantiere");setLoadingTipo(null);return;}
-        cantiere = cantieri.find((c) => c.id === selectedCantiereId);
-      }
+      let cantiere = cantiereOverride || activeCantiere;
+      if (tipoEvento === "ingresso" && !cantiere) throw new Error("Cantiere non valido");
       if (!cantiere) throw new Error("Cantiere non valido");
       const geo = await getPosizioneEDistanza(cantiere);
       if (!geo.gpsDisponibile) toast.info("Posizione non disponibile: timbro registrato senza GPS.");
@@ -173,7 +173,6 @@ export default function Timbratura() {
       if (!geo.inCantiere && cantiere.latitudine) {
         setError(`Posizione fuori cantiere! Sei a ${geo.distanza}m (massimo: ${cantiere.raggio_metri || 150}m).`);
       }
-      if (tipoEvento === "ingresso") setSelectedCantiereId("");
       queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
       queryClient.invalidateQueries({ queryKey: ["timbrature-giornaliere"] });
       // Aggiorna in automatico le ore del rapportino collegato a questo cantiere/giorno
@@ -225,7 +224,7 @@ export default function Timbratura() {
   //   nuovo_cantiere     → cantiere selezionato (selettore in alto)
   //   capannone_stesso   → stesso cantiere di provenienza
   //   capannone_altro    → cantiere selezionato (lavorazione in capannone per altro cantiere)
-  const handleArrivo = async (tipo) => {
+  const handleArrivo = async (tipo, cantiereOverride) => {
     setLoadingTipo("arrivo_" + tipo);
     setError(null);
     try {
@@ -233,16 +232,16 @@ export default function Timbratura() {
       let cantiere = null;
       let nota = "";
       if (tipo === "nuovo_cantiere") {
-        if (!selectedCantiereId) { setError("Seleziona il cantiere a cui sei arrivato"); setLoadingTipo(null); return; }
-        cantiere = cantieri.find((c) => c.id === selectedCantiereId);
+        if (!cantiereOverride) throw new Error("Cantiere non valido");
+        cantiere = cantiereOverride;
         nota = "Arrivato a nuovo cantiere";
       } else if (tipo === "capannone_stesso") {
         if (!cantierePrecedente) throw new Error("Nessun cantiere precedente");
         cantiere = cantierePrecedente;
         nota = "Capannone — stesso cantiere";
       } else if (tipo === "capannone_altro") {
-        if (!selectedCantiereId) { setError("Seleziona il cantiere per cui lavori in capannone"); setLoadingTipo(null); return; }
-        cantiere = cantieri.find((c) => c.id === selectedCantiereId);
+        if (!cantiereOverride) throw new Error("Cantiere non valido");
+        cantiere = cantiereOverride;
         nota = "Capannone — altro cantiere";
       }
       if (!cantiere) throw new Error("Cantiere non valido");
@@ -259,7 +258,6 @@ export default function Timbratura() {
       if (!geo.inCantiere && cantiere.latitudine) {
         setError(`Posizione fuori cantiere! Sei a ${geo.distanza}m (massimo: ${cantiere.raggio_metri || 150}m).`);
       }
-      setSelectedCantiereId("");
       queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
       queryClient.invalidateQueries({ queryKey: ["timbrature-giornaliere"] });
       syncRapportinoOreDaTimbratura({ user_email: user.email, cantiere_id: cantiere.id, giorno: inizio })
@@ -269,6 +267,20 @@ export default function Timbratura() {
       setError(e.message);
     } finally {
       setLoadingTipo(null);
+    }
+  };
+
+  // Esegue l'azione in attesa dopo che l'utente ha scelto il cantiere nel picker
+  const handleCantiereScelto = async (cantiere) => {
+    const action = pendingCantiereAction;
+    setPendingCantiereAction(null);
+    if (!action) return;
+    if (action === "ingresso") {
+      handleTimbra("ingresso", cantiere);
+    } else if (action === "arrivo_nuovo_cantiere") {
+      handleArrivo("nuovo_cantiere", cantiere);
+    } else if (action === "arrivo_capannone_altro") {
+      handleArrivo("capannone_altro", cantiere);
     }
   };
 
@@ -399,28 +411,6 @@ export default function Timbratura() {
           </div>
         }
 
-        {/* Selezione cantiere (solo se nessuna sessione attiva) */}
-        {!activeSession &&
-        <Card className="p-4 space-y-3 border-primary/20">
-            <div>
-              <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Cantiere</Label>
-              <div className="flex gap-2 mt-1.5">
-                <div className="flex-1">
-                  <SheetSelect
-                    value={selectedCantiereId}
-                    onValueChange={setSelectedCantiereId}
-                    options={cantieri.filter((c) => c.attivo !== false).map((c) => ({ value: c.id, label: c.nome }))}
-                    placeholder="Seleziona cantiere..."
-                  />
-                </div>
-                <Button variant="outline" size="icon" onClick={() => setShowNewCantiere(true)}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </Card>
-        }
-
         {/* Sessione attiva */}
         {activeSession && activeCantiere &&
         <Card className="p-4 space-y-3 border-primary/20">
@@ -449,8 +439,8 @@ export default function Timbratura() {
           <div className="space-y-2">
             <p className="text-sm font-semibold text-orange-700 text-center">Sei in spostamento — dove sei arrivato?</p>
             <Button
-              onClick={() => handleArrivo("nuovo_cantiere")}
-              disabled={!!loadingTipo || !selectedCantiereId}
+              onClick={() => setPendingCantiereAction("arrivo_nuovo_cantiere")}
+              disabled={!!loadingTipo}
               className="h-14 w-full text-sm font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700">
               {loadingTipo === "arrivo_nuovo_cantiere" ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
               Arrivato a un nuovo cantiere
@@ -463,8 +453,8 @@ export default function Timbratura() {
               Capannone — stesso cantiere{cantierePrecedente ? ` (${cantierePrecedente.nome})` : ""}
             </Button>
             <Button
-              onClick={() => handleArrivo("capannone_altro")}
-              disabled={!!loadingTipo || !selectedCantiereId}
+              onClick={() => setPendingCantiereAction("arrivo_capannone_altro")}
+              disabled={!!loadingTipo}
               className="h-14 w-full text-sm font-semibold gap-2 bg-indigo-500 hover:bg-indigo-600">
               {loadingTipo === "arrivo_capannone_altro" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Warehouse className="w-5 h-5" />}
               Capannone — altro cantiere
@@ -476,14 +466,11 @@ export default function Timbratura() {
               {loadingTipo === "uscita" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}
               Chiudi giornata
             </Button>
-            <p className="text-[11px] text-muted-foreground text-center">
-              Seleziona il cantiere in alto per «nuovo cantiere» o «altro cantiere».
-            </p>
           </div>
         ) : !activeSession ? (
           <Button
-            onClick={() => handleTimbra("ingresso")}
-            disabled={!!loadingTipo || !selectedCantiereId}
+            onClick={() => setPendingCantiereAction("ingresso")}
+            disabled={!!loadingTipo}
             className="h-16 w-full text-base font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700">
             {loadingTipo === "ingresso" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
             Avvio lavorazione in cantiere
@@ -722,10 +709,38 @@ export default function Timbratura() {
         }
       </div>
 
+      <CantierePickerDialog
+        open={!!pendingCantiereAction}
+        onClose={() => setPendingCantiereAction(null)}
+        onConfirm={handleCantiereScelto}
+        cantieri={cantieri}
+        title={
+          pendingCantiereAction === "ingresso"
+            ? "In quale cantiere sei?"
+            : pendingCantiereAction === "arrivo_nuovo_cantiere"
+            ? "A quale cantiere sei arrivato?"
+            : "Per quale cantiere lavori in capannone?"
+        }
+        loading={!!loadingTipo}
+        onNewCantiere={() => setShowNewCantiere(true)}
+      />
       <NewCantiereModal
         open={showNewCantiere}
         onClose={() => setShowNewCantiere(false)}
-        onCreated={(c) => {refetchCantieri();setSelectedCantiereId(c.id);}} />
+        onCreated={(c) => {
+          refetchCantieri();
+          // Se c'era un'azione in attesa nel picker, usa subito il nuovo cantiere
+          if (pendingCantiereAction === "ingresso") {
+            setPendingCantiereAction(null);
+            handleTimbra("ingresso", c);
+          } else if (pendingCantiereAction === "arrivo_nuovo_cantiere") {
+            setPendingCantiereAction(null);
+            handleArrivo("nuovo_cantiere", c);
+          } else if (pendingCantiereAction === "arrivo_capannone_altro") {
+            setPendingCantiereAction(null);
+            handleArrivo("capannone_altro", c);
+          }
+        }} />
       
       <Dialog open={!!editando} onOpenChange={(o) => !o && setEditando(null)}>
         <DialogContent>
