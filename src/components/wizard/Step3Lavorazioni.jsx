@@ -133,6 +133,8 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
         const perPersone = lav.modalita_calcolo === "per_persone";
         const aperti = dettagliAperti === i;
         const etichetta = lav.tipo_lavorazione_nome || lav.descrizione_custom || "";
+        const catalogo = [...tipiLavorazione].sort((a, b) =>
+        (a.categoria || "").localeCompare(b.categoria || "") || (a.nome || "").localeCompare(b.nome || ""));
         const categorie = [...new Set(tipiLavorazione.map((t) => t.categoria).filter(Boolean))];
         const tipiCategoria = tipiLavorazione.filter((t) => t.categoria === lav.categoria);
         const haCatalogo = Boolean(lav.categoria && lav.categoria !== "__custom__");
@@ -146,11 +148,35 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
             </span>
             <div className="flex-1 min-w-0">
               <Label className="text-[11px] text-muted-foreground">Descrizione</Label>
+              <SheetSelect
+              value={lav.tipo_lavorazione_id || "__custom__"}
+              onValueChange={(val) => {
+                if (val === "__custom__") {
+                  updateLav(i, { tipo_lavorazione_id: "", categoria: "", tipo_lavorazione_nome: "", descrizione_custom: "" });
+                } else {
+                  const tipo = tipiLavorazione.find((t) => t.id === val);
+                  updateLav(i, {
+                    tipo_lavorazione_id: val,
+                    tipo_lavorazione_nome: tipo?.nome || "",
+                    categoria: tipo?.categoria || lav.categoria || "",
+                    descrizione_custom: ""
+                  });
+                }
+              }}
+              options={[
+              ...catalogo.map((t) => ({ value: t.id, label: t.nome })),
+              { value: "__custom__", label: "✏️ Scrivi manualmente" }]
+              }
+              placeholder="Seleziona lavorazione..." />
+            
+              {!lav.tipo_lavorazione_id &&
               <Input
-              value={etichetta}
-              onChange={(e) => updateLav(i, { descrizione_custom: e.target.value, tipo_lavorazione_nome: e.target.value })}
-              className="mt-1"
-              placeholder="Es. rasatura e tinteggiatura pareti..." />
+                value={etichetta}
+                onChange={(e) => updateLav(i, { descrizione_custom: e.target.value, tipo_lavorazione_nome: e.target.value })}
+                className="mt-1"
+                placeholder="Scrivi la lavorazione..." />
+
+              }
             
             </div>
             <div className="w-32 flex-shrink-0">
