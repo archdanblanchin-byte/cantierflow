@@ -139,6 +139,16 @@
           },
           "ore": {
             "type": "number"
+          },
+          "modalita_calcolo": {
+            "type": "string",
+            "description": "manuale oppure per_persone"
+          },
+          "numero_persone": {
+            "type": "number"
+          },
+          "ore_per_persona": {
+            "type": "number"
           }
         }
       }
@@ -192,7 +202,7 @@
           },
           "descrizione": {
             "type": "string",
-            "description": "Note/specifica del materiale (es. dove e stato preso, dettagli prodotto) estratta dal resoconto vocale"
+            "description": "Note/specifica del materiale (es. dove e stato preso, dettagli prodotto) estratto dal resoconto vocale"
           },
           "unita_misura": {
             "type": "string"

@@ -5,8 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import SheetSelect from "@/components/ui/sheet-select";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus, Trash2, Zap, Wrench, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Zap, Wrench, AlertCircle, CheckCircle2, AlertTriangle, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AudioLavorazioniRecorder from "@/components/wizard/AudioLavorazioniRecorder";
 import OreInput from "@/components/wizard/OreInput";
@@ -26,12 +25,20 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
   (a.categoria || "").localeCompare(b.categoria || "") || (a.nome || "").localeCompare(b.nome || ""));
 
   const addExtra = () => {
-    onChange({ lavorazioni_extra: [...extras, { descrizione: "", ore: 0 }] });
+    onChange({
+      lavorazioni_extra: [
+      ...extras,
+      { descrizione: "", ore: 0, modalita_calcolo: "manuale", numero_persone: 0, ore_per_persona: 0 }]
+
+    });
   };
 
-  const updateExtra = (index, field, value) => {
+  const updateExtra = (index, updates) => {
     const updated = [...extras];
-    updated[index] = { ...updated[index], [field]: value };
+    updated[index] = { ...updated[index], ...updates };
+    if (updated[index].modalita_calcolo === "per_persone") {
+      updated[index].ore = (updated[index].numero_persone || 0) * (updated[index].ore_per_persona || 0);
+    }
     onChange({ lavorazioni_extra: updated });
   };
 
@@ -42,7 +49,7 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
   // Dopo la creazione di una nuova lavorazione la assegno subito alla riga di partenza
   const handleNuovaLavorazioneCreata = (tipo) => {
     setNuoviTipi((prev) => [...prev, tipo]);
-    if (nuovaLavIndex !== null) updateExtra(nuovaLavIndex, "descrizione", tipo.nome || "");
+    if (nuovaLavIndex !== null) updateExtra(nuovaLavIndex, { descrizione: tipo.nome || "" });
     setNuovaLavIndex(null);
   };
 
@@ -54,7 +61,7 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
           onCheckedChange={(checked) => {
             onChange({
               has_lavorazioni_extra: checked,
-              lavorazioni_extra: checked && extras.length === 0 ? [{ descrizione: "", ore: 0 }] : extras
+              lavorazioni_extra: checked && extras.length === 0 ? [{ descrizione: "", ore: 0, modalita_calcolo: "manuale", numero_persone: 0, ore_per_persona: 0 }] : extras
             });
           }} />
         
@@ -63,12 +70,19 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
 
       {hasExtra &&
       <div className="space-y-2 pl-2 border-l-2 border-amber-200">
-          {extras.map((extra, i) =>
+          {extras.map((extra, i) => {
+        const perPersone = extra.modalita_calcolo === "per_persone";
+        return (
         <div key={i} className="rounded-xl border border-border p-3 bg-card space-y-2.5">
               <div className="flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
                   {i + 1}
                 </span>
+                {perPersone &&
+              <span className="text-[11px] font-medium bg-muted text-muted-foreground rounded-full px-2 py-0.5 tabular-nums">
+                    {extra.numero_persone || 0} × {fmtH(extra.ore_per_persona)}h = {fmtH(extra.ore)}h
+                  </span>
+              }
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-auto flex-shrink-0" onClick={() => removeExtra(i)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -85,7 +99,7 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
                       return;
                     }
                     const tipo = catalogo.find((t) => t.id === val);
-                    updateExtra(i, "descrizione", tipo?.nome || "");
+                    updateExtra(i, { descrizione: tipo?.nome || "" });
                   }}
                   options={[
                   ...catalogo.map((t) => ({ value: t.id, label: t.nome })),
@@ -99,22 +113,59 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
                 <Label className="text-[11px] text-muted-foreground">Descrizione e dettaglio</Label>
                 <Input
                   value={extra.descrizione || ""}
-                  onChange={(e) => updateExtra(i, "descrizione", e.target.value)}
+                  onChange={(e) => updateExtra(i, { descrizione: e.target.value })}
                   placeholder="Descrivi la lavorazione extra..." />
               </div>
 
-              {/* Riga 3 — Ore */}
-              <div className="flex justify-end">
-                <div className="w-28">
+              {/* Riga 3 — Modalità ore + Ore */}
+              <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Modalità ore</Label>
+                  <div className="flex items-center gap-2 h-9">
+                    <span className="text-sm">{perPersone ? "Per persone" : "Manuale"}</span>
+                    <button
+                      type="button"
+                      title="Calcola per persone"
+                      onClick={() => updateExtra(i, { modalita_calcolo: perPersone ? "manuale" : "per_persone" })}
+                      className={cn(
+                        "h-9 w-9 rounded-full border flex items-center justify-center transition-colors",
+                        perPersone ? "bg-primary text-primary-foreground border-primary" : "border-input text-muted-foreground hover:bg-accent"
+                      )}>
+                      <Users className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {perPersone &&
+                <div className="flex flex-wrap items-end gap-2">
+                    <div className="w-28">
+                      <Label className="text-[11px] text-muted-foreground">N° persone</Label>
+                      <OreInput
+                        compact
+                        step={1}
+                        value={extra.numero_persone ?? 0}
+                        onChange={(v) => updateExtra(i, { numero_persone: v })} />
+                    </div>
+                    <div className="w-28">
+                      <Label className="text-[11px] text-muted-foreground">Ore/persona</Label>
+                      <OreInput
+                        compact
+                        value={extra.ore_per_persona ?? 0}
+                        onChange={(v) => updateExtra(i, { ore_per_persona: v })} />
+                    </div>
+                  </div>
+                }
+
+                <div className="w-28 ml-auto">
                   <Label className="text-[11px] text-muted-foreground">Ore</Label>
                   <OreInput
                     compact
                     value={extra.ore ?? 0}
-                    onChange={(v) => updateExtra(i, "ore", v)} />
+                    onChange={(v) => updateExtra(i, { ore: v, modalita_calcolo: "manuale" })} />
                 </div>
               </div>
-            </div>
-        )}
+            </div>);
+        })}
           <Button variant="outline" size="sm" onClick={addExtra} className="gap-2">
             <Plus className="w-3 h-3" />
             Aggiungi voce extra
@@ -255,20 +306,19 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
           <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
             <div>
               <Label className="text-[11px] text-muted-foreground">Modalità ore</Label>
-              <RadioGroup
-                value={lav.modalita_calcolo || "manuale"}
-                onValueChange={(val) => updateLav(i, { modalita_calcolo: val })}
-                className="flex items-center gap-3 h-9">
-                
-                <div className="flex items-center gap-1.5">
-                  <RadioGroupItem value="manuale" id={`man-${i}`} />
-                  <Label htmlFor={`man-${i}`} className="text-sm cursor-pointer">Manuale</Label>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <RadioGroupItem value="per_persone" id={`pp-${i}`} />
-                  <Label htmlFor={`pp-${i}`} className="text-sm cursor-pointer">Per persone</Label>
-                </div>
-              </RadioGroup>
+              <div className="flex items-center gap-2 h-9">
+                <span className="text-sm">{perPersone ? "Per persone" : "Manuale"}</span>
+                <button
+                  type="button"
+                  title="Calcola per persone"
+                  onClick={() => updateLav(i, { modalita_calcolo: perPersone ? "manuale" : "per_persone" })}
+                  className={cn(
+                    "h-9 w-9 rounded-full border flex items-center justify-center transition-colors",
+                    perPersone ? "bg-primary text-primary-foreground border-primary" : "border-input text-muted-foreground hover:bg-accent"
+                  )}>
+                  <Users className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {perPersone &&
