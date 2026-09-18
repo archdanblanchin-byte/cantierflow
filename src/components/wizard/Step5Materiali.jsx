@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Package } from "lucide-react";
 import AudioMaterialiRecorder from "@/components/wizard/AudioMaterialiRecorder";
+import QuantitaInput from "@/components/wizard/QuantitaInput";
 
 export default function Step5Materiali({ data, onChange, materialiBase }) {
   const materiali = data.materiali || [];
@@ -130,13 +131,9 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Quantità</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.1"
-                inputMode="decimal"
+              <QuantitaInput
                 value={mat.quantita ?? ""}
-                onChange={(e) => updateMateriale(i, { quantita: parseFloat(e.target.value) || 0 })}
+                onChange={(v) => updateMateriale(i, { quantita: v })}
                 className="mt-1"
               />
             </div>
