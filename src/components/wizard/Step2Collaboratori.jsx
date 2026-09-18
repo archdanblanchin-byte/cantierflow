@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import SheetSelect from "@/components/ui/sheet-select";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, Trash2, Users, Clock, ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import { Plus, Minus, Trash2, Users, Clock, Pencil } from "lucide-react";
 
 const NOTE_OPTIONS = [
   "Uscita anticipata dal cantiere concordata",
@@ -85,7 +85,6 @@ function OreInput({ value, onChange }) {
 }
 
 export default function Step2Collaboratori({ data, onChange, collaboratoriList, showErrors, canEditOre = true, canEditCollab = false }) {
-  const [showPicker, setShowPicker] = useState(false);
   const [selected, setSelected] = useState([]);
   const collaboratori = data.collaboratori || [];
   const oreTotali = data.ore_totali_squadra ?? 8;
@@ -104,7 +103,6 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
       });
     onChange({ collaboratori: [...collaboratori, ...nuovi] });
     setSelected([]);
-    setShowPicker(false);
   };
 
   const updateCollaboratore = (index, field, value) => {
@@ -171,7 +169,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
           <p className={`text-sm font-medium ${showErrors ? "text-destructive" : "text-muted-foreground"}`}>
             {showErrors ? "⚠️ Devi aggiungere o confermare almeno un collaboratore per continuare" : "Nessun collaboratore aggiunto"}
           </p>
-          <p className="text-xs mt-1 text-muted-foreground">Premi il bottone qui sotto per aggiungere i collaboratori della squadra</p>
+          <p className="text-xs mt-1 text-muted-foreground">Seleziona qui sotto i collaboratori presenti in cantiere</p>
         </div>
       )}
 
@@ -231,57 +229,39 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
         </div>
       )}
 
-      {/* Bottone aggiungi collaboratore */}
+      {/* Selezione collaboratori — lista sempre visibile */}
       {available.length > 0 && (
-        <div>
-          {!showPicker ? (
-            <Button
-              variant="outline"
-              className="w-full h-12 gap-2 border-dashed text-base"
-              onClick={() => { setSelected([]); setShowPicker(true); }}
-            >
-              <Plus className="w-5 h-5" />
-              Aggiungi Collaboratore
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+          <p className="text-sm font-medium">Seleziona i collaboratori presenti</p>
+          <div className="grid grid-cols-2 gap-2">
+            {available.map((c) => {
+              const isChosen = selected.includes(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => toggleSelected(c.id)}
+                  className={`h-11 rounded-lg border-2 flex items-center gap-2 px-3 text-sm font-medium transition-all ${
+                    isChosen
+                      ? "border-primary bg-primary text-primary-foreground shadow-md"
+                      : "border-border bg-card text-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                    isChosen ? "bg-primary-foreground/20 text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                  }`}>
+                    {c.nome.charAt(0)}
+                  </div>
+                  <span className="truncate">{c.nome}</span>
+                </button>
+              );
+            })}
+          </div>
+          {selected.length > 0 && (
+            <Button className="w-full gap-2" onClick={confirmAdd}>
+              <Plus className="w-4 h-4" />
+              Aggiungi {selected.length} collaborator{selected.length === 1 ? "e" : "i"}
             </Button>
-          ) : (
-            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Seleziona uno o più collaboratori</p>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelected([]); setShowPicker(false); }}>
-                  <ChevronUp className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {available.map((c) => {
-                  const isChosen = selected.includes(c.id);
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => toggleSelected(c.id)}
-                      className={`h-11 rounded-lg border-2 flex items-center gap-2 px-3 text-sm font-medium transition-all ${
-                        isChosen
-                          ? "border-primary bg-primary text-primary-foreground shadow-md"
-                          : "border-border bg-card text-foreground hover:border-primary/50"
-                      }`}
-                    >
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                        isChosen ? "bg-primary-foreground/20 text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                      }`}>
-                        {c.nome.charAt(0)}
-                      </div>
-                      <span className="truncate">{c.nome}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              {selected.length > 0 && (
-                <Button className="w-full gap-2" onClick={confirmAdd}>
-                  <Plus className="w-4 h-4" />
-                  Aggiungi {selected.length} collaborator{selected.length === 1 ? "e" : "i"}
-                </Button>
-              )}
-            </div>
           )}
         </div>
       )}
