@@ -71,17 +71,24 @@ export const STEP_CONFIG = {
 
 export const ORDINE = ["ingresso", "pausa_inizio", "pausa_fine", "uscita"];
 
-export function arrotondaQuarti(ms) {
-  if (!ms || ms < 0) return 0;
-  const ore = ms / 3600000;
-  return Math.round(ore * 4) / 4;
+// Arrotondamento delle ore di lavorazione a frazioni di 5 minuti.
+export const ARROTONDAMENTO_MIN = 5;
+const PASSI_ORA = 60 / ARROTONDAMENTO_MIN; // 12 passi da 5 minuti in un'ora
+
+// Arrotonda un valore espresso in ORE al multiplo di 5 minuti più vicino.
+// Tenuto a 3 decimali per restare leggibile (7.083 = 7h05).
+export function arrotondaOre(ore) {
+  if (!ore || ore < 0) return 0;
+  return Math.round((Math.round(ore * PASSI_ORA) / PASSI_ORA) * 1000) / 1000;
 }
 
-// Arrotondamento delle ore di lavorazione a frazioni di 15 minuti
-// (0, 15, 30, 45 min, ora piena): 8h02 -> 8h00, 8h10 -> 8h15.
-export const ARROTONDAMENTO_MIN = 15;
+// Arrotonda una durata in ms al multiplo di 5 minuti più vicino (in ore decimali).
+export function arrotondaQuarti(ms) {
+  if (!ms || ms < 0) return 0;
+  return arrotondaOre(ms / 3600000);
+}
 
-// Arrotonda un valore in ms al multiplo di `stepMin` minuti più vicino (default 15 min).
+// Arrotonda un valore in ms al multiplo di `stepMin` minuti più vicino (default 5 min).
 // Da usare SOLO sul totale finale, non sulle singole sessioni (che vanno lasciate esatte).
 export function arrotondaMinuti(ms, stepMin = ARROTONDAMENTO_MIN) {
   if (!ms || ms < 0) return 0;

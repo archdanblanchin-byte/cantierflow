@@ -1,20 +1,21 @@
 import { Input } from "@/components/ui/input";
 import { Minus, Plus } from "lucide-react";
+import { arrotondaOre } from "@/lib/timbratureUtils";
 
 /**
  * Input numerico per le ore con:
  * - select-all-on-focus (digitando sovrascrivi il valore presente)
- * - bottoni + e − laterali (incremento/decremento di `step`, default 0.25 = un quarto d'ora)
+ * - bottoni + e − laterali (incremento/decremento di `step`, default 5 minuti)
  * - niente frecce su/giù del browser
  */
-export default function OreInput({ value, onChange, step = 0.25, min = 0, className, disabled, compact = false }) {
-  const round = (v) => Math.round(v * 100) / 100;
+export default function OreInput({ value, onChange, step = 5 / 60, min = 0, className, disabled, compact = false }) {
+  const round = (v) => Math.round(v * 1000) / 1000;
   const clamp = (v) => (min != null && v < min ? min : v);
   const btnW = compact ? "w-7" : "w-9";
   const iconSize = compact ? "w-3.5 h-3.5" : "w-4 h-4";
 
-  const inc = () => onChange(clamp(round((parseFloat(value) || 0) + step)));
-  const dec = () => onChange(clamp(round((parseFloat(value) || 0) - step)));
+  const inc = () => onChange(clamp(arrotondaOre((parseFloat(value) || 0) + step)));
+  const dec = () => onChange(clamp(arrotondaOre((parseFloat(value) || 0) - step)));
 
   return (
     <div className={`flex items-stretch gap-1 mt-1 ${className || ""}`}>

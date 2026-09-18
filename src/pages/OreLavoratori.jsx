@@ -10,7 +10,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Users, Route, CalendarDays
 import BottomNav from "@/components/BottomNav";
 import { format, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import { it } from "date-fns/locale";
-import { fmtOre, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
+import { fmtOre, arrotondaOre, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
 import { buildDettaglioGiorno, calcolaSpostamenti, calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
 import CalendarioMese from "@/components/orelavoratori/CalendarioMese";
 import GiornoDetailDialog from "@/components/orelavoratori/GiornoDetailDialog";
@@ -181,12 +181,12 @@ export default function OreLavoratori() {
       const timsGiorno = timbGiornoMap[key] || [];
       const spost = timsGiorno.length ? calcolaSpostamenti(timsGiorno) : [];
       const oreSpost = spost.reduce((s, sp) => s + sp.durata, 0);
-      const ore = Math.round((oreCantieri + oreSpost) * 4) / 4;
+      const ore = arrotondaOre(oreCantieri + oreSpost);
       const trasfertaConfermata = trasferteMap[key];
       const trasfertaAuto = timsGiorno.length ? calcolaTrasfertaGiorno(timsGiorno, cantieri, config) : null;
       sintesi[key] = {
         ore,
-        oreSpost: Math.round(oreSpost * 4) / 4,
+        oreSpost: arrotondaOre(oreSpost),
         trasferta: trasfertaConfermata || trasfertaAuto || null,
         hasNote,
       };
@@ -205,8 +205,8 @@ export default function OreLavoratori() {
       if (s.trasferta?.km_totali != null) km += s.trasferta.km_totali;
     });
     return {
-      totaleOreCantieri: Math.round(cantieri * 4) / 4,
-      totaleOreSpost: Math.round(spost * 4) / 4,
+      totaleOreCantieri: arrotondaOre(cantieri),
+      totaleOreSpost: arrotondaOre(spost),
       totaleKmMese: km,
       giorniLavoratiMese: lavorati,
     };

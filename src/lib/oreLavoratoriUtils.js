@@ -1,10 +1,9 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { arrotondaQuarti, distanzaKm, getCapannone, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
+import { arrotondaOre, arrotondaQuarti, distanzaKm, getCapannone, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
 
 export function arrotondaOreQuarti(ore) {
-  if (!ore || ore < 0) return 0;
-  return Math.round(ore * 4) / 4;
+  return arrotondaOre(ore);
 }
 
 /**

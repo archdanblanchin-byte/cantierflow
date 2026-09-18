@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import SheetSelect from "@/components/ui/sheet-select";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, Trash2, Users, Clock, Pencil, LogIn, LogOut, Coffee, AlertTriangle } from "lucide-react";
-import { fmtOre } from "@/lib/timbratureUtils";
+import { fmtOre, arrotondaOre } from "@/lib/timbratureUtils";
 
 // Dati rilevati automaticamente dalle timbrature della giornata
 function TimbratureInfo({ coll }) {
@@ -78,15 +78,14 @@ function NoteImprevisti({ value, onChange }) {
 }
 
 function OreInput({ value, onChange }) {
-  const step = 0.25;
-  const increment = () => onChange(Math.round((value + step) * 4) / 4);
-  const decrement = () => onChange(Math.max(0, Math.round((value - step) * 4) / 4));
+  const step = 5 / 60; // passi da 5 minuti
+  const increment = () => onChange(arrotondaOre((value || 0) + step));
+  const decrement = () => onChange(Math.max(0, arrotondaOre((value || 0) - step)));
 
   const formatOre = (v) => {
     const intPart = Math.floor(v);
-    const frac = Math.round((v - intPart) * 4);
-    const fracMap = { 0: "00", 1: "15", 2: "30", 3: "45" };
-    return `${intPart}:${fracMap[frac] ?? "00"}`;
+    const minuti = Math.round((v - intPart) * 12) * 5;
+    return `${intPart}:${String(minuti).padStart(2, "0")}`;
   };
 
   return (
@@ -99,12 +98,12 @@ function OreInput({ value, onChange }) {
           type="number"
           inputMode="decimal"
           min="0"
-          step="0.25"
+          step={step}
           value={value ?? 0}
           onFocus={(e) => e.target.select()}
           onChange={(e) => {
             const v = parseFloat(e.target.value);
-            if (!isNaN(v)) onChange(Math.round(v * 4) / 4);
+            if (!isNaN(v)) onChange(arrotondaOre(v));
           }}
           className="text-center font-semibold pr-14" />
         
