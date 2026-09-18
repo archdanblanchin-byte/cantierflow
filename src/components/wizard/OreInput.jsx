@@ -1,21 +1,31 @@
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus } from "lucide-react";
-import { arrotondaOre } from "@/lib/timbratureUtils";
 
 /**
  * Input numerico per le ore con:
+ * - scatti di `step` (default 0,25 = 15 minuti; passo 1 per i contatori)
+ * - bottoni + e − laterali (incremento/decremento di `step`)
  * - select-all-on-focus (digitando sovrascrivi il valore presente)
- * - bottoni + e − laterali (incremento/decremento di `step`, default 5 minuti)
+ * - il valore digitato viene allineato allo scatto quando si esce dal campo
  * - niente frecce su/giù del browser
  */
-export default function OreInput({ value, onChange, step = 5 / 60, min = 0, className, disabled, compact = false }) {
-  const round = (v) => Math.round(v * 1000) / 1000;
-  const clamp = (v) => (min != null && v < min ? min : v);
+export default function OreInput({ value, onChange, step = 0.25, min = 0, className, disabled, compact = false }) {
+  // Testo libero mentre si digita (per non disturbare la digitazione dei decimali)
+  const [testo, setTesto] = useState(null);
+
+  const snap = (v) => {
+    let val = v;
+    if (min != null && val < min) val = min;
+    const r = Math.round(val / step) * step;
+    return Math.round(r * 1000) / 1000;
+  };
+
+  const inc = () => onChange(snap((parseFloat(value) || 0) + step));
+  const dec = () => onChange(snap((parseFloat(value) || 0) - step));
+
   const btnW = compact ? "w-7" : "w-9";
   const iconSize = compact ? "w-3.5 h-3.5" : "w-4 h-4";
-
-  const inc = () => onChange(clamp(arrotondaOre((parseFloat(value) || 0) + step)));
-  const dec = () => onChange(clamp(arrotondaOre((parseFloat(value) || 0) - step)));
 
   return (
     <div className={`flex items-stretch gap-1 mt-1 ${className || ""}`}>
@@ -31,18 +41,24 @@ export default function OreInput({ value, onChange, step = 5 / 60, min = 0, clas
       <Input
         type="text"
         inputMode="decimal"
-        value={value ?? ""}
+        value={testo ?? (value ?? "")}
         disabled={disabled}
-        onFocus={(e) => e.target.select()}
+        onFocus={(e) => {
+          setTesto(String(value ?? "").replace(".", ","));
+          const el = e.target;
+          el.select();
+          requestAnimationFrame(() => el.select());
+        }}
         onChange={(e) => {
-          const raw = e.target.value.replace(",", ".");
-          if (raw === "" || raw === "-") { onChange(0); return; }
-          const parsed = parseFloat(raw);
-          onChange(isNaN(parsed) ? 0 : clamp(round(parsed)));
+          const raw = e.target.value;
+          setTesto(raw);
+          const parsed = parseFloat(raw.replace(",", "."));
+          if (!isNaN(parsed)) onChange(snap(parsed));
         }}
         onBlur={() => {
-          const parsed = parseFloat(String(value).replace(",", "."));
-          onChange(isNaN(parsed) ? 0 : clamp(arrotondaOre(parsed)));
+          const parsed = parseFloat(String(testo ?? "").replace(",", "."));
+          setTesto(null);
+          onChange(isNaN(parsed) ? 0 : snap(parsed));
         }}
         className="min-w-0 px-1 text-center font-semibold tabular-nums"
       />
