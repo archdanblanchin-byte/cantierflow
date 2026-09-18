@@ -220,7 +220,12 @@ export default function ReportDetail() {
             )}
             {(d.collaboratori || []).map((c, i) => (
               <div key={i} className="flex items-center justify-between py-1 text-sm">
-                <span>{c.nome}</span>
+                <span className="flex items-center gap-2">
+                  {c.nome}
+                  {c.in_sede && (
+                    <Badge variant="outline" className="text-[10px] bg-slate-100 text-slate-600 border-slate-300">In sede</Badge>
+                  )}
+                </span>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="text-xs">{fmtOre(c.ore_lavorate)}</Badge>
                   {c.note_imprevisti && <span className="text-xs text-muted-foreground italic">{c.note_imprevisti}</span>}

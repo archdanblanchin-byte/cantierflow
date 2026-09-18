@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { arrotondaOre, arrotondaQuarti, distanzaKm, distanzaKmStrada, getCapannone, classificaTrasfertaSplit, timbroInSede } from "@/lib/timbratureUtils";
+import { classificaSpostamentiGiornata } from "@/lib/rapportiniFromTimbrature";
 
 export function arrotondaOreQuarti(ore) {
   return arrotondaOre(ore);
@@ -65,11 +66,20 @@ export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config) {
     : ultimoCantiere?.latitudine != null
       ? distanzaKmStrada(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
       : null;
-  if (!kmAndata && !kmRitorno) return null;
+  // Nessuna informazione utile (né sede né coordinate dei cantieri): non si può
+  // determinare la trasferta.
+  if (kmAndata == null && kmRitorno == null) return null;
 
+  // Entrambe le tratte a 0 km: giornata interamente in sede, nessuna trasferta.
+  const nessunaTrasferta = kmAndata === 0 && kmRitorno === 0;
   const split = classificaTrasfertaSplit(kmAndata, kmRitorno, config);
   return {
     ...split,
+    tipo_trasferta: nessunaTrasferta ? null : split.tipo_trasferta,
+    label: nessunaTrasferta ? "—" : split.label,
+    partenza_da_sede: partenzaDaSede,
+    rientro_in_sede: rientroInSede,
+    nessuna_trasferta: nessunaTrasferta,
     primo_cantiere_nome: primo.cantiere_nome || primoCantiere?.nome || null,
     ultimo_cantiere_nome: ultimo.cantiere_nome || ultimoCantiere?.nome || null,
     mezzo_proprio: tims.some((t) => t.mezzo_proprio),
@@ -98,6 +108,12 @@ export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
     ? calcolaSpostamenti(timbratureGiorno)
     : [];
 
+  // Regola delle 8 ore: gli spostamenti entro le 8 ore si dividono tra i cantieri,
+  // la parte oltre le 8 ore viene conteggiata come trasferta.
+  const classificazioneSpostamenti = timbratureGiorno && timbratureGiorno.length
+    ? classificaSpostamentiGiornata(timbratureGiorno)
+    : null;
+
   const oreCantieri = cantieri.reduce((s, c) => s + c.ore, 0);
   const oreSpostamenti = spostamenti.reduce((s, sp) => s + sp.durata, 0);
 
@@ -111,6 +127,7 @@ export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
     cantieri,
     spostamenti,
     note,
+    classificazioneSpostamenti,
     oreCantieri,
     oreSpostamenti,
     oreTotali: oreCantieri + oreSpostamenti,

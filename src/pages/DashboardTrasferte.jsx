@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Save, Loader2, Route } from "lucide-react";
 import { CAPANNONE, SOGLIE_TRASFERTA } from "@/lib/timbratureUtils";
 import BottomNav from "@/components/BottomNav";
+import RicalcolaTrasferteCard from "@/components/trasferte/RicalcolaTrasferteCard";
 
 export default function DashboardTrasferte() {
   const queryClient = useQueryClient();
@@ -71,7 +72,7 @@ export default function DashboardTrasferte() {
           <Route className="w-6 h-6 text-primary" />
           <div>
             <h1 className="text-xl font-bold">Trasferte</h1>
-            <p className="text-sm text-muted-foreground">Soglie chilometriche delle fasce</p>
+            <p className="text-sm text-muted-foreground">Soglie chilometriche e posizione dei timbri</p>
           </div>
         </header>
 
@@ -144,6 +145,8 @@ export default function DashboardTrasferte() {
           Salva soglie
         </Button>
         {msg && <p className="text-center text-sm text-muted-foreground">{msg}</p>}
+
+        <RicalcolaTrasferteCard />
       </div>
       <BottomNav />
     </div>

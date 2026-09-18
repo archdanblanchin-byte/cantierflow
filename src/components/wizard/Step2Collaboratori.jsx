@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import SheetSelect from "@/components/ui/sheet-select";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Users, Clock, Pencil, LogIn, LogOut, Coffee, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Users, Clock, Pencil, LogIn, LogOut, Coffee, AlertTriangle, MapPin } from "lucide-react";
 import { fmtOre } from "@/lib/timbratureUtils";
 import OreInput from "@/components/wizard/OreInput";
 
@@ -35,6 +35,12 @@ function TimbratureInfo({ coll }) {
       <div className="flex items-start gap-1.5 rounded-lg bg-primary/5 border border-primary/20 p-2 text-[11px] text-foreground/80">
           <span className="shrink-0">📝</span>
           <span><strong>Nota dalle timbrature:</strong> {coll.note_timbrature}</span>
+        </div>
+      }
+      {coll.in_sede &&
+      <div className="flex items-start gap-1.5 rounded-lg bg-slate-50 border border-slate-200 p-2 text-[11px] text-slate-700">
+          <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span><strong>In sede:</strong> nessuna trasferta per questa giornata, anche se il cantiere è lontano.</span>
         </div>
       }
       {coll.anomalia &&

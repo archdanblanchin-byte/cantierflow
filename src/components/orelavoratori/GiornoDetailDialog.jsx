@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Navigation, Route, Clock, Truck, AlertTriangle } from "lucide-react";
+import { MapPin, Navigation, Route, Clock, Truck, AlertTriangle, Home } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
@@ -18,6 +18,7 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
   const cfgAndata = trasferta?.fascia_andata ? TRASFERTA_CONFIG[trasferta.fascia_andata] : null;
   const cfgRitorno = trasferta?.fascia_ritorno ? TRASFERTA_CONFIG[trasferta.fascia_ritorno] : null;
   const split = trasferta?.fascia_andata && trasferta?.fascia_ritorno && trasferta.fascia_andata !== trasferta.fascia_ritorno;
+  const inSede = !!trasferta?.nessuna_trasferta;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -101,6 +102,13 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
                 </div>
               </Card>
             ))}
+            {dettaglio?.classificazioneSpostamenti?.totSpostamento > 0 && (
+              <p className="text-[10px] text-muted-foreground">
+                {dettaglio.classificazioneSpostamenti.spostamentoTipo === "trasferta"
+                  ? "Oltre le 8 ore: gli spostamenti sono conteggiati come trasferta."
+                  : "Entro le 8 ore: gli spostamenti sono divisi tra i cantieri della giornata."}
+              </p>
+            )}
           </div>
         )}
 
@@ -113,11 +121,21 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
             <Card className="p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">Giornata (media andata+ritorno)</span>
-                {cfg ? (
+                {inSede ? (
+                  <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-300">In sede</Badge>
+                ) : cfg ? (
                   <Badge variant="outline" className={cfg.color}>{cfg.label}</Badge>
                 ) : <span className="text-xs text-muted-foreground">—</span>}
               </div>
-              {split && (
+              {inSede && (
+                <div className="rounded-md bg-slate-50 border border-slate-200 px-2 py-1.5 flex items-center gap-1.5">
+                  <Home className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <p className="text-[11px] font-semibold text-slate-700">
+                    Nessuna trasferta – lavoro in sede
+                  </p>
+                </div>
+              )}
+              {split && !inSede && (
                 <div className="rounded-md bg-primary/10 px-2 py-1.5 text-center">
                   <p className="text-[10px] text-muted-foreground uppercase">Combinazione</p>
                   <p className="text-sm font-bold text-primary">{trasferta.label || `½ ${trasferta.fascia_andata} + ½ ${trasferta.fascia_ritorno}`}</p>
@@ -127,7 +145,9 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
                 <div className="rounded-md bg-muted/50 p-2">
                   <p className="text-[9px] text-muted-foreground uppercase">Andata</p>
                   <p className="text-sm font-bold">{trasferta.km_andata ?? 0} km</p>
-                  {cfgAndata ? (
+                  {trasferta.partenza_da_sede ? (
+                    <Badge variant="outline" className="mt-1 text-[9px] bg-slate-100 text-slate-600 border-slate-300">In sede</Badge>
+                  ) : cfgAndata ? (
                     <Badge variant="outline" className={`mt-1 text-[9px] ${cfgAndata.color}`}>{cfgAndata.label}</Badge>
                   ) : <p className="text-[9px] text-muted-foreground mt-1">—</p>}
                   <p className="text-[9px] text-muted-foreground truncate mt-1">{trasferta.primo_cantiere_nome || "—"}</p>
@@ -135,7 +155,9 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
                 <div className="rounded-md bg-muted/50 p-2">
                   <p className="text-[9px] text-muted-foreground uppercase">Ritorno</p>
                   <p className="text-sm font-bold">{trasferta.km_ritorno ?? 0} km</p>
-                  {cfgRitorno ? (
+                  {trasferta.rientro_in_sede ? (
+                    <Badge variant="outline" className="mt-1 text-[9px] bg-slate-100 text-slate-600 border-slate-300">In sede</Badge>
+                  ) : cfgRitorno ? (
                     <Badge variant="outline" className={`mt-1 text-[9px] ${cfgRitorno.color}`}>{cfgRitorno.label}</Badge>
                   ) : <p className="text-[9px] text-muted-foreground mt-1">—</p>}
                   <p className="text-[9px] text-muted-foreground truncate mt-1">{trasferta.ultimo_cantiere_nome || "—"}</p>

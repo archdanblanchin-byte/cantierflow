@@ -35,6 +35,7 @@ export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
           const trasferta = s?.trasferta;
           const fascia = trasferta?.tipo_trasferta;
           const cfg = fascia ? TRASFERTA_CONFIG[fascia] : null;
+          const inSede = !!trasferta?.nessuna_trasferta;
           const haDati = ore > 0 || !!trasferta;
           const hasNote = !!s?.hasNote;
           const oggi = isToday(d);
@@ -62,7 +63,12 @@ export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
                   {fmtOre(ore)}
                 </span>
               )}
-              {cfg && (
+              {inSede && (
+                <Badge variant="outline" className="text-[8px] px-1 py-0 mt-0.5 leading-none bg-slate-100 text-slate-600 border-slate-300">
+                  sede
+                </Badge>
+              )}
+              {cfg && !inSede && (
                 <Badge variant="outline" className={`text-[8px] px-1 py-0 mt-0.5 leading-none ${cfg.color}`}>
                   {cfg.label} {trasferta.km_totali != null ? `${trasferta.km_totali}km` : ""}
                 </Badge>

@@ -16,6 +16,7 @@ import {
   STEP_CONFIG, arrotondaQuarti, fmtOre, distanzaKmStrada,
   CAPANNONE, classificaTrasfertaSplit, getCapannone, TRASFERTA_CONFIG, timbroInSede,
 } from "@/lib/timbratureUtils";
+import { calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
 
 export default function CollaboratoreGiornata({ email, nome, trackingPosizione, timbrature, cantieri, data, trasfertaEsistente, config, onSalvata, editable, onTimbraturaCambiata }) {
   const capannone = getCapannone(config);
@@ -67,24 +68,16 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
   const primoCantiere = primoIngresso ? cantieri.find(c => c.id === primoIngresso.cantiere_id) : null;
   const ultimoCantiere = ultimoIngresso ? cantieri.find(c => c.id === ultimoIngresso.cantiere_id) : null;
 
-  // Km stimati di strada (linea d'aria + fattore di correzione): capannone <-> cantiere.
-  // La trasferta segue la posizione: se il timbro di ingresso (o l'ultimo timbro della
-  // giornata) è in sede, la tratta vale 0 km anche se il cantiere è lontano.
-  const ultimoTimbro = tOrd[tOrd.length - 1];
-  const partenzaDaSede = timbroInSede(primoIngresso, capannone);
-  const rientroInSede = timbroInSede(ultimoTimbro, capannone);
-  const kmAndataCalc = partenzaDaSede ? 0
-    : primoCantiere?.latitudine != null
-      ? distanzaKmStrada(capannone.lat, capannone.lon, primoCantiere.latitudine, primoCantiere.longitudine)
-      : null;
-  const kmRitornoCalc = rientroInSede ? 0
-    : ultimoCantiere?.latitudine != null
-      ? distanzaKmStrada(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
-      : null;
-
-  const splitCalc = classificaTrasfertaSplit(kmAndataCalc, kmRitornoCalc, config);
-  const senzaTrasferta = !kmAndataCalc && !kmRitornoCalc;
-  const tipoCalc = senzaTrasferta ? null : splitCalc.tipo_trasferta;
+  // Trasferta calcolata dalla stessa logica condivisa usata da Ore Lavoratori:
+  // la posizione del timbro (sede di Rivignano vs cantiere) determina le tratte.
+  const trasfertaCalc = calcolaTrasfertaGiorno(tOrd, cantieri, config);
+  const partenzaDaSede = trasfertaCalc?.partenza_da_sede || false;
+  const rientroInSede = trasfertaCalc?.rientro_in_sede || false;
+  const senzaTrasferta = !!trasfertaCalc?.nessuna_trasferta;
+  const kmAndataCalc = trasfertaCalc?.km_andata ?? null;
+  const kmRitornoCalc = trasfertaCalc?.km_ritorno ?? null;
+  const splitCalc = trasfertaCalc || { fascia_andata: null, fascia_ritorno: null, km_media: null };
+  const tipoCalc = trasfertaCalc?.tipo_trasferta ?? null;
   const fasciaAndataCalc = splitCalc.fascia_andata;
   const fasciaRitornoCalc = splitCalc.fascia_ritorno;
 
