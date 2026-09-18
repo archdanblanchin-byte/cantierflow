@@ -13,6 +13,7 @@ import DocumentiUpload from "@/components/cantiere/DocumentiUpload";
 import CantiereMappa from "@/components/cantiere/CantiereMappa";
 import AddressAutocomplete from "@/components/cantiere/AddressAutocomplete";
 import SheetSelect from "@/components/ui/sheet-select";
+import OreInput from "@/components/wizard/OreInput";
 
 function generateCodice() {
   return "C-" + Date.now().toString(36).toUpperCase().slice(-6);
@@ -268,15 +269,11 @@ export default function CantiereForm() {
             )}
           </div>
 
-          <div>
+          <div className="w-40">
             <Label className="text-xs text-muted-foreground">Ore stimate</Label>
-            <Input
-              type="number"
-              min="0"
-              value={form.ore_stimate ?? ""}
-              onChange={(e) => set("ore_stimate", parseFloat(e.target.value) || 0)}
-              className="mt-1 w-40"
-              placeholder="0"
+            <OreInput
+              value={form.ore_stimate ?? 0}
+              onChange={(v) => set("ore_stimate", v)}
             />
           </div>
         </div>

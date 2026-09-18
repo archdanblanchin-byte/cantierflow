@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Trash2, Truck, Wrench, Hammer, ChevronDown, ChevronUp } from "lucide-react";
+import OreInput from "@/components/wizard/OreInput";
 
 function PiattaformeSection({ data, onChange }) {
   const piattaforma = data.piattaforma || { tipo: "", ore: 0 };
@@ -34,14 +35,10 @@ function PiattaformeSection({ data, onChange }) {
       {piattaforma.tipo && (
         <div className="w-40">
           <Label className="text-xs text-muted-foreground">Ore di utilizzo</Label>
-          <Input
-            type="number"
-            min="0"
-            step="0.5"
-            value={piattaforma.ore ?? ""}
-            onChange={(e) => onChange({ piattaforma: { ...piattaforma, ore: parseFloat(e.target.value) || 0 } })}
-            className="mt-1"
-            placeholder="0"
+          <OreInput
+            compact
+            value={piattaforma.ore ?? 0}
+            onChange={(v) => onChange({ piattaforma: { ...piattaforma, ore: v } })}
           />
         </div>
       )}
@@ -99,14 +96,10 @@ function IdropulitriciSection({ data, onChange }) {
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Ore utilizzo</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={m.ore ?? ""}
-                  onChange={(e) => update(i, "ore", parseFloat(e.target.value) || 0)}
-                  className="mt-1 h-8 text-sm"
-                  placeholder="0"
+                <OreInput
+                  compact
+                  value={m.ore ?? 0}
+                  onChange={(v) => update(i, "ore", v)}
                 />
               </div>
             </div>
@@ -173,14 +166,10 @@ function AttrezziSection({ data, onChange }) {
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Ore utilizzo</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={a.ore ?? ""}
-                  onChange={(e) => update(i, "ore", parseFloat(e.target.value) || 0)}
-                  className="mt-1 h-8 text-sm"
-                  placeholder="0"
+                <OreInput
+                  compact
+                  value={a.ore ?? 0}
+                  onChange={(v) => update(i, "ore", v)}
                 />
               </div>
             </div>

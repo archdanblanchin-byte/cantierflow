@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import SheetSelect from "@/components/ui/sheet-select";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, Trash2, Users, Clock, Pencil, LogIn, LogOut, Coffee, AlertTriangle } from "lucide-react";
-import { fmtOre, arrotondaOre } from "@/lib/timbratureUtils";
+import { Plus, Trash2, Users, Clock, Pencil, LogIn, LogOut, Coffee, AlertTriangle } from "lucide-react";
+import { fmtOre } from "@/lib/timbratureUtils";
+import OreInput from "@/components/wizard/OreInput";
 
 // Dati rilevati automaticamente dalle timbrature della giornata
 function TimbratureInfo({ coll }) {
@@ -73,47 +73,6 @@ function NoteImprevisti({ value, onChange }) {
         placeholder="Descrivi l'imprevisto..." />
 
       }
-    </div>);
-
-}
-
-function OreInput({ value, onChange }) {
-  const step = 5 / 60; // passi da 5 minuti
-  const increment = () => onChange(arrotondaOre((value || 0) + step));
-  const decrement = () => onChange(Math.max(0, arrotondaOre((value || 0) - step)));
-
-  const formatOre = (v) => {
-    const intPart = Math.floor(v);
-    const minuti = Math.round((v - intPart) * 12) * 5;
-    return `${intPart}:${String(minuti).padStart(2, "0")}`;
-  };
-
-  return (
-    <div className="flex items-center gap-1 mt-1">
-      <Button type="button" variant="outline" size="icon" className="h-9 w-9 flex-shrink-0" onClick={decrement}>
-        <Minus className="w-3 h-3" />
-      </Button>
-      <div className="flex-1 relative">
-        <Input
-          type="number"
-          inputMode="decimal"
-          min="0"
-          step={step}
-          value={value ?? 0}
-          onFocus={(e) => e.target.select()}
-          onChange={(e) => {
-            const v = parseFloat(e.target.value);
-            if (!isNaN(v)) onChange(arrotondaOre(v));
-          }}
-          className="text-center font-semibold pr-14" />
-        
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
-          = {formatOre(value ?? 0)}
-        </span>
-      </div>
-      <Button type="button" variant="outline" size="icon" className="h-9 w-9 flex-shrink-0" onClick={increment}>
-        <Plus className="w-3 h-3" />
-      </Button>
     </div>);
 
 }
