@@ -4,7 +4,42 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import SheetSelect from "@/components/ui/sheet-select";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, Trash2, Users, Clock, Pencil } from "lucide-react";
+import { Plus, Minus, Trash2, Users, Clock, Pencil, LogIn, LogOut, Coffee, AlertTriangle } from "lucide-react";
+import { fmtOre } from "@/lib/timbratureUtils";
+
+// Dati rilevati automaticamente dalle timbrature della giornata
+function TimbratureInfo({ coll }) {
+  if (!coll.ora_ingresso) return null;
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <LogIn className="w-3 h-3" /> {coll.ora_ingresso}
+        </span>
+        <span className="flex items-center gap-1">
+          <LogOut className="w-3 h-3" /> {coll.ora_uscita || "in corso"}
+        </span>
+        {coll.pausa_minuti > 0 &&
+        <span className="flex items-center gap-1">
+            <Coffee className="w-3 h-3" /> {coll.pausa_minuti} min pausa
+          </span>
+        }
+        {coll.spostamento_minuti > 0 &&
+        <span className="flex items-center gap-1 text-orange-600">
+            {coll.spostamento_minuti} min spostamento
+          </span>
+        }
+        <span className="ml-auto font-medium text-foreground">{fmtOre(coll.ore_lavorate)} dalle timbrature</span>
+      </div>
+      {coll.anomalia &&
+      <div className="flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200 p-2 text-[11px] text-amber-800">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>{coll.anomalia}</span>
+        </div>
+      }
+    </div>);
+
+}
 
 const NOTE_OPTIONS = [
 "Uscita anticipata dal cantiere concordata",
@@ -136,8 +171,8 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
           <Users className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Collaboratori</h2>
-          <p className="text-sm text-muted-foreground">Gestisci la squadra e le ore lavorate</p>
+          <h2 className="text-lg font-semibold">Squadra del cantiere</h2>
+          <p className="text-sm text-muted-foreground">Compilata dalle timbrature: controlla ore e anomalie</p>
         </div>
       </div>
 
@@ -209,6 +244,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
             placeholder="Scegli il nuovo collaboratore..." />
 
           }
+              <TimbratureInfo coll={coll} />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-muted-foreground">Ore lavorate</Label>
@@ -284,7 +320,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
       {collaboratori.length > 0 &&
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 flex items-start gap-2">
           <span className="text-base leading-none mt-0.5">💡</span>
-          <span>Ricordati di controllare le <strong>ore</strong> e le eventuali <strong>dinamiche</strong> per ogni lavoratore.</span>
+          <span>Le presenze e le ore arrivano dalle <strong>timbrature</strong>: controlla solo le <strong>anomalie</strong> segnalate e le dinamiche particolari.</span>
         </div>
       }
     </div>);

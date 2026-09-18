@@ -106,15 +106,39 @@
     },
     "collaboratori": {
       "type": "array",
-      "description": "Lista collaboratori con ore",
+      "description": "Squadra del cantiere: compilata automaticamente dalle timbrature della giornata (ingresso, uscita, pausa, spostamenti, ore e anomalie). Il capo cantiere la controlla e la completa.",
       "items": {
         "type": "object",
         "properties": {
           "collaboratore_id": {
             "type": "string"
           },
+          "user_email": {
+            "type": "string",
+            "description": "Email dell'operatore (collega la riga alle sue timbrature)"
+          },
           "nome": {
             "type": "string"
+          },
+          "ora_ingresso": {
+            "type": "string",
+            "description": "Ora di ingresso rilevata dalla timbratura (HH:mm)"
+          },
+          "ora_uscita": {
+            "type": "string",
+            "description": "Ora di uscita rilevata dalla timbratura (HH:mm)"
+          },
+          "pausa_minuti": {
+            "type": "number",
+            "description": "Minuti di pausa pranzo registrati"
+          },
+          "spostamento_minuti": {
+            "type": "number",
+            "description": "Minuti di spostamento intermedi rilevati nella giornata"
+          },
+          "anomalia": {
+            "type": "string",
+            "description": "Anomalie rilevate automaticamente da verificare (ore difformi, ingresso posticipato, ecc.)"
           },
           "ore_lavorate": {
             "type": "number"

@@ -6,9 +6,11 @@ export function computePartecipantiEmail(formData, collaboratoriList, userEmail)
   const author = (userEmail || formData?.user_email || "").trim();
   if (author) emails.add(author);
   (formData?.collaboratori || []).forEach((c) => {
-    if (!c || !c.collaboratore_id) return;
-    const collab = (collaboratoriList || []).find((x) => x.id === c.collaboratore_id);
-    const email = (collab?.user_email || "").trim();
+    if (!c) return;
+    // Le righe della squadra arrivano dalle timbrature e portano già l'email
+    // dell'operatore; in alternativa si risolve dall'anagrafe Collaboratore.
+    const collab = c.collaboratore_id ? (collaboratoriList || []).find((x) => x.id === c.collaboratore_id) : null;
+    const email = (collab?.user_email || c.user_email || "").trim();
     if (email) emails.add(email);
   });
   return Array.from(emails);

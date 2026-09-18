@@ -12,8 +12,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
-  MapPin, Loader2, Clock, LogIn, Coffee, PlayCircle, LogOut, Navigation,
-  AlertTriangle, CheckCircle2, FileText, Trash2, Pencil, Calendar, Warehouse, Users } from
+  MapPin, Loader2, Clock, LogIn, Coffee, PlayCircle, LogOut,
+  AlertTriangle, CheckCircle2, FileText, Trash2, Pencil, Calendar, Users } from
 "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -48,8 +48,7 @@ export default function Timbratura() {
   const canAccessTutte = isAdmin || user?.role === "responsabile_tecnico";
   const [lastTimbro, setLastTimbro] = useState(null);
   const [showNewCantiere, setShowNewCantiere] = useState(false);
-  // Azione in attesa della scelta del cantiere nel picker dialog.
-  // Valori: "ingresso" | "arrivo_nuovo_cantiere" | "arrivo_capannone_altro"
+  // Apertura lavoro in attesa della scelta del cantiere nel picker dialog
   const [pendingCantiereAction, setPendingCantiereAction] = useState(null);
 
   useEffect(() => {base44.auth.me().then(setUser).catch(() => {});}, []);
@@ -62,6 +61,11 @@ export default function Timbratura() {
   const { data: cantieri = [], refetch: refetchCantieri } = useQuery({
     queryKey: ["cantieri"],
     queryFn: () => base44.entities.Cantiere.list()
+  });
+
+  const { data: collaboratoriList = [] } = useQuery({
+    queryKey: ["collaboratori"],
+    queryFn: () => base44.entities.Collaboratore.list()
   });
 
   const { data: timbrature = [] } = useQuery({
@@ -93,16 +97,7 @@ export default function Timbratura() {
   activeSession.events.some((t) => t.tipo_evento === "pausa_inizio") && !activeSession.events.some((t) => t.tipo_evento === "pausa_fine") :
   false;
 
-  // True quando l'ultimo timbro è uno spostamento e non c'è sessione attiva:
-  // l'utente è in viaggio verso un nuovo cantiere.
-  const spostamentoInCorso = !activeSession && timbratureOrd.length > 0 && timbratureOrd[timbratureOrd.length - 1].tipo_evento === "spostamento";
-  // Cantiere da cui proviene l'utente attualmente in viaggio (quello dell'ultimo spostamento).
-  // Serve per l'opzione "capannone - stesso cantiere".
-  const ultimoSpostamento = spostamentoInCorso ? timbratureOrd[timbratureOrd.length - 1] : null;
-  const cantierePrecedente = ultimoSpostamento
-    ? (cantieri.find((c) => c.id === ultimoSpostamento.cantiere_id) || { id: ultimoSpostamento.cantiere_id, nome: ultimoSpostamento.cantiere_nome })
-    : null;
-  // Pausa pranzo già fatta oggi: il bottone non deve comparire più di una volta al giorno
+  // Pausa pranzo già fatta oggi: il pulsante non deve essere riutilizzabile
   const pausaFatta = timbratureOrd.some((t) => t.tipo_evento === "pausa_inizio");
 
   // Ultimo timbro della giornata (per eventuale annullamento rapido)
@@ -190,115 +185,34 @@ export default function Timbratura() {
     }
   };
 
-  // Spostamento: chiude la posizione corrente e avvia il conteggio del tempo
-  // di viaggio. L'utente entra in stato "in viaggio" e al ritorno dovrà
-  // dichiarare la destinazione (nuovo cantiere, capannone stesso, capannone altro).
-  const handleSpostamento = async () => {
-    setLoadingTipo("spostamento");
-    setError(null);
-    try {
-      if (!user) throw new Error("Utente non autenticato");
-      if (!activeCantiere) throw new Error("Nessun cantiere attivo");
-      const geo = await getPosizioneEDistanza(activeCantiere);
-      if (!geo.gpsDisponibile) toast.info("Posizione non disponibile: timbro registrato senza GPS.");
-      const rec = await base44.entities.Timbratura.create({
-        cantiere_id: activeCantiere.id, cantiere_nome: activeCantiere.nome,
-        rapportino_id: null, user_email: user.email, user_nome: user.full_name || "",
-        tipo_evento: "spostamento", data_ora: new Date().toISOString(),
-        latitudine: geo.lat, longitudine: geo.lon, distanza_metri: geo.distanza, in_cantiere: geo.inCantiere,
-      });
-      setLastTimbro(rec);
-      queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
-      queryClient.invalidateQueries({ queryKey: ["timbrature-giornaliere"] });
-      syncRapportinoOreDaTimbratura({ user_email: user.email, cantiere_id: activeCantiere.id, giorno: inizio })
-        .then(() => queryClient.invalidateQueries({ queryKey: ["rapportini"] }))
-        .catch(() => {});
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoadingTipo(null);
-    }
-  };
-
-  // Ripresa dopo uno spostamento: registra l'ingresso sul cantiere di
-  // destinazione in base alla scelta dell'utente.
-  //   nuovo_cantiere     → cantiere selezionato (selettore in alto)
-  //   capannone_stesso   → stesso cantiere di provenienza
-  //   capannone_altro    → cantiere selezionato (lavorazione in capannone per altro cantiere)
-  const handleArrivo = async (tipo, cantiereOverride) => {
-    setLoadingTipo("arrivo_" + tipo);
-    setError(null);
-    try {
-      if (!user) throw new Error("Utente non autenticato");
-      let cantiere = null;
-      let nota = "";
-      if (tipo === "nuovo_cantiere") {
-        if (!cantiereOverride) throw new Error("Cantiere non valido");
-        cantiere = cantiereOverride;
-        nota = "Arrivato a nuovo cantiere";
-      } else if (tipo === "capannone_stesso") {
-        if (!cantierePrecedente) throw new Error("Nessun cantiere precedente");
-        cantiere = cantierePrecedente;
-        nota = "Capannone — stesso cantiere";
-      } else if (tipo === "capannone_altro") {
-        if (!cantiereOverride) throw new Error("Cantiere non valido");
-        cantiere = cantiereOverride;
-        nota = "Capannone — altro cantiere";
-      }
-      if (!cantiere) throw new Error("Cantiere non valido");
-      const geo = await getPosizioneEDistanza(cantiere);
-      if (!geo.gpsDisponibile) toast.info("Posizione non disponibile: timbro registrato senza GPS.");
-      const rec = await base44.entities.Timbratura.create({
-        cantiere_id: cantiere.id, cantiere_nome: cantiere.nome,
-        rapportino_id: null, user_email: user.email, user_nome: user.full_name || "",
-        tipo_evento: "ingresso", data_ora: new Date().toISOString(),
-        latitudine: geo.lat, longitudine: geo.lon, distanza_metri: geo.distanza, in_cantiere: geo.inCantiere,
-        note: nota,
-      });
-      setLastTimbro(rec);
-      if (!geo.inCantiere && cantiere.latitudine) {
-        setError(`Posizione fuori cantiere! Sei a ${geo.distanza}m (massimo: ${cantiere.raggio_metri || 150}m).`);
-      }
-      queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
-      queryClient.invalidateQueries({ queryKey: ["timbrature-giornaliere"] });
-      syncRapportinoOreDaTimbratura({ user_email: user.email, cantiere_id: cantiere.id, giorno: inizio })
-        .then(() => queryClient.invalidateQueries({ queryKey: ["rapportini"] }))
-        .catch(() => {});
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoadingTipo(null);
-    }
-  };
-
   // Esegue l'azione in attesa dopo che l'utente ha scelto il cantiere nel picker
   const handleCantiereScelto = async (cantiere) => {
-    const action = pendingCantiereAction;
     setPendingCantiereAction(null);
-    if (!action) return;
-    if (action === "ingresso") {
-      handleTimbra("ingresso", cantiere);
-    } else if (action === "arrivo_nuovo_cantiere") {
-      handleArrivo("nuovo_cantiere", cantiere);
-    } else if (action === "arrivo_capannone_altro") {
-      handleArrivo("capannone_altro", cantiere);
-    }
+    handleTimbra("ingresso", cantiere);
   };
 
   const handleGeneraRapportini = async () => {
     if (!user) return;
     setGenerando(true);
     try {
-      const esistenti = await base44.entities.Rapportino.filter({ user_email: user.email });
+      // Il rapportino è unico per cantiere e giornata: servono le timbrature
+      // di tutta la squadra (non solo le mie) e i rapportini già esistenti.
+      const esistenti = await base44.entities.Rapportino.filter({
+        data: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
+      });
+      const timbratureGiorno = await base44.entities.Timbratura.filter({
+        data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
+      });
       const creati = await generaRapportiniDaGiornata({
         user,
         giorno: inizio,
-        timbrature: timbratureOrd,
-        rapportiniEsistenti: esistenti
+        timbrature: timbratureGiorno,
+        rapportiniEsistenti: esistenti,
+        collaboratoriList
       });
       queryClient.invalidateQueries({ queryKey: ["rapportini"] });
       if (creati.length === 0) {
-        toast.info("Nessun nuovo rapportino: esistono già bozze per questi cantieri");
+        toast.info("Nessun nuovo rapportino: per questi cantieri ne esiste già uno oggi");
       } else {
         toast.success(
           `Creat${creati.length === 1 ? "o" : "i"} ${creati.length} rapportin${creati.length === 1 ? "o" : "i"} in bozza`
@@ -435,102 +349,44 @@ export default function Timbratura() {
           </Card>
         }
 
-        {/* Pannello azioni — macchina a stati contestuale */}
-        {spostamentoInCorso ? (
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-orange-700 text-center">Sei in spostamento — dove sei arrivato?</p>
-            <Button
-              onClick={() => setPendingCantiereAction("arrivo_nuovo_cantiere")}
-              disabled={!!loadingTipo}
-              className="h-14 w-full text-sm font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700">
-              {loadingTipo === "arrivo_nuovo_cantiere" ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
-              Arrivato a un nuovo cantiere
-            </Button>
-            <Button
-              onClick={() => handleArrivo("capannone_stesso")}
-              disabled={!!loadingTipo || !cantierePrecedente}
-              className="h-14 w-full text-sm font-semibold gap-2 bg-indigo-500 hover:bg-indigo-600">
-              {loadingTipo === "arrivo_capannone_stesso" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Warehouse className="w-5 h-5" />}
-              Capannone — stesso cantiere{cantierePrecedente ? ` (${cantierePrecedente.nome})` : ""}
-            </Button>
-            <Button
-              onClick={() => setPendingCantiereAction("arrivo_capannone_altro")}
-              disabled={!!loadingTipo}
-              className="h-14 w-full text-sm font-semibold gap-2 bg-indigo-500 hover:bg-indigo-600">
-              {loadingTipo === "arrivo_capannone_altro" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Warehouse className="w-5 h-5" />}
-              Capannone — altro cantiere
-            </Button>
-            <Button
-              onClick={() => handleTimbra("uscita")}
-              disabled={!!loadingTipo}
-              className="h-14 w-full text-sm font-semibold gap-2 bg-rose-600 hover:bg-rose-700">
-              {loadingTipo === "uscita" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}
-              Chiudi giornata
-            </Button>
-          </div>
-        ) : !activeSession ? (
+        {/* Pannello azioni — le 4 timbrature, sempre a disposizione */}
+        <div className="space-y-2">
           <Button
             onClick={() => setPendingCantiereAction("ingresso")}
-            disabled={!!loadingTipo}
+            disabled={!!loadingTipo || !!activeSession}
             className="h-16 w-full text-base font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700">
             {loadingTipo === "ingresso" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-            Avvio lavorazione in cantiere
+            Avvia lavoro in cantiere
           </Button>
-        ) : inPausa ? (
-          <div className="space-y-2">
-            <Button
-              onClick={() => handleTimbra("pausa_fine")}
-              disabled={!!loadingTipo}
-              className="h-14 w-full text-sm font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700">
-              {loadingTipo === "pausa_fine" ? <Loader2 className="w-5 h-5 animate-spin" /> : <PlayCircle className="w-5 h-5" />}
-              Riprendi la lavorazione in cantiere
-            </Button>
-            <div className="grid grid-cols-2 gap-2">
-              <Button onClick={() => handleSpostamento()} disabled={!!loadingTipo}
-                className="h-12 text-xs font-semibold gap-1.5 bg-orange-500 hover:bg-orange-600">
-                {loadingTipo === "spostamento" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />} Spostamento
-              </Button>
-              <Button onClick={() => handleTimbra("uscita")} disabled={!!loadingTipo}
-                className="h-12 text-xs font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700">
-                {loadingTipo === "uscita" ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-                Chiudi giornata
-              </Button>
-            </div>
-          </div>
-        ) : pausaFatta ? (
+          <Button
+            onClick={() => handleTimbra("uscita")}
+            disabled={!!loadingTipo || !activeSession}
+            className="h-14 w-full text-sm font-semibold gap-2 bg-rose-600 hover:bg-rose-700">
+            {loadingTipo === "uscita" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}
+            Chiudi lavoro in cantiere
+          </Button>
           <div className="grid grid-cols-2 gap-2">
-            <Button onClick={() => handleSpostamento()} disabled={!!loadingTipo}
-              className="h-14 text-sm font-semibold gap-1.5 bg-orange-500 hover:bg-orange-600">
-              {loadingTipo === "spostamento" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />} Spostamento
-            </Button>
-            <Button onClick={() => handleTimbra("uscita")} disabled={!!loadingTipo}
-              className="h-14 text-sm font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700">
-              {loadingTipo === "uscita" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}
-              Chiudi giornata
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-2">
             <Button
               onClick={() => handleTimbra("pausa_inizio")}
-              disabled={!!loadingTipo}
-              className="h-14 w-full text-sm font-semibold gap-2 bg-amber-500 hover:bg-amber-600">
-              {loadingTipo === "pausa_inizio" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Coffee className="w-5 h-5" />}
-              Vado in pausa pranzo
+              disabled={!!loadingTipo || !activeSession || inPausa || pausaFatta}
+              className="h-14 text-xs font-semibold gap-1.5 bg-amber-500 hover:bg-amber-600">
+              {loadingTipo === "pausa_inizio" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Coffee className="w-4 h-4" />}
+              Inizia pausa pranzo
             </Button>
-            <div className="grid grid-cols-2 gap-2">
-              <Button onClick={() => handleSpostamento()} disabled={!!loadingTipo}
-                className="h-12 text-xs font-semibold gap-1.5 bg-orange-500 hover:bg-orange-600">
-                {loadingTipo === "spostamento" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />} Spostamento
-              </Button>
-              <Button onClick={() => handleTimbra("uscita")} disabled={!!loadingTipo}
-                className="h-12 text-xs font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700">
-                {loadingTipo === "uscita" ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-                Chiudi giornata
-              </Button>
-            </div>
+            <Button
+              onClick={() => handleTimbra("pausa_fine")}
+              disabled={!!loadingTipo || !inPausa}
+              className="h-14 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700">
+              {loadingTipo === "pausa_fine" ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
+              Fine pausa pranzo
+            </Button>
           </div>
-        )}
+          <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+            {activeSession
+              ? "Per lavorare in un altro cantiere chiudi prima il lavoro: il tempo tra la chiusura e la nuova apertura viene contato automaticamente come spostamento."
+              : "Lo spostamento non si timbra: il sistema lo ricava dall'intervallo tra la chiusura di un cantiere e l'apertura del successivo."}
+          </p>
+        </div>
 
         {/* Annulla ultimo timbro (entro 1 ora) */}
         {ultimoTimbro && canUndo(ultimoTimbro) &&
@@ -716,13 +572,7 @@ export default function Timbratura() {
         onClose={() => setPendingCantiereAction(null)}
         onConfirm={handleCantiereScelto}
         cantieri={cantieri}
-        title={
-          pendingCantiereAction === "ingresso"
-            ? "In quale cantiere sei?"
-            : pendingCantiereAction === "arrivo_nuovo_cantiere"
-            ? "A quale cantiere sei arrivato?"
-            : "Per quale cantiere lavori in capannone?"
-        }
+        title="In quale cantiere inizi a lavorare?"
         loading={!!loadingTipo}
         onNewCantiere={() => setShowNewCantiere(true)}
       />
@@ -732,15 +582,9 @@ export default function Timbratura() {
         onCreated={(c) => {
           refetchCantieri();
           // Se c'era un'azione in attesa nel picker, usa subito il nuovo cantiere
-          if (pendingCantiereAction === "ingresso") {
+          if (pendingCantiereAction) {
             setPendingCantiereAction(null);
             handleTimbra("ingresso", c);
-          } else if (pendingCantiereAction === "arrivo_nuovo_cantiere") {
-            setPendingCantiereAction(null);
-            handleArrivo("nuovo_cantiere", c);
-          } else if (pendingCantiereAction === "arrivo_capannone_altro") {
-            setPendingCantiereAction(null);
-            handleArrivo("capannone_altro", c);
           }
         }} />
       

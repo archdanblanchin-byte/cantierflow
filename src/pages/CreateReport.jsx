@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, AlertTriangle } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -16,6 +17,7 @@ import Step4Materiali from "@/components/wizard/Step5Materiali";
 import Step5Riepilogo from "@/components/wizard/Step6Riepilogo";
 import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
 import { usePermessoRapportinoManuale } from "@/hooks/usePermessoRapportinoManuale";
+import { buildSquadraDaTimbrature, getRapportinoCantiereGiorno } from "@/lib/rapportiniFromTimbrature";
 
 const TOTAL_STEPS = 5;
 const AUTOSAVE_INTERVAL = 30000; // 30 secondi
@@ -29,6 +31,7 @@ export default function CreateReport() {
   const [showErrors, setShowErrors] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [draftId, setDraftId] = useState(null);
+  const [rapportinoEsistente, setRapportinoEsistente] = useState(null);
   const autosaveRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -77,10 +80,17 @@ export default function CreateReport() {
     const interval = setInterval(async () => {
       const data = autosaveRef.current;
       if (!data.cantiere_id) return; // non salvare senza cantiere
+      if (rapportinoEsistente) return; // esiste già il rapportino del cantiere
       try {
         if (draftId) {
           await base44.entities.Rapportino.update(draftId, { ...data, stato: "bozza" });
         } else {
+          // Non creare mai un secondo rapportino per lo stesso cantiere e giornata
+          const esistente = await getRapportinoCantiereGiorno(data.cantiere_id, data.data || new Date());
+          if (esistente) {
+            setRapportinoEsistente(esistente);
+            return;
+          }
           const saved = await base44.entities.Rapportino.create({ ...data, stato: "bozza" });
           setDraftId(saved.id);
         }
@@ -88,7 +98,7 @@ export default function CreateReport() {
       } catch (_) {}
     }, AUTOSAVE_INTERVAL);
     return () => clearInterval(interval);
-  }, [draftId]);
+  }, [draftId, rapportinoEsistente]);
 
   const { data: cantieri = [], refetch: refetchCantieri } = useQuery({
     queryKey: ["cantieri"],
@@ -116,6 +126,46 @@ export default function CreateReport() {
       return { ...prev, partecipanti_email: pe };
     });
   }, [formData.collaboratori, formData.user_email, collaboratoriList]);
+
+  const giornoKey = formData.data ? format(new Date(formData.data), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
+
+  // La squadra del cantiere arriva dalle timbrature: il capo cantiere non deve
+  // inserire le persone a mano, trova già presenze, ore e anomalie.
+  useEffect(() => {
+    if (!formData.cantiere_id) return;
+    let annullato = false;
+    const g = new Date(formData.data || new Date());
+    const inizioG = new Date(g); inizioG.setHours(0, 0, 0, 0);
+    const fineG = new Date(g); fineG.setHours(23, 59, 59, 999);
+    base44.entities.Timbratura.filter({
+      cantiere_id: formData.cantiere_id,
+      data_ora: { $gte: inizioG.toISOString(), $lt: fineG.toISOString() },
+    }).then((timb) => {
+      if (annullato) return;
+      const squadra = buildSquadraDaTimbrature(timb, collaboratoriList);
+      setFormData((prev) => {
+        if (prev.cantiere_id !== formData.cantiere_id) return prev;
+        const note = new Map((prev.collaboratori || []).map((c) => [c.user_email || c.collaboratore_id, c.note_imprevisti || ""]));
+        const righe = squadra.map((r) => ({ ...r, note_imprevisti: note.get(r.user_email || r.collaboratore_id) || "" }));
+        const ore = righe.reduce((s, r) => s + (r.ore_lavorate || 0), 0);
+        return { ...prev, collaboratori: righe, ore_totali_squadra: ore > 0 ? ore : prev.ore_totali_squadra };
+      });
+    }).catch(() => {});
+    return () => { annullato = true; };
+  }, [formData.cantiere_id, giornoKey, collaboratoriList]);
+
+  // Un solo rapportino per cantiere e per giornata
+  useEffect(() => {
+    if (!formData.cantiere_id) {
+      setRapportinoEsistente(null);
+      return;
+    }
+    let annullato = false;
+    getRapportinoCantiereGiorno(formData.cantiere_id, formData.data || new Date())
+      .then((r) => { if (!annullato) setRapportinoEsistente(r && r.id !== draftId ? r : null); })
+      .catch(() => {});
+    return () => { annullato = true; };
+  }, [formData.cantiere_id, giornoKey, draftId]);
 
   const updateForm = (updates) => {
     setFormData((prev) => ({ ...prev, ...updates }));
@@ -170,6 +220,7 @@ export default function CreateReport() {
   };
 
   const handleNext = () => {
+    if (rapportinoEsistente) return;
     if (!validateStep()) {
       setShowErrors(true);
       return;
@@ -251,6 +302,21 @@ export default function CreateReport() {
 
       {/* Padding bottom per la nav fissa */}
       <div className="max-w-2xl mx-auto px-4 py-6 pb-28">
+        {rapportinoEsistente &&
+        <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+              <AlertTriangle className="w-4 h-4" />
+              Esiste già il rapportino di questo cantiere
+            </div>
+            <p className="text-xs text-amber-800">
+              Per {rapportinoEsistente.cantiere_nome || "questo cantiere"} del {format(new Date(rapportinoEsistente.data), "dd/MM/yyyy")} è già stato creato un rapportino
+              {rapportinoEsistente.user_email ? ` da ${rapportinoEsistente.user_email}` : ""}. Se ne crea uno solo per cantiere e per giornata: aprine uno nuovo solo se quello esistente va corretto.
+            </p>
+            <Button size="sm" onClick={() => navigate(`/report/${rapportinoEsistente.id}`)}>
+              Apri il rapportino esistente
+            </Button>
+          </div>
+        }
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -271,7 +337,7 @@ export default function CreateReport() {
         onNext={handleNext}
         onSubmit={handleSubmit}
         submitting={submitting}
-        canProceed={step === TOTAL_STEPS ? canProceedStep6 && !submitting : true}
+        canProceed={step === TOTAL_STEPS ? canProceedStep6 && !submitting : !rapportinoEsistente}
       />
     </div>
   );
