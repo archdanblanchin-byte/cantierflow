@@ -6,7 +6,7 @@ import SheetSelect from "@/components/ui/sheet-select";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus, Trash2, Zap, Wrench, AlertCircle, CheckCircle2, AlertTriangle, Settings2 } from "lucide-react";
+import { Plus, Trash2, Zap, Wrench, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AudioLavorazioniRecorder from "@/components/wizard/AudioLavorazioniRecorder";
 import OreInput from "@/components/wizard/OreInput";
@@ -64,15 +64,20 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
       {hasExtra &&
       <div className="space-y-2 pl-2 border-l-2 border-amber-200">
           {extras.map((extra, i) =>
-        <div key={i} className="rounded-xl border border-border p-3 bg-card">
-              <div className="flex items-end gap-2">
-                <span className="w-6 h-6 mb-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
+        <div key={i} className="rounded-xl border border-border p-3 bg-card space-y-2.5">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
                   {i + 1}
                 </span>
-                <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div className="min-w-0">
-                    <Label className="text-[11px] text-muted-foreground">Tipo lavorazione</Label>
-                    <SheetSelect
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-auto flex-shrink-0" onClick={() => removeExtra(i)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Riga 1 — Tipo lavorazione */}
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Tipo lavorazione</Label>
+                <SheetSelect
                   value={catalogo.find((t) => t.nome === extra.descrizione)?.id}
                   onValueChange={(val) => {
                     if (val === "__nuovo__") {
@@ -87,27 +92,26 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
                   { value: "__nuovo__", label: "＋ Nuova lavorazione" }]
                   }
                   placeholder="Seleziona lavorazione..." />
-                  </div>
-                  <div className="min-w-0">
-                    <Label className="text-[11px] text-muted-foreground">Descrizione</Label>
-                    <Input
+              </div>
+
+              {/* Riga 2 — Descrizione e dettaglio */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] text-muted-foreground">Descrizione e dettaglio</Label>
+                <Input
                   value={extra.descrizione || ""}
                   onChange={(e) => updateExtra(i, "descrizione", e.target.value)}
-                  className="mt-1"
                   placeholder="Descrivi la lavorazione extra..." />
-                
-                  </div>
-                  <div>
-                    <Label className="text-[11px] text-muted-foreground">Ore</Label>
-                    <OreInput
-                  value={extra.ore ?? 0}
-                  onChange={(v) => updateExtra(i, "ore", v)} />
-                
-                  </div>
+              </div>
+
+              {/* Riga 3 — Ore */}
+              <div className="flex justify-end">
+                <div className="w-28">
+                  <Label className="text-[11px] text-muted-foreground">Ore</Label>
+                  <OreInput
+                    compact
+                    value={extra.ore ?? 0}
+                    onChange={(v) => updateExtra(i, "ore", v)} />
                 </div>
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive flex-shrink-0" onClick={() => removeExtra(i)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
               </div>
             </div>
         )}
@@ -130,7 +134,6 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
 // ─── LAVORAZIONI NORMALI ──────────────────────────────────────────────────────
 
 function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
-  const [dettagliAperti, setDettagliAperti] = useState(null);
   const [nuoviTipi, setNuoviTipi] = useState([]);
   const [nuovaLavIndex, setNuovaLavIndex] = useState(null);
   const lavorazioni = data.lavorazioni_normali || [];
@@ -184,23 +187,36 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
     <div className="space-y-3">
       {lavorazioni.map((lav, i) => {
         const perPersone = lav.modalita_calcolo === "per_persone";
-        const aperti = dettagliAperti === i;
-        const descrizione = lav.descrizione_custom || (lav.tipo_lavorazione_id ? "" : lav.tipo_lavorazione_nome) || "";
         const catalogo = [...tipiLavorazione, ...nuoviTipi].sort((a, b) =>
         (a.categoria || "").localeCompare(b.categoria || "") || (a.nome || "").localeCompare(b.nome || ""));
         const haCatalogo = Boolean(lav.categoria && lav.categoria !== "__custom__");
 
         return (
-        <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
-          {/* Riga principale — descrizione + ore */}
-          <div className="flex items-end gap-2 p-3">
-            <span className="w-6 h-6 mb-2 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
+        <div key={i} className="rounded-xl border border-border bg-card p-3 space-y-2.5">
+          {/* Intestazione riga */}
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
               {i + 1}
             </span>
-            <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="min-w-0">
-              <Label className="text-[11px] text-muted-foreground">Tipo lavorazione</Label>
-              <SheetSelect
+            {haCatalogo &&
+            <span className="text-[11px] font-medium bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                {lav.categoria}
+              </span>
+            }
+            {perPersone &&
+            <span className="text-[11px] font-medium bg-muted text-muted-foreground rounded-full px-2 py-0.5 tabular-nums">
+                {lav.numero_persone || 0} × {fmtH(lav.ore_per_persona)}h = {fmtH(lav.ore_totali)}h
+              </span>
+            }
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-auto flex-shrink-0" onClick={() => removeLav(i)}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Riga 1 — Tipo lavorazione */}
+          <div>
+            <Label className="text-[11px] text-muted-foreground">Tipo lavorazione</Label>
+            <SheetSelect
               value={lav.tipo_lavorazione_id || undefined}
               onValueChange={(val) => {
                 if (val === "__nuovo__") {
@@ -219,110 +235,70 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
               { value: "__nuovo__", label: "＋ Nuova lavorazione" }]
               }
               placeholder="Seleziona lavorazione..." />
-            </div>
-            <div className="min-w-0">
-              <Label className="text-[11px] text-muted-foreground">Descrizione</Label>
-              <Input
-                value={descrizione}
-                onChange={(e) => updateLav(i, { descrizione_custom: e.target.value })}
-                className="mt-1"
-                placeholder="Descrizione manuale..." />
-            </div>
-            </div>
-            <div className="w-32 flex-shrink-0">
-              <Label className="text-[11px] text-muted-foreground">Ore</Label>
-              <OreInput
-              compact
-              value={lav.ore_totali ?? 0}
-              onChange={(v) => updateLav(i, { ore_totali: v, modalita_calcolo: "manuale" })} />
-            
-            </div>
-            <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive flex-shrink-0" onClick={() => removeLav(i)}>
-              <Trash2 className="w-4 h-4" />
-            </Button>
           </div>
 
-          {/* Riga info — solo etichette compatte, nessuna cella in più */}
-          <div className="flex flex-wrap items-center gap-2 px-3 pb-2.5">
-            {haCatalogo &&
-            <span className="text-[11px] font-medium bg-primary/10 text-primary rounded-full px-2 py-0.5">
-                {lav.categoria}
-              </span>
-            }
-            {perPersone &&
-            <span className="text-[11px] font-medium bg-muted text-muted-foreground rounded-full px-2 py-0.5 tabular-nums">
-                {lav.numero_persone || 0} × {fmtH(lav.ore_per_persona)}h = {fmtH(lav.ore_totali)}h
-              </span>
-            }
-            <button
-              type="button"
-              onClick={() => setDettagliAperti(aperti ? null : i)}
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2">
-              
-              <Settings2 className="w-3 h-3" />
-              {aperti ? "Nascondi dettagli" : "Modalità ore / dettagli"}
-            </button>
-          </div>
-
-          {/* Dettaglio (cosa / dove) — visibile se compilato dall'AI o aprendo i dettagli */}
-          {(lav.descrizione || aperti) &&
-          <div className="px-3 pb-2.5">
-              <Textarea
+          {/* Riga 2 — Descrizione e dettaglio */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px] text-muted-foreground">Descrizione e dettaglio</Label>
+            <Input
+              value={lav.descrizione_custom || ""}
+              onChange={(e) => updateLav(i, { descrizione_custom: e.target.value })}
+              placeholder="Descrizione lavorazione..." />
+            <Textarea
               value={lav.descrizione || ""}
               onChange={(e) => updateLav(i, { descrizione: e.target.value })}
-              className="min-h-[34px] resize-y text-sm"
+              className="min-h-[40px] resize-y text-sm"
               placeholder="Dettaglio (cosa / dove) — es. facciata nord, prime due stanze..." />
-            
-            </div>
-          }
+          </div>
 
-          {/* Dettagli — nascosti di default */}
-          {aperti &&
-          <div className="border-t border-border bg-muted/30 p-3 space-y-2">
-
-              <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">Modalità ore</Label>
-                  <RadioGroup
-                  value={lav.modalita_calcolo || "manuale"}
-                  onValueChange={(val) => updateLav(i, { modalita_calcolo: val })}
-                  className="flex items-center gap-3 h-9">
-                  
-                    <div className="flex items-center gap-1.5">
-                      <RadioGroupItem value="manuale" id={`man-${i}`} />
-                      <Label htmlFor={`man-${i}`} className="text-sm cursor-pointer">Manuale</Label>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <RadioGroupItem value="per_persone" id={`pp-${i}`} />
-                      <Label htmlFor={`pp-${i}`} className="text-sm cursor-pointer">Per persone</Label>
-                    </div>
-                  </RadioGroup>
+          {/* Riga 3 — Modalità ore + Ore */}
+          <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Modalità ore</Label>
+              <RadioGroup
+                value={lav.modalita_calcolo || "manuale"}
+                onValueChange={(val) => updateLav(i, { modalita_calcolo: val })}
+                className="flex items-center gap-3 h-9">
+                
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="manuale" id={`man-${i}`} />
+                  <Label htmlFor={`man-${i}`} className="text-sm cursor-pointer">Manuale</Label>
                 </div>
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="per_persone" id={`pp-${i}`} />
+                  <Label htmlFor={`pp-${i}`} className="text-sm cursor-pointer">Per persone</Label>
+                </div>
+              </RadioGroup>
+            </div>
 
-                {perPersone &&
-              <div className="flex flex-wrap items-end gap-2 ml-auto">
-                    <div className="w-32">
-                      <Label className="text-[11px] text-muted-foreground">N° persone</Label>
-                      <OreInput
+            {perPersone &&
+            <div className="flex flex-wrap items-end gap-2">
+                <div className="w-28">
+                  <Label className="text-[11px] text-muted-foreground">N° persone</Label>
+                  <OreInput
                     compact
-                    value={lav.numero_persone ?? 0}
                     step={1}
+                    value={lav.numero_persone ?? 0}
                     onChange={(v) => updateLav(i, { numero_persone: v })} />
-                  
-                    </div>
-                    <div className="w-32">
-                      <Label className="text-[11px] text-muted-foreground">Ore/persona</Label>
-                      <OreInput
+                </div>
+                <div className="w-28">
+                  <Label className="text-[11px] text-muted-foreground">Ore/persona</Label>
+                  <OreInput
                     compact
                     value={lav.ore_per_persona ?? 0}
                     onChange={(v) => updateLav(i, { ore_per_persona: v })} />
-                  
-                    </div>
-                  </div>
-              }
+                </div>
               </div>
+            }
+
+            <div className="w-28 ml-auto">
+              <Label className="text-[11px] text-muted-foreground">Ore</Label>
+              <OreInput
+                compact
+                value={lav.ore_totali ?? 0}
+                onChange={(v) => updateLav(i, { ore_totali: v, modalita_calcolo: "manuale" })} />
             </div>
-          }
+          </div>
         </div>);
 
       })}
