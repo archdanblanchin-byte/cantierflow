@@ -10,6 +10,7 @@ import { Plus, Trash2, Zap, Wrench, AlertCircle, CheckCircle2, AlertTriangle, Se
 import { cn } from "@/lib/utils";
 import AudioLavorazioniRecorder from "@/components/wizard/AudioLavorazioniRecorder";
 import OreInput from "@/components/wizard/OreInput";
+import NuovaLavorazioneDialog from "@/components/wizard/NuovaLavorazioneDialog";
 
 const fmtH = (n) => Number(n || 0).toFixed(2).replace(".", ",");
 
@@ -94,7 +95,10 @@ function LavorazioniExtra({ data, onChange }) {
 
 function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
   const [dettagliAperti, setDettagliAperti] = useState(null);
+  const [nuoviTipi, setNuoviTipi] = useState([]);
+  const [nuovaLavIndex, setNuovaLavIndex] = useState(null);
   const lavorazioni = data.lavorazioni_normali || [];
+  const tutteCategorie = [...new Set(tipiLavorazione.map((t) => t.categoria).filter(Boolean))];
   const oreLavoratori = (data.collaboratori || []).reduce((sum, c) => sum + (c.ore_lavorate || 0), 0) ||
   data.ore_totali_squadra || 0;
   const oreExtra = data.has_lavorazioni_extra ?
@@ -127,16 +131,27 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
     onChange({ lavorazioni_normali: lavorazioni.filter((_, i) => i !== index) });
   };
 
+  // Dopo la creazione di una nuova lavorazione la assegno subito alla riga di partenza
+  const handleNuovaLavorazioneCreata = (tipo) => {
+    setNuoviTipi((prev) => [...prev, tipo]);
+    if (nuovaLavIndex !== null) {
+      updateLav(nuovaLavIndex, {
+        tipo_lavorazione_id: tipo.id,
+        tipo_lavorazione_nome: tipo.nome || "",
+        categoria: tipo.categoria || ""
+      });
+    }
+    setNuovaLavIndex(null);
+  };
+
   return (
     <div className="space-y-3">
       {lavorazioni.map((lav, i) => {
         const perPersone = lav.modalita_calcolo === "per_persone";
         const aperti = dettagliAperti === i;
         const descrizione = lav.descrizione_custom || (lav.tipo_lavorazione_id ? "" : lav.tipo_lavorazione_nome) || "";
-        const catalogo = [...tipiLavorazione].sort((a, b) =>
+        const catalogo = [...tipiLavorazione, ...nuoviTipi].sort((a, b) =>
         (a.categoria || "").localeCompare(b.categoria || "") || (a.nome || "").localeCompare(b.nome || ""));
-        const categorie = [...new Set(tipiLavorazione.map((t) => t.categoria).filter(Boolean))];
-        const tipiCategoria = tipiLavorazione.filter((t) => t.categoria === lav.categoria);
         const haCatalogo = Boolean(lav.categoria && lav.categoria !== "__custom__");
 
         return (
@@ -152,14 +167,21 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
               <SheetSelect
               value={lav.tipo_lavorazione_id || undefined}
               onValueChange={(val) => {
-                const tipo = tipiLavorazione.find((t) => t.id === val);
+                if (val === "__nuovo__") {
+                  setNuovaLavIndex(i);
+                  return;
+                }
+                const tipo = catalogo.find((t) => t.id === val);
                 updateLav(i, {
                   tipo_lavorazione_id: val,
                   tipo_lavorazione_nome: tipo?.nome || "",
                   categoria: tipo?.categoria || lav.categoria || ""
                 });
               }}
-              options={catalogo.map((t) => ({ value: t.id, label: t.nome }))}
+              options={[
+              ...catalogo.map((t) => ({ value: t.id, label: t.nome })),
+              { value: "__nuovo__", label: "＋ Nuova lavorazione" }]
+              }
               placeholder="Seleziona lavorazione..." />
             </div>
             <div className="min-w-0">
@@ -202,7 +224,7 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
               className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2">
               
               <Settings2 className="w-3 h-3" />
-              {aperti ? "Nascondi dettagli" : "Categoria / tipo / modalità ore"}
+              {aperti ? "Nascondi dettagli" : "Modalità ore / dettagli"}
             </button>
           </div>
 
@@ -221,50 +243,6 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
           {/* Dettagli — nascosti di default */}
           {aperti &&
           <div className="border-t border-border bg-muted/30 p-3 space-y-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">Categoria</Label>
-                  <SheetSelect
-                  value={lav.categoria || ""}
-                  onValueChange={(val) => updateLav(i, { categoria: val, tipo_lavorazione_id: "", tipo_lavorazione_nome: "", descrizione_custom: "" })}
-                  options={[
-                  ...categorie.map((cat) => ({ value: cat, label: cat })),
-                  { value: "__custom__", label: "✏️ Personalizzata" }]
-                  }
-                  placeholder="Seleziona categoria..." />
-                
-                </div>
-
-                {lav.categoria && lav.categoria !== "__custom__" &&
-              <div>
-                    <Label className="text-[11px] text-muted-foreground">Tipo lavorazione</Label>
-                    <SheetSelect
-                  value={lav.tipo_lavorazione_id || ""}
-                  onValueChange={(val) => {
-                    if (val === "__custom_tipo__") {
-                      updateLav(i, { tipo_lavorazione_id: "", tipo_lavorazione_nome: "", descrizione_custom: "" });
-                    } else {
-                      const tipo = tipiLavorazione.find((t) => t.id === val);
-                      updateLav(i, { tipo_lavorazione_id: val, tipo_lavorazione_nome: tipo?.nome || "", descrizione_custom: "" });
-                    }
-                  }}
-                  options={[
-                  ...tipiCategoria.map((t) => ({ value: t.id, label: t.nome })),
-                  { value: "__custom_tipo__", label: "✏️ Non trovata" }]
-                  }
-                  placeholder="Seleziona tipo..." />
-                
-                    {!lav.tipo_lavorazione_id &&
-                <Input
-                  value={lav.descrizione_custom || ""}
-                  onChange={(e) => updateLav(i, { descrizione_custom: e.target.value, tipo_lavorazione_nome: e.target.value })}
-                  className="mt-1"
-                  placeholder="Scrivi il tipo di lavorazione..." />
-
-                }
-                  </div>
-              }
-              </div>
 
               <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
                 <div>
@@ -317,6 +295,12 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
         <Plus className="w-4 h-4" />
         Aggiungi Lavorazione
       </Button>
+
+      <NuovaLavorazioneDialog
+        open={nuovaLavIndex !== null}
+        onOpenChange={(o) => { if (!o) setNuovaLavIndex(null); }}
+        categorie={tutteCategorie}
+        onCreated={handleNuovaLavorazioneCreata} />
 
       {/* Quadro ore */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
