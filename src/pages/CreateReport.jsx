@@ -15,6 +15,7 @@ import Step3Lavorazioni from "@/components/wizard/Step3Lavorazioni";
 import Step4Materiali from "@/components/wizard/Step5Materiali";
 import Step5Riepilogo from "@/components/wizard/Step6Riepilogo";
 import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
+import { buildCollaboratoriPrefill } from "@/lib/rapportinoCollaboratori";
 import { usePermessoRapportinoManuale } from "@/hooks/usePermessoRapportinoManuale";
 
 const TOTAL_STEPS = 5;
@@ -106,6 +107,18 @@ export default function CreateReport() {
     queryKey: ["materialiBase"],
     queryFn: () => base44.entities.MaterialeBase.list(),
   });
+
+  // Pre-carica tutti i collaboratori attivi: sono già elencati nel rapportino e
+  // vengono salvati automaticamente, senza doverli aggiungere uno per uno.
+  const prefillDone = useRef(false);
+  useEffect(() => {
+    if (prefillDone.current || collaboratoriList.length === 0) return;
+    prefillDone.current = true;
+    setFormData((prev) => {
+      if ((prev.collaboratori || []).length > 0) return prev;
+      return { ...prev, collaboratori: buildCollaboratoriPrefill(collaboratoriList, prev.ore_totali_squadra ?? 8) };
+    });
+  }, [collaboratoriList]);
 
   // Mantiene aggiornata la lista email dei partecipanti (autore + collaboratori)
   // per la regola RLS di visibilità del rapportino.

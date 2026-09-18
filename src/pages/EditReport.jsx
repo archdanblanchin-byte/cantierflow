@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +16,7 @@ import Step3Lavorazioni from "@/components/wizard/Step3Lavorazioni";
 import Step4Materiali from "@/components/wizard/Step5Materiali";
 import Step5Riepilogo from "@/components/wizard/Step6Riepilogo";
 import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
+import { buildCollaboratoriPrefill } from "@/lib/rapportinoCollaboratori";
 
 const TOTAL_STEPS = 5;
 
@@ -67,6 +68,18 @@ export default function EditReport() {
     queryFn: () => base44.entities.MaterialeBase.list(),
   });
   const updateForm = (updates) => setFormData((prev) => ({ ...prev, ...updates }));
+
+  // Pre-carica tutti i collaboratori attivi se il rapportino non ne ha ancora:
+  // sono già elencati e vengono salvati automaticamente, senza aggiungerli a mano.
+  const prefillDone = useRef(false);
+  useEffect(() => {
+    if (prefillDone.current || !formData || collaboratoriList.length === 0) return;
+    prefillDone.current = true;
+    setFormData((prev) => {
+      if (!prev || (prev.collaboratori || []).length > 0) return prev;
+      return { ...prev, collaboratori: buildCollaboratoriPrefill(collaboratoriList, prev.ore_totali_squadra ?? 8) };
+    });
+  }, [formData, collaboratoriList]);
 
   // Mantiene aggiornata la lista email dei partecipanti (autore + collaboratori)
   // per la regola RLS di visibilità del rapportino.
