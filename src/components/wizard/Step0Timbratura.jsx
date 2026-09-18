@@ -39,9 +39,12 @@ export default function Step0Timbratura({ data, onChange, cantieri, onCantieriRe
                 <SelectValue placeholder="Seleziona cantiere..." />
               </SelectTrigger>
               <SelectContent>
-                {cantieri.filter(c => c.attivo !== false).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                ))}
+                {cantieri
+                  .filter((c) => (c.stato ? c.stato === "aperto" : c.attivo !== false))
+                  .sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "it"))
+                  .map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             <Button variant="outline" size="icon" onClick={() => setShowNewCantiere(true)}>

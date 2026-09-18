@@ -126,7 +126,10 @@ export default function TimbraturaRapidaPanel({ timbrature, cantiere, cantieri, 
               <SelectValue placeholder="Seleziona cantiere..." />
             </SelectTrigger>
             <SelectContent>
-              {cantieri.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+              {cantieri
+                .filter((c) => (c.stato ? c.stato === "aperto" : c.attivo !== false))
+                .sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "it"))
+                .map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
