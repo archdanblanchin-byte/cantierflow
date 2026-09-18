@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, Zap } from "lucide-react";
 import OreInput from "@/components/wizard/OreInput";
+import { fmtOre } from "@/lib/timbratureUtils";
 
 export default function Step3LavorazioniExtra({ data, onChange }) {
   const extras = data.lavorazioni_extra || [];
@@ -88,7 +89,7 @@ export default function Step3LavorazioniExtra({ data, onChange }) {
           {extras.length > 0 && (
             <div className="rounded-xl border border-border bg-muted/30 p-4 flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Totale ore extra</span>
-              <span className="text-lg font-bold">{totaleExtra.toFixed(2).replace(".", ",")}h</span>
+              <span className="text-lg font-bold">{fmtOre(totaleExtra)}</span>
             </div>
           )}
         </>

@@ -6,6 +6,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Trash2, Wrench, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import OreInput from "@/components/wizard/OreInput";
+import NumeroInput from "@/components/wizard/NumeroInput";
+import { fmtOre } from "@/lib/timbratureUtils";
 
 export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazione }) {
   const lavorazioni = data.lavorazioni_normali || [];
@@ -173,7 +175,7 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">N° persone</Label>
-                <OreInput
+                <NumeroInput
                   value={lav.numero_persone ?? 0}
                   step={1}
                   onChange={(v) => updateLavorazione(i, { numero_persone: v })}
@@ -182,19 +184,21 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
               <div>
                 <Label className="text-xs text-muted-foreground">Ore/persona</Label>
                 <OreInput
+                  compact
                   value={lav.ore_per_persona ?? 0}
                   onChange={(v) => updateLavorazione(i, { ore_per_persona: v })}
                 />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Ore totali</Label>
-                <Input type="text" inputMode="decimal" value={lav.ore_totali ?? 0} disabled className="mt-1 bg-muted font-semibold text-center font-semibold" />
+                <Input type="text" value={fmtOre(lav.ore_totali ?? 0)} disabled className="mt-1 bg-muted font-semibold text-center text-xs" />
               </div>
             </div>
           ) : (
             <div className="w-44">
               <Label className="text-xs text-muted-foreground">Ore totali</Label>
               <OreInput
+                compact
                 value={lav.ore_totali ?? 0}
                 onChange={(v) => updateLavorazione(i, { ore_totali: v })}
               />
@@ -216,15 +220,15 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
         <div className="divide-y divide-border">
           <div className="flex justify-between items-center px-4 py-2.5 text-sm">
             <span className="text-muted-foreground">Ore lavoratori</span>
-            <span className="font-semibold">{oreLavoratori.toFixed(2).replace(".", ",")}h</span>
+            <span className="font-semibold">{fmtOre(oreLavoratori)}</span>
           </div>
           <div className="flex justify-between items-center px-4 py-2.5 text-sm">
             <span className="text-muted-foreground">− Ore extra</span>
-            <span className="font-semibold text-amber-600">−{oreExtra.toFixed(2).replace(".", ",")}h</span>
+            <span className="font-semibold text-amber-600">−{fmtOre(oreExtra)}</span>
           </div>
           <div className="flex justify-between items-center px-4 py-2.5 text-sm">
             <span className="text-muted-foreground">− Ore normali (da preventivo)</span>
-            <span className="font-semibold text-primary">−{oreNormali.toFixed(2).replace(".", ",")}h</span>
+            <span className="font-semibold text-primary">−{fmtOre(oreNormali)}</span>
           </div>
           <div
             className={cn(
@@ -240,12 +244,12 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
               {isSforato && <AlertCircle className="w-4 h-4" />}
               <span>
                 {isValid && "✅ In pareggio — puoi procedere"}
-                {isMancante && `⚠️ Mancano ${Math.abs(delta).toFixed(2).replace(".", ",")}h da assegnare`}
-                {isSforato && `❌ Sforato di ${Math.abs(delta).toFixed(2).replace(".", ",")}h`}
+                {isMancante && `⚠️ Mancano ${fmtOre(Math.abs(delta))} da assegnare`}
+                {isSforato && `❌ Sforato di ${fmtOre(Math.abs(delta))}`}
               </span>
             </div>
             <span className={isValid ? "text-green-700" : isSforato ? "text-red-700" : "text-amber-700"}>
-              = {delta.toFixed(2).replace(".", ",")}h
+              = {delta < 0 ? "−" : ""}{fmtOre(Math.abs(delta))}
             </span>
           </div>
         </div>

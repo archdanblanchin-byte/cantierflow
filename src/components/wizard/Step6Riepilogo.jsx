@@ -58,7 +58,7 @@ export default function Step6Riepilogo({ data }) {
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
           <div>
-            <p className="font-semibold">Ore non in pareggio: {delta > 0 ? "mancano" : "sforato di"} {Math.abs(delta).toFixed(2).replace(".", ",")}h</p>
+            <p className="font-semibold">Ore non in pareggio: {delta > 0 ? "mancano" : "sforato di"} {fmtOre(Math.abs(delta))}</p>
             <p className="text-xs mt-0.5">Torna allo step Lavorazioni e assegna tutte le ore dei collaboratori. Il pulsante «Invia» resta bloccato finché le ore non tornano.</p>
           </div>
         </div>
@@ -84,9 +84,9 @@ export default function Step6Riepilogo({ data }) {
         {(data.ore_utilizzo_piattaforma > 0 || data.ore_noleggio_mezzi > 0 || data.ore_noleggio_plexi > 0) && (
           <div className="p-4">
             <Section icon={Truck} title="Mezzi / Noleggi">
-              <Row label="Piattaforma aerea" value={data.ore_utilizzo_piattaforma ? `${data.ore_utilizzo_piattaforma}h` : null} />
-              <Row label="Noleggio mezzi" value={data.ore_noleggio_mezzi ? `${data.descrizione_noleggio_mezzi || ""} — ${data.ore_noleggio_mezzi}h` : null} />
-              <Row label="Noleggio plexi" value={data.ore_noleggio_plexi ? `${data.descrizione_noleggio_plexi || ""} — ${data.ore_noleggio_plexi}h` : null} />
+              <Row label="Piattaforma aerea" value={data.ore_utilizzo_piattaforma ? fmtOre(data.ore_utilizzo_piattaforma) : null} />
+              <Row label="Noleggio mezzi" value={data.ore_noleggio_mezzi ? `${data.descrizione_noleggio_mezzi || ""} — ${fmtOre(data.ore_noleggio_mezzi)}` : null} />
+              <Row label="Noleggio plexi" value={data.ore_noleggio_plexi ? `${data.descrizione_noleggio_plexi || ""} — ${fmtOre(data.ore_noleggio_plexi)}` : null} />
             </Section>
           </div>
         )}
@@ -113,7 +113,7 @@ export default function Step6Riepilogo({ data }) {
               <div key={i} className="flex items-center justify-between py-1 text-sm">
                 <span>{c.nome}</span>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">{c.ore_lavorate}h</Badge>
+                  <Badge variant="secondary" className="text-xs">{fmtOre(c.ore_lavorate)}</Badge>
                   {c.note_imprevisti && <span className="text-xs text-muted-foreground italic">{c.note_imprevisti}</span>}
                 </div>
               </div>
@@ -123,11 +123,11 @@ export default function Step6Riepilogo({ data }) {
 
         {data.has_lavorazioni_extra && (data.lavorazioni_extra || []).length > 0 && (
           <div className="p-4">
-            <Section icon={Zap} title={`Lavorazioni Extra (${sommaOreExtra}h)`}>
+            <Section icon={Zap} title={`Lavorazioni Extra (${fmtOre(sommaOreExtra)})`}>
               {(data.lavorazioni_extra || []).map((l, i) => (
                 <div key={i} className="flex justify-between text-sm py-1">
                   <span>{l.descrizione || "—"}</span>
-                  <Badge variant="secondary" className="text-xs">{l.ore}h</Badge>
+                  <Badge variant="secondary" className="text-xs">{fmtOre(l.ore)}</Badge>
                 </div>
               ))}
             </Section>
@@ -135,12 +135,12 @@ export default function Step6Riepilogo({ data }) {
         )}
 
         <div className="p-4">
-          <Section icon={Wrench} title={`Lavorazioni Normali (${sommaOreNormali.toFixed(1)}h)`}>
+          <Section icon={Wrench} title={`Lavorazioni Normali (${fmtOre(sommaOreNormali)})`}>
             {(data.lavorazioni_normali || []).map((l, i) => (
               <div key={i} className="py-1.5 text-sm">
                 <div className="flex justify-between">
                   <span className="font-medium">{l.tipo_lavorazione_nome || l.descrizione_custom || "—"}</span>
-                  <Badge variant="secondary" className="text-xs">{l.ore_totali}h</Badge>
+                  <Badge variant="secondary" className="text-xs">{fmtOre(l.ore_totali)}</Badge>
                 </div>
                 {l.descrizione && (
                   <p className="text-xs text-muted-foreground mt-0.5">{l.descrizione}</p>

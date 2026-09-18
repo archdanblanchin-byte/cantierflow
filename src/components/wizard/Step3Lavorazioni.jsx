@@ -9,9 +9,11 @@ import { Plus, Trash2, Zap, Wrench, AlertCircle, CheckCircle2, AlertTriangle, Us
 import { cn } from "@/lib/utils";
 import AudioLavorazioniRecorder from "@/components/wizard/AudioLavorazioniRecorder";
 import OreInput from "@/components/wizard/OreInput";
+import NumeroInput from "@/components/wizard/NumeroInput";
 import NuovaLavorazioneDialog from "@/components/wizard/NuovaLavorazioneDialog";
+import { fmtOre } from "@/lib/timbratureUtils";
 
-const fmtH = (n) => Number(n || 0).toFixed(2).replace(".", ",");
+const fmtH = (n) => fmtOre(n);
 
 // ─── LAVORAZIONI EXTRA ────────────────────────────────────────────────────────
 
@@ -80,7 +82,7 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
                 </span>
                 {perPersone &&
               <span className="text-[11px] font-medium bg-muted text-muted-foreground rounded-full px-2 py-0.5 tabular-nums">
-                    {extra.numero_persone || 0} × {fmtH(extra.ore_per_persona)}h = {fmtH(extra.ore)}h
+                    {extra.numero_persone || 0} × {fmtH(extra.ore_per_persona)} = {fmtH(extra.ore)}
                   </span>
               }
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-auto flex-shrink-0" onClick={() => removeExtra(i)}>
@@ -140,7 +142,7 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
                 <div className="flex flex-wrap items-end gap-2">
                     <div className="w-28">
                       <Label className="text-[11px] text-muted-foreground">N° persone</Label>
-                      <OreInput
+                      <NumeroInput
                         compact
                         step={1}
                         value={extra.numero_persone ?? 0}
@@ -256,7 +258,7 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
             }
             {perPersone &&
             <span className="text-[11px] font-medium bg-muted text-muted-foreground rounded-full px-2 py-0.5 tabular-nums">
-                {lav.numero_persone || 0} × {fmtH(lav.ore_per_persona)}h = {fmtH(lav.ore_totali)}h
+                {lav.numero_persone || 0} × {fmtH(lav.ore_per_persona)} = {fmtH(lav.ore_totali)}
               </span>
             }
             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-auto flex-shrink-0" onClick={() => removeLav(i)}>
@@ -325,7 +327,7 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
             <div className="flex flex-wrap items-end gap-2">
                 <div className="w-28">
                   <Label className="text-[11px] text-muted-foreground">N° persone</Label>
-                  <OreInput
+                  <NumeroInput
                     compact
                     step={1}
                     value={lav.numero_persone ?? 0}
@@ -372,15 +374,15 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
         <div className="divide-y divide-border">
           <div className="flex justify-between items-center px-4 py-2 text-sm">
             <span className="text-muted-foreground">Ore lavoratori</span>
-            <span className="font-semibold">{fmtH(oreLavoratori)}h</span>
+            <span className="font-semibold">{fmtH(oreLavoratori)}</span>
           </div>
           <div className="flex justify-between items-center px-4 py-2 text-sm">
             <span className="text-muted-foreground">− Ore extra</span>
-            <span className="font-semibold text-amber-600">−{fmtH(oreExtra)}h</span>
+            <span className="font-semibold text-amber-600">−{fmtH(oreExtra)}</span>
           </div>
           <div className="flex justify-between items-center px-4 py-2 text-sm">
             <span className="text-muted-foreground">− Ore normali</span>
-            <span className="font-semibold text-primary">−{fmtH(oreNormali)}h</span>
+            <span className="font-semibold text-primary">−{fmtH(oreNormali)}</span>
           </div>
           <div className={cn(
             "flex justify-between items-center px-4 py-3 text-sm font-bold border-t-2",
@@ -394,11 +396,11 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
               {isSforato && <AlertCircle className="w-4 h-4" />}
               <span>
                 {isValid && "In pareggio"}
-                {isMancante && `Mancano ${fmtH(Math.abs(delta))}h`}
-                {isSforato && `Sforato di ${fmtH(Math.abs(delta))}h`}
+                {isMancante && `Mancano ${fmtH(Math.abs(delta))}`}
+                {isSforato && `Sforato di ${fmtH(Math.abs(delta))}`}
               </span>
             </div>
-            <span>= {fmtH(delta)}h</span>
+            <span>= {delta < 0 ? "−" : ""}{fmtH(Math.abs(delta))}</span>
           </div>
         </div>
       </div>

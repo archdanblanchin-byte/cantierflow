@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Archive, MapPin, Clock, ChevronRight, Search, Building2, RotateCcw } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { fmtOre } from "@/lib/timbratureUtils";
 import { useToast } from "@/components/ui/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -181,7 +182,7 @@ export default function ArchivioCantieri() {
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            {ore.toFixed(1)}h lavorate
+                            {fmtOre(ore)} lavorate
                           </span>
                         </div>
                       </div>

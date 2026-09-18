@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, MapPin, Clock, ChevronRight, Building2, ArrowLeft, CheckCircle2, Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { fmtOre } from "@/lib/timbratureUtils";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -230,9 +231,9 @@ export default function Cantieri() {
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            {ore.toFixed(1)}h lavorate
+                            {fmtOre(ore)} lavorate
                           </span>
-                          {c.ore_stimate > 0 && <span>/ {c.ore_stimate}h stimate</span>}
+                          {c.ore_stimate > 0 && <span>/ {fmtOre(c.ore_stimate)} stimate</span>}
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 flex-shrink-0">

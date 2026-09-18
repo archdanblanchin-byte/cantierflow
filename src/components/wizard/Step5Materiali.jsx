@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Package } from "lucide-react";
 import AudioMaterialiRecorder from "@/components/wizard/AudioMaterialiRecorder";
-import OreInput from "@/components/wizard/OreInput";
+import NumeroInput from "@/components/wizard/NumeroInput";
 
 export default function Step5Materiali({ data, onChange, materialiBase }) {
   const materiali = data.materiali || [];
@@ -131,7 +131,7 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Quantità</Label>
-              <OreInput
+              <NumeroInput
                 compact
                 value={mat.quantita ?? 0}
                 onChange={(v) => updateMateriale(i, { quantita: v })}

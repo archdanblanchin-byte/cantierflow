@@ -144,7 +144,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
             <OreInput value={oreTotali} onChange={(v) => onChange({ ore_totali_squadra: v })} /> :
 
             <div className="flex items-center gap-2 h-9 px-3 rounded-md bg-muted border border-border">
-                <span className="font-semibold">{oreTotali.toFixed(2).replace(".", ",")}h</span>
+                <span className="font-semibold">{fmtOre(oreTotali)}</span>
                 <span className="text-[11px] text-muted-foreground ml-auto">calcolate dalle timbrature</span>
               </div>
             }
@@ -268,7 +268,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
             <span>{collaboratori.length} lavorator{collaboratori.length === 1 ? "e" : "i"}</span>
           </div>
           <div className="text-right">
-            <span className="text-lg font-bold text-foreground">{totaleOreLavoratori.toFixed(2).replace(".", ",")}h</span>
+            <span className="text-lg font-bold text-foreground">{fmtOre(totaleOreLavoratori)}</span>
             <p className="text-[10px] text-muted-foreground">Totale ore lavoratori</p>
           </div>
         </div>

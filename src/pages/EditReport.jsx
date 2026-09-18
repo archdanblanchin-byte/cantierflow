@@ -16,6 +16,7 @@ import Step3Lavorazioni from "@/components/wizard/Step3Lavorazioni";
 import Step4Materiali from "@/components/wizard/Step5Materiali";
 import Step5Riepilogo from "@/components/wizard/Step6Riepilogo";
 import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
+import { fmtOre } from "@/lib/timbratureUtils";
 
 const TOTAL_STEPS = 5;
 
@@ -89,7 +90,7 @@ export default function EditReport() {
       const oreNorm = (formData.lavorazioni_normali || []).reduce((s, l) => s + (l.ore_totali || 0), 0);
       const delta = oreLav - oreExtra - oreNorm;
       if (Math.abs(delta) >= 0.01) {
-        toast.error(delta > 0 ? `Mancano ${delta.toFixed(2)}h da assegnare` : `Sforato di ${Math.abs(delta).toFixed(2)}h`);
+        toast.error(delta > 0 ? `Mancano ${fmtOre(delta)} da assegnare` : `Sforato di ${fmtOre(Math.abs(delta))}`);
         return false;
       }
     }

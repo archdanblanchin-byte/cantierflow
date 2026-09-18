@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
+import { fmtOre } from "@/lib/timbratureUtils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -274,9 +275,9 @@ export default function CantiereDetail() {
             <Calculator className="w-3.5 h-3.5" /> Ore Lavorate (dai rapportini)
           </h2>
           <div className="grid grid-cols-3 gap-3">
-            <StatCard label="Totale ore" value={`${oreTotali.toFixed(1)}h`} sub={cantiere.ore_stimate ? `/ ${cantiere.ore_stimate}h stimate` : ""} color="text-primary" />
-            <StatCard label="Ore normali" value={`${oreNormali.toFixed(1)}h`} />
-            <StatCard label="Ore extra" value={`${oreExtra.toFixed(1)}h`} color="text-amber-600" />
+            <StatCard label="Totale ore" value={fmtOre(oreTotali)} sub={cantiere.ore_stimate ? `/ ${fmtOre(cantiere.ore_stimate)} stimate` : ""} color="text-primary" />
+            <StatCard label="Ore normali" value={fmtOre(oreNormali)} />
+            <StatCard label="Ore extra" value={fmtOre(oreExtra)} color="text-amber-600" />
           </div>
         </div>
 
@@ -286,9 +287,9 @@ export default function CantiereDetail() {
             <Truck className="w-3.5 h-3.5" /> Mezzi e Attrezzature
           </h2>
           <div className="grid grid-cols-3 gap-3">
-            <StatCard label="Piattaforma" value={`${orePiattaforma.toFixed(1)}h`} />
-            <StatCard label="Noleggio mezzi" value={`${oreMezzi.toFixed(1)}h`} />
-            <StatCard label="Noleggio attrezzi" value={`${oreAttrezzi.toFixed(1)}h`} />
+            <StatCard label="Piattaforma" value={fmtOre(orePiattaforma)} />
+            <StatCard label="Noleggio mezzi" value={fmtOre(oreMezzi)} />
+            <StatCard label="Noleggio attrezzi" value={fmtOre(oreAttrezzi)} />
           </div>
         </div>
 
@@ -316,7 +317,7 @@ export default function CantiereDetail() {
                       <Link key={r.id} to={`/report/${r.id}`} className="flex items-center justify-between rounded-xl border border-border bg-card p-3 hover:border-primary/20 transition-colors">
                         <div className="text-sm">
                           <p className="font-medium">{(r.collaboratori || []).length} collaboratori</p>
-                          <p className="text-xs text-muted-foreground">{r.ore_totali_squadra ? `${r.ore_totali_squadra}h` : ""}</p>
+                          <p className="text-xs text-muted-foreground">{r.ore_totali_squadra ? fmtOre(r.ore_totali_squadra) : ""}</p>
                         </div>
                         <Badge variant={r.stato === "inviato" ? "default" : "secondary"} className="text-[10px] uppercase">
                           {r.stato === "inviato" ? "Inviato" : "Bozza"}

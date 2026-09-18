@@ -195,9 +195,9 @@ export default function ReportDetail() {
 
           {(d.ore_utilizzo_piattaforma > 0 || d.ore_noleggio_mezzi > 0 || d.ore_noleggio_plexi > 0) && (
             <DetailSection icon={Truck} title="Mezzi / Noleggi">
-              <DetailRow label="Piattaforma aerea" value={d.ore_utilizzo_piattaforma ? `${d.ore_utilizzo_piattaforma}h` : null} />
-              <DetailRow label="Noleggio mezzi" value={d.ore_noleggio_mezzi ? `${d.descrizione_noleggio_mezzi || ""} — ${d.ore_noleggio_mezzi}h` : null} />
-              <DetailRow label="Noleggio plexi" value={d.ore_noleggio_plexi ? `${d.descrizione_noleggio_plexi || ""} — ${d.ore_noleggio_plexi}h` : null} />
+              <DetailRow label="Piattaforma aerea" value={d.ore_utilizzo_piattaforma ? fmtOre(d.ore_utilizzo_piattaforma) : null} />
+              <DetailRow label="Noleggio mezzi" value={d.ore_noleggio_mezzi ? `${d.descrizione_noleggio_mezzi || ""} — ${fmtOre(d.ore_noleggio_mezzi)}` : null} />
+              <DetailRow label="Noleggio plexi" value={d.ore_noleggio_plexi ? `${d.descrizione_noleggio_plexi || ""} — ${fmtOre(d.ore_noleggio_plexi)}` : null} />
             </DetailSection>
           )}
 
@@ -222,7 +222,7 @@ export default function ReportDetail() {
               <div key={i} className="flex items-center justify-between py-1 text-sm">
                 <span>{c.nome}</span>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">{c.ore_lavorate}h</Badge>
+                  <Badge variant="secondary" className="text-xs">{fmtOre(c.ore_lavorate)}</Badge>
                   {c.note_imprevisti && <span className="text-xs text-muted-foreground italic">{c.note_imprevisti}</span>}
                 </div>
               </div>
@@ -234,18 +234,18 @@ export default function ReportDetail() {
               {d.lavorazioni_extra.map((l, i) => (
                 <div key={i} className="flex justify-between text-sm py-0.5">
                   <span>{l.descrizione || "—"}</span>
-                  <Badge variant="secondary" className="text-xs">{l.ore}h</Badge>
+                  <Badge variant="secondary" className="text-xs">{fmtOre(l.ore)}</Badge>
                 </div>
               ))}
             </DetailSection>
           )}
 
-          <DetailSection icon={Wrench} title={`Lavorazioni Normali (${sommaOreNormali.toFixed(1)}h)`}>
+          <DetailSection icon={Wrench} title={`Lavorazioni Normali (${fmtOre(sommaOreNormali)})`}>
             {(d.lavorazioni_normali || []).map((l, i) => (
               <div key={i} className="py-1 text-sm">
                 <div className="flex justify-between">
                   <span>{l.tipo_lavorazione_nome || l.descrizione_custom || "—"}</span>
-                  <Badge variant="secondary" className="text-xs">{l.ore_totali}h</Badge>
+                  <Badge variant="secondary" className="text-xs">{fmtOre(l.ore_totali)}</Badge>
                 </div>
                 {l.descrizione && (
                   <p className="text-xs text-muted-foreground mt-0.5">{l.descrizione}</p>

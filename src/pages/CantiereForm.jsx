@@ -272,6 +272,7 @@ export default function CantiereForm() {
           <div className="w-40">
             <Label className="text-xs text-muted-foreground">Ore stimate</Label>
             <OreInput
+              compact
               value={form.ore_stimate ?? 0}
               onChange={(v) => set("ore_stimate", v)}
             />

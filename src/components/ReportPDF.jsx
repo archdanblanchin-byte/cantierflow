@@ -6,9 +6,10 @@ import { it } from "date-fns/locale";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { toast } from "sonner";
+import { fmtOre } from "@/lib/timbratureUtils";
 
 function fmt(n) {
-  return `${(n || 0).toFixed(1)}h`;
+  return fmtOre(n);
 }
 
 function Section({ title, color = "#2563eb", children }) {
