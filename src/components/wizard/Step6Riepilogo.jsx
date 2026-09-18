@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { fmtOre } from "@/lib/timbratureUtils";
 import { useClassificazioneSpostamento } from "@/hooks/useClassificazioneSpostamento";
+import NotaSpostamentoLavorativo from "@/components/timbrature/NotaSpostamentoLavorativo";
 
 function Section({ icon: Icon, title, children }) {
   return (
@@ -105,6 +106,9 @@ export default function Step6Riepilogo({ data }) {
               </div>
             </div>
             <Row label="Totale ore cantiere" value={fmtOre((data.ore_totali_squadra || 0) + (data.ore_spostamento || 0))} />
+            {spoTipo === "lavorative" && (data.ore_spostamento || 0) > 0 && (
+              <div className="pt-1"><NotaSpostamentoLavorativo /></div>
+            )}
             {(data.collaboratori || []).map((c, i) => (
               <div key={i} className="flex items-center justify-between py-1 text-sm">
                 <span>{c.nome}</span>

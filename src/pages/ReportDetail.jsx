@@ -13,6 +13,7 @@ import {
 import DetailSection, { DetailRow } from "@/components/detail/DetailSection";
 import { fmtOre } from "@/lib/timbratureUtils";
 import { useClassificazioneSpostamento } from "@/hooks/useClassificazioneSpostamento";
+import NotaSpostamentoLavorativo from "@/components/timbrature/NotaSpostamentoLavorativo";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -214,6 +215,9 @@ export default function ReportDetail() {
               </div>
             </div>
             <DetailRow label="Totale ore cantiere" value={fmtOre((d.ore_totali_squadra || 0) + (d.ore_spostamento || 0))} />
+            {spoTipo === "lavorative" && (d.ore_spostamento || 0) > 0 && (
+              <div className="pt-1"><NotaSpostamentoLavorativo /></div>
+            )}
             {(d.collaboratori || []).map((c, i) => (
               <div key={i} className="flex items-center justify-between py-1 text-sm">
                 <span>{c.nome}</span>

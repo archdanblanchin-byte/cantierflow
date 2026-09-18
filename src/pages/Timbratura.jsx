@@ -22,6 +22,7 @@ import { calcolaOrePerCantiere, generaRapportiniDaGiornata, syncRapportinoOreDaT
 import { getRuoloLabel } from "@/lib/permissions";
 import NewCantiereModal from "@/components/wizard/NewCantiereModal";
 import CantierePickerDialog from "@/components/timbrature/CantierePickerDialog";
+import NotaSpostamentoLavorativo from "@/components/timbrature/NotaSpostamentoLavorativo";
 
 // Finestra di tempo entro cui un utente può annullare/modificare un timbro accidentale (1 ora)
 const UNDO_WINDOW_MS = 60 * 60 * 1000;
@@ -580,6 +581,7 @@ export default function Timbratura() {
               </span>
             </div>
             )}
+            {totSpostamento > 0 && !isTrasferta && <NotaSpostamentoLavorativo />}
             {totPausa > 0 && (
               <p className="text-[11px] text-muted-foreground text-center">
                 Pausa pranzo: <span className="font-medium">{fmtOre(totPausa)}</span> (non conteggiata nelle ore lavorative)

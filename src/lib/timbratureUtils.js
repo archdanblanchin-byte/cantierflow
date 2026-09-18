@@ -77,9 +77,13 @@ export function arrotondaQuarti(ms) {
   return Math.round(ore * 4) / 4;
 }
 
-// Arrotonda un valore in ms al multiplo di `stepMin` minuti più vicino (default 5 min).
+// Arrotondamento delle ore di lavorazione a frazioni di 15 minuti
+// (0, 15, 30, 45 min, ora piena): 8h02 -> 8h00, 8h10 -> 8h15.
+export const ARROTONDAMENTO_MIN = 15;
+
+// Arrotonda un valore in ms al multiplo di `stepMin` minuti più vicino (default 15 min).
 // Da usare SOLO sul totale finale, non sulle singole sessioni (che vanno lasciate esatte).
-export function arrotondaMinuti(ms, stepMin = 5) {
+export function arrotondaMinuti(ms, stepMin = ARROTONDAMENTO_MIN) {
   if (!ms || ms < 0) return 0;
   const totalMin = ms / 60000;
   const roundedMin = Math.round(totalMin / stepMin) * stepMin;
