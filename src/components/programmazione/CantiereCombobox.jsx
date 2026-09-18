@@ -9,7 +9,9 @@ export default function CantiereCombobox({ cantieri, value, onSelect, excludedId
   const [open, setOpen] = useState(false);
   const selected = cantieri.find((c) => c.id === value);
 
-  const disponibili = cantieri.filter((c) => !excludedIds.has(c.id));
+  const disponibili = cantieri
+    .filter((c) => (c.stato ? c.stato === "aperto" : c.attivo !== false) && !excludedIds.has(c.id))
+    .sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "it"));
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

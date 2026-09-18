@@ -47,7 +47,10 @@ export default function Step1DatiCantiere({ data, onChange, cantieri, onCantieri
                   const c = (cantieri || []).find((c) => c.id === val);
                   onChange({ cantiere_id: val, cantiere_nome: c?.nome || "" });
                 }}
-                options={(cantieri || []).filter((c) => c.attivo !== false).map((c) => ({ value: c.id, label: c.nome }))}
+                options={(cantieri || [])
+                  .filter((c) => (c.stato ? c.stato === "aperto" : c.attivo !== false) || c.id === data.cantiere_id)
+                  .sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "it"))
+                  .map((c) => ({ value: c.id, label: c.nome }))}
                 placeholder="Seleziona cantiere..."
               />
             </div>

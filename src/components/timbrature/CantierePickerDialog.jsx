@@ -21,7 +21,9 @@ export default function CantierePickerDialog({
 
   const filtrati = useMemo(() => {
     const term = q.trim().toLowerCase();
-    const list = (cantieri || []).filter((c) => c.attivo !== false);
+    const list = (cantieri || [])
+      .filter((c) => (c.stato ? c.stato === "aperto" : c.attivo !== false))
+      .sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "it"));
     if (!term) return list;
     return list.filter(
       (c) =>
