@@ -237,7 +237,7 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
             <div className="flex items-end gap-2 ml-auto">
               {lav.modalita_calcolo === "per_persone" ?
             <>
-                  <div className="w-[4.5rem] mx-8">
+                  <div className="w-[4.5rem] ml-8 mr-8">
                     <Label className="text-[11px] text-muted-foreground">Persone</Label>
                     <OreInput
                   value={lav.numero_persone ?? 0}
