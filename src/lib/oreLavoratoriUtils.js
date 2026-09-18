@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { arrotondaOre, arrotondaQuarti, distanzaKm, getCapannone, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
+import { arrotondaOre, arrotondaQuarti, distanzaKm, distanzaKmStrada, getCapannone, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
 
 export function arrotondaOreQuarti(ore) {
   return arrotondaOre(ore);
@@ -37,7 +37,7 @@ export function calcolaSpostamenti(timbratureGiorno) {
  *  - Ritorno: ultimo cantiere (ultimo ingresso) -> capannone
  *  - fasce separate + combinazione "metà andata + metà ritorno"
  */
-export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config, distanze = null) {
+export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config) {
   const tims = (timbratureGiorno || [])
     .slice()
     .sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
@@ -50,13 +50,13 @@ export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config, dista
   const primoCantiere = cantieri.find((c) => c.id === primo.cantiere_id);
   const ultimoCantiere = cantieri.find((c) => c.id === ultimo.cantiere_id);
 
-  // distanze: km reali di strada (Google Maps) passati dal chiamante; altrimenti linea d'aria
-  const kmAndata = distanze?.kmAndata ?? (primoCantiere?.latitudine != null
-    ? distanzaKm(capannone.lat, capannone.lon, primoCantiere.latitudine, primoCantiere.longitudine)
-    : null);
-  const kmRitorno = distanze?.kmRitorno ?? (ultimoCantiere?.latitudine != null
-    ? distanzaKm(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
-    : null);
+  // km stimati di strada (linea d'aria + fattore di correzione): capannone <-> cantiere
+  const kmAndata = primoCantiere?.latitudine != null
+    ? distanzaKmStrada(capannone.lat, capannone.lon, primoCantiere.latitudine, primoCantiere.longitudine)
+    : null;
+  const kmRitorno = ultimoCantiere?.latitudine != null
+    ? distanzaKmStrada(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
+    : null;
   if (kmAndata == null && kmRitorno == null) return null;
 
   const split = classificaTrasfertaSplit(kmAndata, kmRitorno, config);

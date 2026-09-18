@@ -21,6 +21,14 @@ export function distanzaKm(lat1, lon1, lat2, lon2) {
   return Math.round((distanzaM(lat1, lon1, lat2, lon2) / 1000) * 10) / 10;
 }
 
+// Fattore di correzione per stimare i km reali di strada partendo dalla distanza
+// in linea d'aria (che tende a sottostimare: il percorso stradale è più lungo).
+export const FATTORE_STRADA = 1.3;
+
+export function distanzaKmStrada(lat1, lon1, lat2, lon2) {
+  return Math.round(distanzaKm(lat1, lon1, lat2, lon2) * FATTORE_STRADA * 10) / 10;
+}
+
 export function getPosizione() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
