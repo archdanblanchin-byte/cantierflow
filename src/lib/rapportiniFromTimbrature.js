@@ -139,6 +139,7 @@ export function buildSquadraDaTimbrature(timbrature, collaboratoriList = []) {
         spostamentoMs: 0,
         primo: null,
         ultimo: null,
+        note: [],
       });
     }
     const u = perUser.get(email);
@@ -149,6 +150,7 @@ export function buildSquadraDaTimbrature(timbrature, collaboratoriList = []) {
   tOrd.forEach((t, idx) => {
     if (!t.user_email) return;
     const u = getU(t.user_email, t.user_nome);
+    if (t.nota) u.note.push(t.nota);
     if (t.tipo_evento === "ingresso") {
       if (!u.primo) u.primo = t;
       u.ultimo = t;
@@ -211,6 +213,7 @@ export function buildSquadraDaTimbrature(timbrature, collaboratoriList = []) {
       spostamento_minuti: minutiDa(u.spostamentoMs),
       ore_lavorate: arrotondaMinuti(oreMs),
       cantieri: u.cantieri,
+      note_timbrature: [...new Set(u.note)].join(" · "),
       anomalia: "",
     };
   });
@@ -281,8 +284,10 @@ export async function generaRapportiniDaGiornata({
 
   const creati = [];
   for (const [cid, timb] of Object.entries(perCantiere)) {
+    // Il rapportino nasce al primo ingresso nel cantiere, anche con ore ancora a 0:
+    // poi si aggiorna da solo a ogni timbratura della squadra.
     const calc = oreCantieri.find((c) => c.cantiere_id === cid);
-    if (!calc || calc.ore <= 0) continue;
+    if (!calc) continue;
     const esiste = (rapportiniEsistenti || []).some(
       (r) => r.cantiere_id === cid && stessaGiornata(r.data, giorno)
     );
@@ -345,4 +350,42 @@ export async function syncRapportinoOreDaTimbratura({ cantiere_id, giorno }) {
 
   await base44.entities.Rapportino.update(r.id, { ore_totali_squadra: ore, ore_spostamento, collaboratori });
   return { ...r, ore_totali_squadra: ore, ore_spostamento, collaboratori };
+}
+
+// Minuti della giornata non coperti né da lavoro né da pausa registrata:
+// è il tempo che l'operatore deve spiegare alla chiusura del cantiere
+// (spostamenti tra cantieri, fermate, commissioni).
+export function minutiScopertiGiornata(timbrature) {
+  const tOrd = sortTimbri(timbrature);
+  const ingressi = tOrd.filter((t) => t.tipo_evento === "ingresso");
+  const uscite = tOrd.filter((t) => t.tipo_evento === "uscita");
+  if (!ingressi.length || !uscite.length) return 0;
+
+  const intervallo = new Date(uscite[uscite.length - 1].data_ora) - new Date(ingressi[0].data_ora);
+  const aperte = new Map();
+  let lavorato = 0;
+  let pausa = 0;
+
+  tOrd.forEach((t) => {
+    const e = t.user_email || "anon";
+    if (t.tipo_evento === "ingresso") {
+      aperte.set(e, { start: new Date(t.data_ora), pausaMs: 0, pausaIn: null });
+    } else if (t.tipo_evento === "pausa_inizio") {
+      const s = aperte.get(e);
+      if (s) s.pausaIn = new Date(t.data_ora);
+    } else if (t.tipo_evento === "pausa_fine") {
+      const s = aperte.get(e);
+      if (s && s.pausaIn) { s.pausaMs += new Date(t.data_ora) - s.pausaIn; s.pausaIn = null; }
+    } else if (t.tipo_evento === "uscita" || t.tipo_evento === "spostamento") {
+      const s = aperte.get(e);
+      if (s) {
+        if (s.pausaIn) { s.pausaMs += new Date(t.data_ora) - s.pausaIn; s.pausaIn = null; }
+        lavorato += Math.max(0, new Date(t.data_ora) - s.start - s.pausaMs);
+        pausa += s.pausaMs;
+        aperte.delete(e);
+      }
+    }
+  });
+
+  return Math.max(0, Math.round((intervallo - lavorato - pausa) / 60000));
 }

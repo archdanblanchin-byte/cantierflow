@@ -71,9 +71,18 @@
       "default": false,
       "description": "Se lo spostamento \u00e8 stato fatto con mezzo proprio"
     },
-    "note": {
+    "nota": {
       "type": "string",
-      "description": "Note opzionali (es. giustificazione se fuori cantiere)"
+      "description": "Nota individuale dell'operatore (domande guidate alla chiusura del cantiere)"
+    },
+    "risposte_guidata": {
+      "type": "object",
+      "description": "Risposte alle domande guidate: spostamento, fermata, mezzo_proprio"
+    },
+    "confermato_capannone": {
+      "type": "boolean",
+      "default": false,
+      "description": "L'operatore ha confermato di lavorare per il cantiere dal capannone"
     }
   },
   "required": [

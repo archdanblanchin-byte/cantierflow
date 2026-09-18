@@ -31,6 +31,12 @@ function TimbratureInfo({ coll }) {
         }
         <span className="ml-auto font-medium text-foreground">{fmtOre(coll.ore_lavorate)} dalle timbrature</span>
       </div>
+      {coll.note_timbrature &&
+      <div className="flex items-start gap-1.5 rounded-lg bg-primary/5 border border-primary/20 p-2 text-[11px] text-foreground/80">
+          <span className="shrink-0">📝</span>
+          <span><strong>Nota dalle timbrature:</strong> {coll.note_timbrature}</span>
+        </div>
+      }
       {coll.anomalia &&
       <div className="flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200 p-2 text-[11px] text-amber-800">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
@@ -92,7 +98,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
     filter((id) => !collaboratori.some((c) => c.collaboratore_id === id)).
     map((id) => {
       const found = collaboratoriList.find((c) => c.id === id);
-      return { collaboratore_id: id, nome: found.nome, ore_lavorate: oreTotali, note_imprevisti: "" };
+      return { collaboratore_id: id, nome: found.nome, ore_lavorate: 0, note_imprevisti: "" };
     });
     onChange({ collaboratori: [...collaboratori, ...nuovi] });
     setSelected([]);
@@ -206,10 +212,16 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-muted-foreground">Ore lavorate</Label>
-                  <OreInput
-                value={coll.ore_lavorate ?? oreTotali}
-                onChange={(v) => updateCollaboratore(i, "ore_lavorate", v)} />
-              
+                  {canEditOre ?
+                <OreInput
+                  value={coll.ore_lavorate ?? 0}
+                  onChange={(v) => updateCollaboratore(i, "ore_lavorate", v)} /> :
+
+                <div className="flex items-center gap-2 h-9 px-3 rounded-md bg-muted border border-border">
+                      <span className="font-semibold">{fmtOre(coll.ore_lavorate ?? 0)}</span>
+                      <span className="text-[11px] text-muted-foreground ml-auto">dalle timbrature</span>
+                    </div>
+                }
                 </div>
                 <div>
                   <NoteImprevisti

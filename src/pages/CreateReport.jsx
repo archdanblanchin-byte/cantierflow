@@ -58,9 +58,14 @@ export default function CreateReport() {
     partecipanti_email: [],
   });
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
   useEffect(() => {
     base44.auth.me().then((user) => {
-      if (user) setFormData((prev) => ({ ...prev, user_email: user.email }));
+      if (user) {
+        setFormData((prev) => ({ ...prev, user_email: user.email }));
+        setIsAdmin(user.role === "admin");
+      }
     });
   }, []);
 
@@ -273,7 +278,7 @@ export default function CreateReport() {
 
   const stepContent = {
     1: <Step1DatiCantiere data={formData} onChange={updateForm} cantieri={cantieri} onCantieriRefresh={refetchCantieri} />,
-    2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} showErrors={showErrors} />,
+    2: <Step2Collaboratori data={formData} onChange={updateForm} collaboratoriList={collaboratoriList} showErrors={showErrors} canEditOre={isAdmin} />,
     3: <Step3Lavorazioni data={formData} onChange={updateForm} tipiLavorazione={tipiLavorazione} />,
     4: <Step4Materiali data={formData} onChange={updateForm} materialiBase={materialiBase} />,
     5: <Step5Riepilogo data={formData} />,

@@ -3,6 +3,13 @@ import { LogIn, Coffee, LogOut, PlayCircle, Navigation, Route } from "lucide-rea
 // Coordinate del capannone sede (Rivignano Teor, UD)
 export const CAPANNONE = { lat: 45.8533, lon: 12.9997, nome: "Rivignano Teor" };
 
+// Raggio entro il quale un timbro è accettato senza domande (1 km).
+// Configurabile per singolo cantiere tramite il campo raggio_metri.
+export const RAGGIO_ACCETTAZIONE_M = 1000;
+
+// Quanto vicino al capannone deve essere la posizione per considerarla "al capannone"
+export const RAGGIO_CAPANNONE_M = 250;
+
 // Soglie fasce trasferta (in km): T0 < soglia_t0, T1 < soglia_t1, T2 < soglia_t2, T3 < soglia_t3, oltre = T4
 export const SOGLIE_TRASFERTA = { T0: 10, T1: 27, T2: 40, T3: 70 };
 
@@ -64,9 +71,32 @@ export async function getPosizioneEDistanza(cantiere) {
   let inCantiere = true;
   if (gpsDisponibile && lat != null && cantiere?.latitudine && cantiere?.longitudine) {
     distanza = distanzaM(lat, lon, cantiere.latitudine, cantiere.longitudine);
-    inCantiere = distanza <= (cantiere.raggio_metri || 150);
+    inCantiere = distanza <= (cantiere.raggio_metri || RAGGIO_ACCETTAZIONE_M);
   }
   return { lat, lon, distanza, inCantiere, gpsDisponibile };
+}
+
+// Km stimati tra due cantieri (linea d'aria corretta dal fattore strada)
+export function kmTraCantieri(a, b) {
+  if (!a?.latitudine || !a?.longitudine || !b?.latitudine || !b?.longitudine) return null;
+  return distanzaKmStrada(a.latitudine, a.longitudine, b.latitudine, b.longitudine);
+}
+
+// Valuta la posizione GPS rispetto al cantiere e al capannone:
+// entroRaggio = timbro accettato senza domande, alCapannone = serve la conferma.
+export function valutaPosizione(pos, cantiere, capannone) {
+  const raggio = cantiere?.raggio_metri || RAGGIO_ACCETTAZIONE_M;
+  let distanza = null;
+  let entroRaggio = true;
+  if (pos?.lat != null && pos?.lon != null && cantiere?.latitudine && cantiere?.longitudine) {
+    distanza = distanzaM(pos.lat, pos.lon, cantiere.latitudine, cantiere.longitudine);
+    entroRaggio = distanza <= raggio;
+  }
+  let alCapannone = false;
+  if (pos?.lat != null && pos?.lon != null && capannone?.lat != null && capannone?.lon != null) {
+    alCapannone = distanzaM(pos.lat, pos.lon, capannone.lat, capannone.lon) <= RAGGIO_CAPANNONE_M;
+  }
+  return { distanza, entroRaggio, alCapannone, raggio };
 }
 
 export const STEP_CONFIG = {

@@ -64,8 +64,8 @@
     },
     "raggio_metri": {
       "type": "number",
-      "default": 150,
-      "description": "Raggio di accettazione timbrature in metri"
+      "default": 1000,
+      "description": "Raggio di accettazione timbrature in metri (1 km di default)"
     },
     "foto_cantiere": {
       "type": "array",

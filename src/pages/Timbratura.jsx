@@ -13,16 +13,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import {
   MapPin, Loader2, Clock, LogIn, Coffee, PlayCircle, LogOut,
-  AlertTriangle, CheckCircle2, FileText, Trash2, Pencil, Calendar, Users } from
+  AlertTriangle, CheckCircle2, FileText, Trash2, Pencil, Calendar, Users, Navigation } from
 "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { getPosizioneEDistanza, STEP_CONFIG, arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
-import { calcolaOrePerCantiere, generaRapportiniDaGiornata, syncRapportinoOreDaTimbratura, classificaSpostamentiGiornata } from "@/lib/rapportiniFromTimbrature";
+import { getPosizione, getCapannone, valutaPosizione, kmTraCantieri, STEP_CONFIG, arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
+import { calcolaOrePerCantiere, generaRapportiniDaGiornata, syncRapportinoOreDaTimbratura, classificaSpostamentiGiornata, minutiScopertiGiornata } from "@/lib/rapportiniFromTimbrature";
 import { getRuoloLabel } from "@/lib/permissions";
 import NewCantiereModal from "@/components/wizard/NewCantiereModal";
 import CantierePickerDialog from "@/components/timbrature/CantierePickerDialog";
 import NotaSpostamentoLavorativo from "@/components/timbrature/NotaSpostamentoLavorativo";
+import ConfermaPosizioneDialog from "@/components/timbrature/ConfermaPosizioneDialog";
+import DomandeGuidaDialog from "@/components/timbrature/DomandeGuidaDialog";
 
 // Finestra di tempo entro cui un utente può annullare/modificare un timbro accidentale (1 ora)
 const UNDO_WINDOW_MS = 60 * 60 * 1000;
@@ -38,7 +40,6 @@ export default function Timbratura() {
   const [user, setUser] = useState(null);
   const [loadingTipo, setLoadingTipo] = useState(null);
   const [error, setError] = useState(null);
-  const [generando, setGenerando] = useState(false);
   const [eliminando, setEliminando] = useState(null);
   const [editando, setEditando] = useState(null);
   const [editForm, setEditForm] = useState({ cantiere_id: "", tipo_evento: "ingresso", data_ora: "" });
@@ -50,6 +51,10 @@ export default function Timbratura() {
   const [showNewCantiere, setShowNewCantiere] = useState(false);
   // Apertura lavoro in attesa della scelta del cantiere nel picker dialog
   const [pendingCantiereAction, setPendingCantiereAction] = useState(null);
+  // Conferma posizione (al capannone o fuori raggio) prima di registrare il timbro
+  const [confermaPosizione, setConfermaPosizione] = useState(null);
+  // Domande guidate alla chiusura del cantiere
+  const [domandeGuida, setDomandeGuida] = useState(null);
 
   useEffect(() => {base44.auth.me().then(setUser).catch(() => {});}, []);
 
@@ -67,6 +72,12 @@ export default function Timbratura() {
     queryKey: ["collaboratori"],
     queryFn: () => base44.entities.Collaboratore.list()
   });
+
+  const { data: configTrasferta = [] } = useQuery({
+    queryKey: ["config-trasferta"],
+    queryFn: () => base44.entities.ConfigurazioneTrasferta.list()
+  });
+  const capannone = getCapannone(configTrasferta[0]);
 
   const { data: timbrature = [] } = useQuery({
     queryKey: ["timbrature-giornata", user?.email, giornoKey],
@@ -118,6 +129,27 @@ export default function Timbratura() {
   const oreInCorso = calcolaOre();
   const orePerCantiere = calcolaOrePerCantiere(timbratureOrd).filter((c) => c.ore > 0);
 
+  // Spostamenti tra cantieri della giornata, con i km stimati tra i due cantieri
+  const spostamentiOggi = (() => {
+    const out = [];
+    timbratureOrd.forEach((t, i) => {
+      if (t.tipo_evento !== "uscita") return;
+      const next = timbratureOrd.slice(i + 1).find((x) => x.tipo_evento === "ingresso");
+      if (!next || next.cantiere_id === t.cantiere_id) return;
+      const km = kmTraCantieri(
+        cantieri.find((c) => c.id === t.cantiere_id),
+        cantieri.find((c) => c.id === next.cantiere_id)
+      );
+      out.push({
+        da: t.cantiere_nome,
+        a: next.cantiere_nome,
+        min: Math.round((new Date(next.data_ora) - new Date(t.data_ora)) / 60000),
+        km
+      });
+    });
+    return out;
+  })();
+
   // Totali giornata con regola delle 8 ore: se il totale lavorato (esclusi
   // gli spostamenti) è inferiore a 8h, gli spostamenti contano come ore
   // lavorative; se raggiunge o supera le 8h, contano come trasferta.
@@ -142,42 +174,70 @@ export default function Timbratura() {
 
 
 
-  const handleTimbra = async (tipoEvento, cantiereOverride) => {
-    setLoadingTipo(tipoEvento);
+  // Il rapportino unico di cantiere e giornata si crea al primo ingresso e si
+  // riallinea da solo a ogni timbratura della squadra.
+  const aggiornaRapportino = async (cantiereId) => {
+    try {
+      const esistenti = await base44.entities.Rapportino.filter({
+        data: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
+      });
+      const timbGiorno = await base44.entities.Timbratura.filter({
+        data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
+      });
+      await generaRapportiniDaGiornata({
+        user, giorno: inizio, timbrature: timbGiorno,
+        rapportiniEsistenti: esistenti, collaboratoriList
+      });
+      if (cantiereId) await syncRapportinoOreDaTimbratura({ cantiere_id: cantiereId, giorno: inizio });
+      queryClient.invalidateQueries({ queryKey: ["rapportini"] });
+    } catch (e) {
+      // il rapportino si riallinea al prossimo timbro
+    }
+  };
+
+  const registraTimbro = async (tipoEvento, cantiere, { pos, v, extra = {} } = {}) => {
+    const record = await base44.entities.Timbratura.create({
+      cantiere_id: cantiere.id,
+      cantiere_nome: cantiere.nome,
+      rapportino_id: null,
+      user_email: user.email,
+      user_nome: user.full_name || "",
+      tipo_evento: tipoEvento,
+      data_ora: new Date().toISOString(),
+      latitudine: pos?.lat ?? null,
+      longitudine: pos?.lon ?? null,
+      distanza_metri: v?.distanza ?? null,
+      in_cantiere: v ? v.entroRaggio : true,
+      ...extra
+    });
+    setLastTimbro(record);
+    if (v && v.distanza != null && !v.entroRaggio) {
+      setError(`Posizione fuori cantiere: sei a ${(v.distanza / 1000).toFixed(1)} km dal cantiere (raggio ${(v.raggio / 1000).toFixed(1)} km).`);
+    }
+    queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
+    queryClient.invalidateQueries({ queryKey: ["timbrature-giornaliere"] });
+    await aggiornaRapportino(cantiere.id);
+    return record;
+  };
+
+  // Avvia il lavoro: valuta la posizione e, se è al capannone o fuori raggio,
+  // chiede conferma all'operatore prima di registrare il timbro.
+  const avviaIngresso = async (cantiere) => {
+    setLoadingTipo("ingresso");
     setError(null);
     try {
       if (!user) throw new Error("Utente non autenticato");
-      let cantiere = cantiereOverride || activeCantiere;
-      if (tipoEvento === "ingresso" && !cantiere) throw new Error("Cantiere non valido");
-      if (!cantiere) throw new Error("Cantiere non valido");
-      const geo = await getPosizioneEDistanza(cantiere);
-      if (!geo.gpsDisponibile) toast.info("Posizione non disponibile: timbro registrato senza GPS.");
-      const record = await base44.entities.Timbratura.create({
-        cantiere_id: cantiere.id,
-        cantiere_nome: cantiere.nome,
-        rapportino_id: null,
-        user_email: user.email,
-        user_nome: user.full_name || "",
-        tipo_evento: tipoEvento,
-        data_ora: new Date().toISOString(),
-        latitudine: geo.lat,
-        longitudine: geo.lon,
-        distanza_metri: geo.distanza,
-        in_cantiere: geo.inCantiere
-      });
-      setLastTimbro(record);
-      if (!geo.inCantiere && cantiere.latitudine) {
-        setError(`Posizione fuori cantiere! Sei a ${geo.distanza}m (massimo: ${cantiere.raggio_metri || 150}m).`);
+      const pos = await getPosizione().catch(() => null);
+      if (!pos) toast.info("Posizione non disponibile: timbro registrato senza GPS.");
+      const v = valutaPosizione(pos, cantiere, capannone);
+      if (v.alCapannone || !v.entroRaggio) {
+        setConfermaPosizione({
+          tipo: v.alCapannone ? "capannone" : "fuori_raggio",
+          cantiere, distanza: v.distanza, raggio: v.raggio, pos
+        });
+        return;
       }
-      queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
-      queryClient.invalidateQueries({ queryKey: ["timbrature-giornaliere"] });
-      // Aggiorna in automatico le ore del rapportino collegato a questo cantiere/giorno
-      syncRapportinoOreDaTimbratura({
-        user_email: user.email,
-        cantiere_id: cantiere.id,
-        giorno: inizio,
-      }).then(() => queryClient.invalidateQueries({ queryKey: ["rapportini"] }))
-        .catch(() => {});
+      await registraTimbro("ingresso", cantiere, { pos, v });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -185,45 +245,108 @@ export default function Timbratura() {
     }
   };
 
+  const confermaCapannone = async () => {
+    const c = confermaPosizione;
+    setConfermaPosizione(null);
+    setLoadingTipo("ingresso");
+    try {
+      await registraTimbro("ingresso", c.cantiere, {
+        pos: c.pos,
+        v: { distanza: c.distanza, entroRaggio: false, raggio: c.raggio },
+        extra: { confermato_capannone: true, nota: "Lavoro dal capannone per questo cantiere" }
+      });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoadingTipo(null);
+    }
+  };
+
+  const confermaFuoriRaggio = async (nota) => {
+    const c = confermaPosizione;
+    setConfermaPosizione(null);
+    setLoadingTipo("ingresso");
+    try {
+      await registraTimbro("ingresso", c.cantiere, {
+        pos: c.pos,
+        v: { distanza: c.distanza, entroRaggio: false, raggio: c.raggio },
+        extra: { nota }
+      });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoadingTipo(null);
+    }
+  };
+
+  const handlePausa = async (tipoEvento) => {
+    setLoadingTipo(tipoEvento);
+    setError(null);
+    try {
+      const pos = await getPosizione().catch(() => null);
+      const v = valutaPosizione(pos, activeCantiere, capannone);
+      await registraTimbro(tipoEvento, activeCantiere, { pos, v });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoadingTipo(null);
+    }
+  };
+
+  // Chiude il cantiere e, se il tempo non è tutto coperto, apre le domande guidate
+  const handleUscita = async () => {
+    setLoadingTipo("uscita");
+    setError(null);
+    try {
+      if (!user) throw new Error("Utente non autenticato");
+      const pos = await getPosizione().catch(() => null);
+      const v = valutaPosizione(pos, activeCantiere, capannone);
+      const record = await registraTimbro("uscita", activeCantiere, { pos, v });
+      const timb = await base44.entities.Timbratura.filter({
+        user_email: user.email,
+        data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
+      });
+      const mancanti = minutiScopertiGiornata(timb);
+      if (mancanti >= 30) setDomandeGuida({ timbro: record, minutiMancanti: mancanti });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoadingTipo(null);
+    }
+  };
+
+  // Le risposte alle domande guidate diventano la nota individuale della timbratura
+  const salvaRisposteGuida = async ({ spostamento, fermata, mezzoProprio, nota }) => {
+    const d = domandeGuida;
+    setDomandeGuida(null);
+    const parti = [];
+    if (spostamento) parti.push("Tempo mancante fatto di spostamento");
+    if (fermata) parti.push("Fermata in corso d'opera / acquisto materiale");
+    if (mezzoProprio) parti.push("Ha usato il mezzo proprio");
+    if (nota && nota.trim()) parti.push(nota.trim());
+    try {
+      await base44.entities.Timbratura.update(d.timbro.id, {
+        nota: parti.join(" · "),
+        risposte_guidata: {
+          spostamento: !!spostamento,
+          fermata: !!fermata,
+          mezzo_proprio: !!mezzoProprio
+        }
+      });
+      await aggiornaRapportino(d.timbro.cantiere_id);
+      queryClient.invalidateQueries({ queryKey: ["timbrature-giornata", user.email, giornoKey] });
+    } catch (e) {
+      toast.error("Nota non salvata: " + e.message);
+    }
+  };
+
   // Esegue l'azione in attesa dopo che l'utente ha scelto il cantiere nel picker
   const handleCantiereScelto = async (cantiere) => {
     setPendingCantiereAction(null);
-    handleTimbra("ingresso", cantiere);
+    avviaIngresso(cantiere);
   };
 
-  const handleGeneraRapportini = async () => {
-    if (!user) return;
-    setGenerando(true);
-    try {
-      // Il rapportino è unico per cantiere e giornata: servono le timbrature
-      // di tutta la squadra (non solo le mie) e i rapportini già esistenti.
-      const esistenti = await base44.entities.Rapportino.filter({
-        data: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
-      });
-      const timbratureGiorno = await base44.entities.Timbratura.filter({
-        data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
-      });
-      const creati = await generaRapportiniDaGiornata({
-        user,
-        giorno: inizio,
-        timbrature: timbratureGiorno,
-        rapportiniEsistenti: esistenti,
-        collaboratoriList
-      });
-      queryClient.invalidateQueries({ queryKey: ["rapportini"] });
-      if (creati.length === 0) {
-        toast.info("Nessun nuovo rapportino: per questi cantieri ne esiste già uno oggi");
-      } else {
-        toast.success(
-          `Creat${creati.length === 1 ? "o" : "i"} ${creati.length} rapportin${creati.length === 1 ? "o" : "i"} in bozza`
-        );
-      }
-    } catch (e) {
-      toast.error("Errore: " + e.message);
-    } finally {
-      setGenerando(false);
-    }
-  };
+
 
   const apriEdit = (t) => {
     const d = new Date(t.data_ora);
@@ -359,7 +482,7 @@ export default function Timbratura() {
             Avvia lavoro in cantiere
           </Button>
           <Button
-            onClick={() => handleTimbra("uscita")}
+            onClick={handleUscita}
             disabled={!!loadingTipo || !activeSession}
             className="h-14 w-full text-sm font-semibold gap-2 bg-rose-600 hover:bg-rose-700">
             {loadingTipo === "uscita" ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}
@@ -367,14 +490,14 @@ export default function Timbratura() {
           </Button>
           <div className="grid grid-cols-2 gap-2">
             <Button
-              onClick={() => handleTimbra("pausa_inizio")}
+              onClick={() => handlePausa("pausa_inizio")}
               disabled={!!loadingTipo || !activeSession || inPausa || pausaFatta}
               className="h-14 text-xs font-semibold gap-1.5 bg-amber-500 hover:bg-amber-600">
               {loadingTipo === "pausa_inizio" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Coffee className="w-4 h-4" />}
               Inizia pausa pranzo
             </Button>
             <Button
-              onClick={() => handleTimbra("pausa_fine")}
+              onClick={() => handlePausa("pausa_fine")}
               disabled={!!loadingTipo || !inPausa}
               className="h-14 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700">
               {loadingTipo === "pausa_fine" ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
@@ -406,6 +529,24 @@ export default function Timbratura() {
                 <Trash2 className="w-3.5 h-3.5" /> Annulla
               </Button>
             </div>
+          </Card>
+        }
+
+        {/* Spostamenti di oggi: minuti e km tra un cantiere e il successivo */}
+        {spostamentiOggi.length > 0 &&
+        <Card className="p-4 space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Spostamenti di oggi</p>
+            {spostamentiOggi.map((s, i) =>
+            <div key={i} className="flex items-center gap-2 text-xs">
+                <Navigation className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                <span className="flex-1 truncate">{s.da} → {s.a}</span>
+                <span className="font-medium">{s.min} min</span>
+                {s.km != null && <span className="font-semibold text-orange-600">· {s.km} km</span>}
+              </div>
+            )}
+            <p className="text-[11px] text-muted-foreground">
+              Lo spostamento è ricavato in automatico tra la chiusura di un cantiere e l'apertura del successivo: non serve timbrarlo.
+            </p>
           </Card>
         }
 
@@ -506,6 +647,7 @@ export default function Timbratura() {
                       <span className={t.distanza_metri > 5000 ? "text-orange-600 font-medium" : ""}>
                             {" · "}{(t.distanza_metri / 1000).toFixed(t.distanza_metri < 1000 ? 2 : 1)} km dal cantiere</span>
                       }
+                      {t.nota && <p className="text-[11px] italic text-primary truncate">📝 {t.nota}</p>}
                       </p>
                     </div>
                   </div>
@@ -534,16 +676,17 @@ export default function Timbratura() {
           </div>
         }
 
-        {/* Genera rapportini dalla giornata */}
-        {orePerCantiere.length > 0 &&
+        {/* Rapportini della giornata — creati e aggiornati in automatico */}
+        {timbratureOrd.length > 0 &&
         <Card className="p-4 space-y-3 border-primary/30 bg-primary/5">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" />
-              <p className="text-sm font-semibold">Genera rapportini dalla giornata</p>
+              <p className="text-sm font-semibold">Rapportini della giornata</p>
             </div>
+            {orePerCantiere.length > 0 &&
             <div className="space-y-1.5">
               {orePerCantiere.map((c) =>
-            <div key={c.cantiere_id} className="flex items-center justify-between text-xs">
+              <div key={c.cantiere_id} className="flex items-center justify-between text-xs">
                   <span className="font-medium truncate flex-1">{c.cantiere_nome}</span>
                   <span className="text-muted-foreground ml-2">
                     {fmtOre(c.ore)}
@@ -552,20 +695,38 @@ export default function Timbratura() {
                     )}
                   </span>
                 </div>
-            )}
+              )}
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handleGeneraRapportini} disabled={generando} className="flex-1 gap-2">
-                {generando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                {generando ? "Generazione..." : "Genera rapportini"}
-              </Button>
-              <Button variant="outline" onClick={() => navigate("/rapportini")}>
-                Vai a rapportini
-              </Button>
-            </div>
+            }
+            <p className="text-[11px] text-muted-foreground">
+              Il rapportino di ogni cantiere esiste già e si aggiorna da solo con le ore di tutta la squadra.
+            </p>
+            <Button onClick={() => navigate("/rapportini")} className="w-full gap-2">
+              <FileText className="w-4 h-4" /> Vai al rapportino
+            </Button>
           </Card>
         }
       </div>
+
+      <ConfermaPosizioneDialog
+        open={!!confermaPosizione}
+        tipo={confermaPosizione?.tipo}
+        cantiere={confermaPosizione?.cantiere}
+        distanza={confermaPosizione?.distanza}
+        raggio={confermaPosizione?.raggio}
+        loading={!!loadingTipo}
+        onConfermaCapannone={confermaCapannone}
+        onConfermaFuoriRaggio={confermaFuoriRaggio}
+        onCambiaCantiere={() => { setConfermaPosizione(null); setPendingCantiereAction("ingresso"); }}
+        onClose={() => setConfermaPosizione(null)}
+      />
+
+      <DomandeGuidaDialog
+        open={!!domandeGuida}
+        minutiMancanti={domandeGuida?.minutiMancanti}
+        onConferma={salvaRisposteGuida}
+        onSalta={() => setDomandeGuida(null)}
+      />
 
       <CantierePickerDialog
         open={!!pendingCantiereAction}
@@ -584,7 +745,7 @@ export default function Timbratura() {
           // Se c'era un'azione in attesa nel picker, usa subito il nuovo cantiere
           if (pendingCantiereAction) {
             setPendingCantiereAction(null);
-            handleTimbra("ingresso", c);
+            avviaIngresso(c);
           }
         }} />
       

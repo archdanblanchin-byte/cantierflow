@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { distanzaM, getPosizione, STEP_CONFIG, arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
+import { distanzaM, getPosizione, STEP_CONFIG, arrotondaQuarti, fmtOre, RAGGIO_ACCETTAZIONE_M } from "@/lib/timbratureUtils";
 import { getRuoloLabel } from "@/lib/permissions";
 
 export default function TimbraturaRapportino({ cantiere, cantieri, rapportinoId, onEnsureDraft, onChange }) {
@@ -98,7 +98,7 @@ export default function TimbraturaRapportino({ cantiere, cantieri, rapportinoId,
     }
   }, [t_uscita?.id, oreTotaliHours]);
 
-  const raggio = cantiere?.raggio_metri || 150;
+  const raggio = cantiere?.raggio_metri || RAGGIO_ACCETTAZIONE_M;
   const cantiereCoords = cantiere?.latitudine && cantiere?.longitudine;
 
   const handleTimbra = async (tipoEvento, extraData = {}) => {

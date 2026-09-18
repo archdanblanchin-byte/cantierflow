@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Loader2, MapPin, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
-import { STEP_CONFIG, getPosizione, distanzaM } from "@/lib/timbratureUtils";
+import { STEP_CONFIG, getPosizione, distanzaM, RAGGIO_ACCETTAZIONE_M } from "@/lib/timbratureUtils";
 
 // Le 4 timbrature principali, sempre le stesse
 const LABEL_BOTTONE = {
@@ -62,7 +62,7 @@ export default function TimbraturaRapidaPanel({ timbrature, cantiere, cantieri, 
         let inCantiere = true;
         if (cSel?.latitudine && cSel?.longitudine) {
           distanza = distanzaM(pos.lat, pos.lon, cSel.latitudine, cSel.longitudine);
-          inCantiere = distanza <= (cSel.raggio_metri || 150);
+          inCantiere = distanza <= (cSel.raggio_metri || RAGGIO_ACCETTAZIONE_M);
         }
 
         await base44.entities.Timbratura.create({
@@ -90,7 +90,7 @@ export default function TimbraturaRapidaPanel({ timbrature, cantiere, cantieri, 
       let inCantiere = true;
       if (c?.latitudine && c?.longitudine) {
         distanza = distanzaM(pos.lat, pos.lon, c.latitudine, c.longitudine);
-        inCantiere = distanza <= (c.raggio_metri || 150);
+        inCantiere = distanza <= (c.raggio_metri || RAGGIO_ACCETTAZIONE_M);
       }
 
       await base44.entities.Timbratura.create({
