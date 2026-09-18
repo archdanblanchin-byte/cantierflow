@@ -232,7 +232,7 @@ export default function Step2Collaboratori({ data, onChange, collaboratoriList, 
       {/* Selezione collaboratori — lista sempre visibile */}
       {available.length > 0 &&
       <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
-          <p className="text-sm font-medium">Seleziona i collaboratori presenti</p>
+          <p className="text-sm font-medium">Seleziona altri colavorator</p>
           <div className="grid grid-cols-2 gap-2">
             {available.map((c) => {
             const isChosen = selected.includes(c.id);
