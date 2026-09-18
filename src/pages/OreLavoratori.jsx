@@ -184,11 +184,14 @@ export default function OreLavoratori() {
       const ore = arrotondaOre(oreCantieri + oreSpost);
       const trasfertaConfermata = trasferteMap[key];
       const trasfertaAuto = timsGiorno.length ? calcolaTrasfertaGiorno(timsGiorno, cantieri, config) : null;
+      // Luoghi dichiarati diversi dal cantiere (Capannone, officina, ...)
+      const luoghi = [...new Set(timsGiorno.filter((t) => t.lavoro_altro_luogo && t.luogo_lavoro).map((t) => t.luogo_lavoro))];
       sintesi[key] = {
         ore,
         oreSpost: arrotondaOre(oreSpost),
         trasferta: trasfertaConfermata || trasfertaAuto || null,
         hasNote,
+        luoghi,
       };
     });
     return sintesi;
@@ -281,7 +284,7 @@ export default function OreLavoratori() {
             />
           </Card>
           <p className="text-[11px] text-muted-foreground text-center">
-            Tocca un giorno con dati per vedere cantieri, spostamenti, trasferta e note
+            Tocca un giorno con dati per vedere cantieri, spostamenti, luoghi di lavoro, trasferta e note
           </p>
         </div>
 

@@ -1,13 +1,13 @@
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, format, isToday } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, MapPin } from "lucide-react";
 import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
 
 const GIORNI_SETT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 
 /**
- * giorniSintesi: { [yyyy-MM-dd]: { ore: number, trasferta: { tipo_trasferta, km_totali, label } | null } }
+ * giorniSintesi: { [yyyy-MM-dd]: { ore: number, luoghi: string[], trasferta: { tipo_trasferta, km_totali, label } | null } }
  */
 export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
   const primo = startOfMonth(mese);
@@ -37,6 +37,7 @@ export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
           const cfg = fascia ? TRASFERTA_CONFIG[fascia] : null;
           const inSede = !!trasferta?.nessuna_trasferta;
           const haDati = ore > 0 || !!trasferta;
+          const luoghi = s?.luoghi || [];
           const hasNote = !!s?.hasNote;
           const oggi = isToday(d);
 
@@ -55,6 +56,9 @@ export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
               {hasNote && (
                 <AlertTriangle className="absolute top-0.5 right-0.5 w-2.5 h-2.5 text-amber-500" />
               )}
+              {luoghi.length > 0 && (
+                <MapPin className="absolute top-0.5 left-0.5 w-2.5 h-2.5 text-slate-500" />
+              )}
               <span className={`text-xs ${oggi ? "font-bold text-primary" : "text-muted-foreground"}`}>
                 {format(d, "d")}
               </span>
@@ -64,8 +68,8 @@ export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
                 </span>
               )}
               {inSede && (
-                <Badge variant="outline" className="text-[8px] px-1 py-0 mt-0.5 leading-none bg-slate-100 text-slate-600 border-slate-300">
-                  sede
+                <Badge variant="outline" className="text-[8px] px-1 py-0 mt-0.5 leading-none bg-slate-100 text-slate-600 border-slate-300 max-w-full truncate">
+                  {luoghi[0] ? luoghi[0].slice(0, 9) : "sede"}
                 </Badge>
               )}
               {cfg && !inSede && (

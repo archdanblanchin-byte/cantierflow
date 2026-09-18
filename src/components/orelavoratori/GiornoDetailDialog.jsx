@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Navigation, Route, Clock, Truck, AlertTriangle, Home } from "lucide-react";
+import { MapPin, Navigation, Route, Clock, Truck, AlertTriangle, Home, Warehouse } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
@@ -14,6 +14,7 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
   const oreCantieri = dettaglio?.oreCantieri || 0;
   const oreSpostamenti = dettaglio?.oreSpostamenti || 0;
   const note = dettaglio?.note || [];
+  const luoghiLavoro = dettaglio?.luoghiLavoro || [];
   const cfg = trasferta?.tipo_trasferta ? TRASFERTA_CONFIG[trasferta.tipo_trasferta] : null;
   const cfgAndata = trasferta?.fascia_andata ? TRASFERTA_CONFIG[trasferta.fascia_andata] : null;
   const cfgRitorno = trasferta?.fascia_ritorno ? TRASFERTA_CONFIG[trasferta.fascia_ritorno] : null;
@@ -112,6 +113,25 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
           </div>
         )}
 
+        {/* Luoghi di lavoro fuori cantiere (Capannone, officina, ...) */}
+        {luoghiLavoro.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <Warehouse className="w-3.5 h-3.5 text-slate-500" /> Lavoro fuori cantiere
+            </p>
+            <Card className="p-3 border-slate-200 bg-slate-50/60 space-y-1">
+              {luoghiLavoro.map((l, i) => (
+                <p key={i} className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" /> {l}
+                </p>
+              ))}
+              <p className="text-[10px] text-muted-foreground pt-0.5">
+                Giornata timbrata in questi luoghi: la trasferta è calcolata sulla posizione del timbro, non sul cantiere.
+              </p>
+            </Card>
+          </div>
+        )}
+
         {/* Trasferta */}
         {trasferta && (
           <div className="space-y-2">
@@ -131,7 +151,9 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
                 <div className="rounded-md bg-slate-50 border border-slate-200 px-2 py-1.5 flex items-center gap-1.5">
                   <Home className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                   <p className="text-[11px] font-semibold text-slate-700">
-                    Nessuna trasferta – lavoro in sede
+                    {luoghiLavoro.length
+                      ? `Nessuna trasferta – lavoro a ${luoghiLavoro.join(", ")}`
+                      : "Nessuna trasferta – lavoro in sede"}
                   </p>
                 </div>
               )}
@@ -194,7 +216,7 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
           </div>
         )}
 
-        {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && note.length === 0 && (
+        {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && note.length === 0 && luoghiLavoro.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-6">Nessun dato per questa giornata</p>
         )}
       </DialogContent>

@@ -114,6 +114,12 @@ export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
     ? calcolaSpostamenti(timbratureGiorno)
     : [];
 
+  // Luoghi di lavoro dichiarati diversi dal cantiere (es. Capannone, officina):
+  // servono a spiegare il tipo di trasferta della giornata.
+  const luoghiLavoro = timbratureGiorno && timbratureGiorno.length
+    ? [...new Set(timbratureGiorno.filter((t) => t.lavoro_altro_luogo && t.luogo_lavoro).map((t) => t.luogo_lavoro))]
+    : [];
+
   // Regola delle 8 ore: gli spostamenti entro le 8 ore si dividono tra i cantieri,
   // la parte oltre le 8 ore viene conteggiata come trasferta.
   const classificazioneSpostamenti = timbratureGiorno && timbratureGiorno.length
@@ -133,6 +139,7 @@ export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
     cantieri,
     spostamenti,
     note,
+    luoghiLavoro,
     classificazioneSpostamenti,
     oreCantieri,
     oreSpostamenti,
