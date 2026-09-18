@@ -40,6 +40,10 @@ export default function OreInput({ value, onChange, step = 5 / 60, min = 0, clas
           const parsed = parseFloat(raw);
           onChange(isNaN(parsed) ? 0 : clamp(round(parsed)));
         }}
+        onBlur={() => {
+          const parsed = parseFloat(String(value).replace(",", "."));
+          onChange(isNaN(parsed) ? 0 : clamp(arrotondaOre(parsed)));
+        }}
         className="min-w-0 px-1 text-center font-semibold tabular-nums"
       />
       <button
