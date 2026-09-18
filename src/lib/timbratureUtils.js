@@ -111,6 +111,21 @@ export function timbroInSede(timbro, capannone) {
   return distanzaM(timbro.latitudine, timbro.longitudine, c.lat, c.lon) <= RAGGIO_CAPANNONE_M;
 }
 
+// Coordinate da usare per il calcolo della trasferta di una tratta.
+// Se l'operatore ha confermato di lavorare per il cantiere in un ALTRO posto
+// (es. capannone, officina), valgono le coordinate GPS del timbro; altrimenti
+// si usano quelle del cantiere.
+export function coordinateTrasferta(timbro, cantiere) {
+  if (!timbro) return null;
+  if (timbro.lavoro_altro_luogo && timbro.latitudine != null && timbro.longitudine != null) {
+    return { lat: timbro.latitudine, lon: timbro.longitudine };
+  }
+  if (cantiere?.latitudine != null && cantiere?.longitudine != null) {
+    return { lat: cantiere.latitudine, lon: cantiere.longitudine };
+  }
+  return null;
+}
+
 export const STEP_CONFIG = {
   ingresso: { label: "Ingresso", icon: LogIn, color: "bg-emerald-600 hover:bg-emerald-700" },
   pausa_inizio: { label: "Inizio pausa", icon: Coffee, color: "bg-amber-500 hover:bg-amber-600" },

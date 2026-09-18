@@ -83,6 +83,15 @@
       "type": "boolean",
       "default": false,
       "description": "L'operatore ha confermato di lavorare per il cantiere dal capannone"
+    },
+    "lavoro_altro_luogo": {
+      "type": "boolean",
+      "default": false,
+      "description": "L'operatore ha confermato di lavorare per questo cantiere in un altro posto (non al cantiere): la trasferta si calcola sulla posizione GPS del timbro, non sulle coordinate del cantiere"
+    },
+    "luogo_lavoro": {
+      "type": "string",
+      "description": "Dove sta lavorando l'operatore quando non \u00e8 al cantiere (es. Capannone, officina, casa del cliente)"
     }
   },
   "required": [

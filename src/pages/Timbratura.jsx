@@ -233,6 +233,7 @@ export default function Timbratura() {
       if (v.alCapannone || !v.entroRaggio) {
         setConfermaPosizione({
           tipo: v.alCapannone ? "capannone" : "fuori_raggio",
+          azione: "ingresso",
           cantiere, distanza: v.distanza, raggio: v.raggio, pos
         });
         return;
@@ -245,16 +246,31 @@ export default function Timbratura() {
     }
   };
 
-  const confermaCapannone = async () => {
+  // Registra l'uscita e, se il tempo non è tutto coperto, apre le domande guidate
+  const eseguiUscita = async (pos, v, extra = {}) => {
+    const record = await registraTimbro("uscita", activeCantiere, { pos, v, extra });
+    const timb = await base44.entities.Timbratura.filter({
+      user_email: user.email,
+      data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
+    });
+    const mancanti = minutiScopertiGiornata(timb);
+    if (mancanti >= 30) setDomandeGuida({ timbro: record, minutiMancanti: mancanti });
+  };
+
+  // Registra il timbro confermato fuori posizione (capannone o altro luogo),
+  // in ingresso o in uscita, conservando la posizione GPS del timbro: è quella
+  // che determina la trasferta al posto delle coordinate del cantiere.
+  const registraConfermaPosizione = async (extra) => {
     const c = confermaPosizione;
     setConfermaPosizione(null);
-    setLoadingTipo("ingresso");
+    setLoadingTipo(c.azione);
+    const v = { distanza: c.distanza, entroRaggio: false, raggio: c.raggio };
     try {
-      await registraTimbro("ingresso", c.cantiere, {
-        pos: c.pos,
-        v: { distanza: c.distanza, entroRaggio: false, raggio: c.raggio },
-        extra: { confermato_capannone: true, nota: "Lavoro dal capannone per questo cantiere" }
-      });
+      if (c.azione === "uscita") {
+        await eseguiUscita(c.pos, v, extra);
+      } else {
+        await registraTimbro("ingresso", c.cantiere, { pos: c.pos, v, extra });
+      }
     } catch (e) {
       setError(e.message);
     } finally {
@@ -262,22 +278,20 @@ export default function Timbratura() {
     }
   };
 
-  const confermaFuoriRaggio = async (nota) => {
-    const c = confermaPosizione;
-    setConfermaPosizione(null);
-    setLoadingTipo("ingresso");
-    try {
-      await registraTimbro("ingresso", c.cantiere, {
-        pos: c.pos,
-        v: { distanza: c.distanza, entroRaggio: false, raggio: c.raggio },
-        extra: { nota }
-      });
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoadingTipo(null);
-    }
-  };
+  const confermaCapannone = () =>
+  registraConfermaPosizione({
+    confermato_capannone: true,
+    lavoro_altro_luogo: true,
+    luogo_lavoro: capannone.nome,
+    nota: "Lavoro dal capannone per questo cantiere"
+  });
+
+  const confermaAltroLuogo = ({ luogo }) =>
+  registraConfermaPosizione({
+    lavoro_altro_luogo: true,
+    luogo_lavoro: luogo,
+    nota: `Lavoro per il cantiere da: ${luogo}`
+  });
 
   const handlePausa = async (tipoEvento) => {
     setLoadingTipo(tipoEvento);
@@ -293,7 +307,8 @@ export default function Timbratura() {
     }
   };
 
-  // Chiude il cantiere e, se il tempo non è tutto coperto, apre le domande guidate
+  // Chiude il cantiere: se la posizione è fuori raggio (o al capannone) chiede
+  // prima conferma, così anche la tratta di ritorno si basa sulla posizione reale.
   const handleUscita = async () => {
     setLoadingTipo("uscita");
     setError(null);
@@ -301,13 +316,15 @@ export default function Timbratura() {
       if (!user) throw new Error("Utente non autenticato");
       const pos = await getPosizione().catch(() => null);
       const v = valutaPosizione(pos, activeCantiere, capannone);
-      const record = await registraTimbro("uscita", activeCantiere, { pos, v });
-      const timb = await base44.entities.Timbratura.filter({
-        user_email: user.email,
-        data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() }
-      });
-      const mancanti = minutiScopertiGiornata(timb);
-      if (mancanti >= 30) setDomandeGuida({ timbro: record, minutiMancanti: mancanti });
+      if (v.alCapannone || !v.entroRaggio) {
+        setConfermaPosizione({
+          tipo: v.alCapannone ? "capannone" : "fuori_raggio",
+          azione: "uscita",
+          cantiere: activeCantiere, distanza: v.distanza, raggio: v.raggio, pos
+        });
+        return;
+      }
+      await eseguiUscita(pos, v);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -716,7 +733,7 @@ export default function Timbratura() {
         raggio={confermaPosizione?.raggio}
         loading={!!loadingTipo}
         onConfermaCapannone={confermaCapannone}
-        onConfermaFuoriRaggio={confermaFuoriRaggio}
+        onConfermaAltroLuogo={confermaAltroLuogo}
         onCambiaCantiere={() => { setConfermaPosizione(null); setPendingCantiereAction("ingresso"); }}
         onClose={() => setConfermaPosizione(null)}
       />

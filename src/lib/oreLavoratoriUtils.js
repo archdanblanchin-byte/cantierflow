@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { arrotondaOre, arrotondaQuarti, distanzaKm, distanzaKmStrada, getCapannone, classificaTrasfertaSplit, timbroInSede } from "@/lib/timbratureUtils";
+import { arrotondaOre, arrotondaQuarti, distanzaKm, distanzaKmStrada, getCapannone, classificaTrasfertaSplit, timbroInSede, coordinateTrasferta } from "@/lib/timbratureUtils";
 import { classificaSpostamentiGiornata } from "@/lib/rapportiniFromTimbrature";
 
 export function arrotondaOreQuarti(ore) {
@@ -46,27 +46,33 @@ export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config) {
   if (ingressi.length === 0) return null;
 
   const primo = ingressi[0];
-  const ultimo = ingressi[ingressi.length - 1];
+  const ultimoIngresso = ingressi[ingressi.length - 1];
+  const ultimoTimbro = tims[tims.length - 1];
   const capannone = getCapannone(config);
   const primoCantiere = cantieri.find((c) => c.id === primo.cantiere_id);
-  const ultimoCantiere = cantieri.find((c) => c.id === ultimo.cantiere_id);
+  const ultimoCantiere = cantieri.find((c) => c.id === ultimoIngresso.cantiere_id);
 
   // La trasferta segue la posizione, non solo il cantiere: se il timbro di ingresso
   // (o l'ultimo timbro della giornata) è in sede, quella tratta vale 0 km e non
-  // genera trasferta anche se il cantiere è lontano.
+  // genera trasferta anche se il cantiere è lontano. Se invece l'operatore ha
+  // confermato di lavorare per il cantiere in un altro posto, la tratta si misura
+  // dalla posizione GPS timbrata e non dalle coordinate del cantiere.
   const partenzaDaSede = timbroInSede(primo, capannone);
-  const rientroInSede = timbroInSede(tims[tims.length - 1], capannone);
+  const rientroInSede = timbroInSede(ultimoTimbro, capannone);
 
-  // km stimati di strada (linea d'aria + fattore di correzione): capannone <-> cantiere
+  const coordAndata = partenzaDaSede ? null : coordinateTrasferta(primo, primoCantiere);
+  const coordRitorno = rientroInSede ? null : coordinateTrasferta(ultimoTimbro, ultimoCantiere);
+
+  // km stimati di strada (linea d'aria + fattore di correzione): capannone <-> posizione
   const kmAndata = partenzaDaSede ? 0
-    : primoCantiere?.latitudine != null
-      ? distanzaKmStrada(capannone.lat, capannone.lon, primoCantiere.latitudine, primoCantiere.longitudine)
+    : coordAndata
+      ? distanzaKmStrada(capannone.lat, capannone.lon, coordAndata.lat, coordAndata.lon)
       : null;
   const kmRitorno = rientroInSede ? 0
-    : ultimoCantiere?.latitudine != null
-      ? distanzaKmStrada(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
+    : coordRitorno
+      ? distanzaKmStrada(coordRitorno.lat, coordRitorno.lon, capannone.lat, capannone.lon)
       : null;
-  // Nessuna informazione utile (né sede né coordinate dei cantieri): non si può
+  // Nessuna informazione utile (né sede né posizione dei timbri/cantieri): non si può
   // determinare la trasferta.
   if (kmAndata == null && kmRitorno == null) return null;
 
@@ -81,7 +87,7 @@ export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config) {
     rientro_in_sede: rientroInSede,
     nessuna_trasferta: nessunaTrasferta,
     primo_cantiere_nome: primo.cantiere_nome || primoCantiere?.nome || null,
-    ultimo_cantiere_nome: ultimo.cantiere_nome || ultimoCantiere?.nome || null,
+    ultimo_cantiere_nome: ultimoIngresso.cantiere_nome || ultimoCantiere?.nome || null,
     mezzo_proprio: tims.some((t) => t.mezzo_proprio),
   };
 }
