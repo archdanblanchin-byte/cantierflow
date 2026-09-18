@@ -132,7 +132,7 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
       {lavorazioni.map((lav, i) => {
         const perPersone = lav.modalita_calcolo === "per_persone";
         const aperti = dettagliAperti === i;
-        const etichetta = lav.tipo_lavorazione_nome || lav.descrizione_custom || "";
+        const descrizione = lav.descrizione_custom || (lav.tipo_lavorazione_id ? "" : lav.tipo_lavorazione_nome) || "";
         const catalogo = [...tipiLavorazione].sort((a, b) =>
         (a.categoria || "").localeCompare(b.categoria || "") || (a.nome || "").localeCompare(b.nome || ""));
         const categorie = [...new Set(tipiLavorazione.map((t) => t.categoria).filter(Boolean))];
@@ -146,38 +146,30 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
             <span className="w-6 h-6 mb-2 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
               {i + 1}
             </span>
-            <div className="flex-1 min-w-0">
-              <Label className="text-[11px] text-muted-foreground">Descrizione</Label>
+            <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="min-w-0">
+              <Label className="text-[11px] text-muted-foreground">Tipo lavorazione</Label>
               <SheetSelect
-              value={lav.tipo_lavorazione_id || "__custom__"}
+              value={lav.tipo_lavorazione_id || undefined}
               onValueChange={(val) => {
-                if (val === "__custom__") {
-                  updateLav(i, { tipo_lavorazione_id: "", categoria: "", tipo_lavorazione_nome: "", descrizione_custom: "" });
-                } else {
-                  const tipo = tipiLavorazione.find((t) => t.id === val);
-                  updateLav(i, {
-                    tipo_lavorazione_id: val,
-                    tipo_lavorazione_nome: tipo?.nome || "",
-                    categoria: tipo?.categoria || lav.categoria || "",
-                    descrizione_custom: ""
-                  });
-                }
+                const tipo = tipiLavorazione.find((t) => t.id === val);
+                updateLav(i, {
+                  tipo_lavorazione_id: val,
+                  tipo_lavorazione_nome: tipo?.nome || "",
+                  categoria: tipo?.categoria || lav.categoria || ""
+                });
               }}
-              options={[
-              ...catalogo.map((t) => ({ value: t.id, label: t.nome })),
-              { value: "__custom__", label: "✏️ Scrivi manualmente" }]
-              }
+              options={catalogo.map((t) => ({ value: t.id, label: t.nome }))}
               placeholder="Seleziona lavorazione..." />
-            
-              {!lav.tipo_lavorazione_id &&
+            </div>
+            <div className="min-w-0">
+              <Label className="text-[11px] text-muted-foreground">Descrizione</Label>
               <Input
-                value={etichetta}
-                onChange={(e) => updateLav(i, { descrizione_custom: e.target.value, tipo_lavorazione_nome: e.target.value })}
+                value={descrizione}
+                onChange={(e) => updateLav(i, { descrizione_custom: e.target.value })}
                 className="mt-1"
-                placeholder="Scrivi la lavorazione..." />
-
-              }
-            
+                placeholder="Descrizione manuale..." />
+            </div>
             </div>
             <div className="w-32 flex-shrink-0">
               <Label className="text-[11px] text-muted-foreground">Ore</Label>
