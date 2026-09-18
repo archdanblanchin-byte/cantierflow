@@ -16,9 +16,14 @@ const fmtH = (n) => Number(n || 0).toFixed(2).replace(".", ",");
 
 // ─── LAVORAZIONI EXTRA ────────────────────────────────────────────────────────
 
-function LavorazioniExtra({ data, onChange }) {
+function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
   const extras = data.lavorazioni_extra || [];
   const hasExtra = data.has_lavorazioni_extra || false;
+  const [nuoviTipi, setNuoviTipi] = useState([]);
+  const [nuovaLavIndex, setNuovaLavIndex] = useState(null);
+  const tutteCategorie = [...new Set((tipiLavorazione || []).map((t) => t.categoria).filter(Boolean))];
+  const catalogo = [...(tipiLavorazione || []), ...nuoviTipi].sort((a, b) =>
+  (a.categoria || "").localeCompare(b.categoria || "") || (a.nome || "").localeCompare(b.nome || ""));
 
   const addExtra = () => {
     onChange({ lavorazioni_extra: [...extras, { descrizione: "", ore: 0 }] });
@@ -32,6 +37,13 @@ function LavorazioniExtra({ data, onChange }) {
 
   const removeExtra = (index) => {
     onChange({ lavorazioni_extra: extras.filter((_, i) => i !== index) });
+  };
+
+  // Dopo la creazione di una nuova lavorazione la assegno subito alla riga di partenza
+  const handleNuovaLavorazioneCreata = (tipo) => {
+    setNuoviTipi((prev) => [...prev, tipo]);
+    if (nuovaLavIndex !== null) updateExtra(nuovaLavIndex, "descrizione", tipo.nome || "");
+    setNuovaLavIndex(null);
   };
 
   return (
@@ -57,8 +69,26 @@ function LavorazioniExtra({ data, onChange }) {
                 <span className="w-6 h-6 mb-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
                   {i + 1}
                 </span>
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div className="sm:col-span-2">
+                <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="min-w-0">
+                    <Label className="text-[11px] text-muted-foreground">Tipo lavorazione</Label>
+                    <SheetSelect
+                  value={catalogo.find((t) => t.nome === extra.descrizione)?.id}
+                  onValueChange={(val) => {
+                    if (val === "__nuovo__") {
+                      setNuovaLavIndex(i);
+                      return;
+                    }
+                    const tipo = catalogo.find((t) => t.id === val);
+                    updateExtra(i, "descrizione", tipo?.nome || "");
+                  }}
+                  options={[
+                  ...catalogo.map((t) => ({ value: t.id, label: t.nome })),
+                  { value: "__nuovo__", label: "＋ Nuova lavorazione" }]
+                  }
+                  placeholder="Seleziona lavorazione..." />
+                  </div>
+                  <div className="min-w-0">
                     <Label className="text-[11px] text-muted-foreground">Descrizione</Label>
                     <Input
                   value={extra.descrizione || ""}
@@ -85,6 +115,12 @@ function LavorazioniExtra({ data, onChange }) {
             <Plus className="w-3 h-3" />
             Aggiungi voce extra
           </Button>
+
+          <NuovaLavorazioneDialog
+            open={nuovaLavIndex !== null}
+            onOpenChange={(o) => { if (!o) setNuovaLavIndex(null); }}
+            categorie={tutteCategorie}
+            onCreated={handleNuovaLavorazioneCreata} />
         </div>
       }
     </div>);
@@ -403,7 +439,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
           <h3 className="font-semibold text-amber-900 text-sm">Lavorazioni Extra</h3>
           <span className="text-xs text-amber-700 ml-1">(concordate, non in preventivo)</span>
         </div>
-        <LavorazioniExtra data={data} onChange={onChange} />
+        <LavorazioniExtra data={data} onChange={onChange} tipiLavorazione={tipiLavorazione} />
         {hasExtra &&
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <AudioLavorazioniRecorder mode="extra" tipiLavorazione={tipiLavorazione} onResult={handleExtraResult} />
