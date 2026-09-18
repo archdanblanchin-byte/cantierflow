@@ -99,6 +99,18 @@ export function valutaPosizione(pos, cantiere, capannone) {
   return { distanza, entroRaggio, alCapannone, raggio };
 }
 
+// Un timbro è "in sede" se l'operatore ha confermato di lavorare dal capannone
+// oppure se la posizione GPS cade dentro il raggio della sede.
+// In sede non si genera trasferta, anche se il cantiere è lontano.
+export function timbroInSede(timbro, capannone) {
+  if (!timbro) return false;
+  if (timbro.confermato_capannone) return true;
+  const c = capannone || CAPANNONE;
+  if (timbro.latitudine == null || timbro.longitudine == null) return false;
+  if (c?.lat == null || c?.lon == null) return false;
+  return distanzaM(timbro.latitudine, timbro.longitudine, c.lat, c.lon) <= RAGGIO_CAPANNONE_M;
+}
+
 export const STEP_CONFIG = {
   ingresso: { label: "Ingresso", icon: LogIn, color: "bg-emerald-600 hover:bg-emerald-700" },
   pausa_inizio: { label: "Inizio pausa", icon: Coffee, color: "bg-amber-500 hover:bg-amber-600" },

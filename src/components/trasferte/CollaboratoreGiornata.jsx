@@ -14,7 +14,7 @@ import { it } from "date-fns/locale";
 import { MapPin, Navigation, Clock, Save, CheckCircle2, Car, AlertTriangle, Settings, ChevronDown } from "lucide-react";
 import {
   STEP_CONFIG, arrotondaQuarti, fmtOre, distanzaKmStrada,
-  CAPANNONE, classificaTrasfertaSplit, getCapannone, TRASFERTA_CONFIG,
+  CAPANNONE, classificaTrasfertaSplit, getCapannone, TRASFERTA_CONFIG, timbroInSede,
 } from "@/lib/timbratureUtils";
 
 export default function CollaboratoreGiornata({ email, nome, trackingPosizione, timbrature, cantieri, data, trasfertaEsistente, config, onSalvata, editable, onTimbraturaCambiata }) {
@@ -67,16 +67,24 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
   const primoCantiere = primoIngresso ? cantieri.find(c => c.id === primoIngresso.cantiere_id) : null;
   const ultimoCantiere = ultimoIngresso ? cantieri.find(c => c.id === ultimoIngresso.cantiere_id) : null;
 
-  // Km stimati di strada (linea d'aria + fattore di correzione): capannone <-> cantiere
-  const kmAndataCalc = primoCantiere?.latitudine != null
-    ? distanzaKmStrada(capannone.lat, capannone.lon, primoCantiere.latitudine, primoCantiere.longitudine)
-    : null;
-  const kmRitornoCalc = ultimoCantiere?.latitudine != null
-    ? distanzaKmStrada(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
-    : null;
+  // Km stimati di strada (linea d'aria + fattore di correzione): capannone <-> cantiere.
+  // La trasferta segue la posizione: se il timbro di ingresso (o l'ultimo timbro della
+  // giornata) è in sede, la tratta vale 0 km anche se il cantiere è lontano.
+  const ultimoTimbro = tOrd[tOrd.length - 1];
+  const partenzaDaSede = timbroInSede(primoIngresso, capannone);
+  const rientroInSede = timbroInSede(ultimoTimbro, capannone);
+  const kmAndataCalc = partenzaDaSede ? 0
+    : primoCantiere?.latitudine != null
+      ? distanzaKmStrada(capannone.lat, capannone.lon, primoCantiere.latitudine, primoCantiere.longitudine)
+      : null;
+  const kmRitornoCalc = rientroInSede ? 0
+    : ultimoCantiere?.latitudine != null
+      ? distanzaKmStrada(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
+      : null;
 
   const splitCalc = classificaTrasfertaSplit(kmAndataCalc, kmRitornoCalc, config);
-  const tipoCalc = splitCalc.tipo_trasferta;
+  const senzaTrasferta = !kmAndataCalc && !kmRitornoCalc;
+  const tipoCalc = senzaTrasferta ? null : splitCalc.tipo_trasferta;
   const fasciaAndataCalc = splitCalc.fascia_andata;
   const fasciaRitornoCalc = splitCalc.fascia_ritorno;
 
@@ -242,7 +250,17 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
           )}
         </div>
 
-        {splitCalc.km_media != null && (
+        {(partenzaDaSede || rientroInSede) && (
+          <p className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
+            {partenzaDaSede && rientroInSede
+              ? "Timbrature in sede: nessuna trasferta per questa giornata."
+              : partenzaDaSede
+                ? "Ingresso in sede: nessuna trasferta di andata, anche se il cantiere è lontano."
+                : "Uscita in sede: nessuna trasferta di ritorno."}
+          </p>
+        )}
+
+        {!senzaTrasferta && splitCalc.km_media != null && (
           <p className="text-[10px] text-muted-foreground">
             Andata {splitCalc.fascia_andata} · Ritorno {splitCalc.fascia_ritorno} · Media {splitCalc.km_media.toFixed(1)} km → proposta: <strong>{tipoCalc}</strong>
           </p>

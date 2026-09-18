@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { arrotondaOre, arrotondaQuarti, distanzaKm, distanzaKmStrada, getCapannone, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
+import { arrotondaOre, arrotondaQuarti, distanzaKm, distanzaKmStrada, getCapannone, classificaTrasfertaSplit, timbroInSede } from "@/lib/timbratureUtils";
 
 export function arrotondaOreQuarti(ore) {
   return arrotondaOre(ore);
@@ -50,14 +50,22 @@ export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config) {
   const primoCantiere = cantieri.find((c) => c.id === primo.cantiere_id);
   const ultimoCantiere = cantieri.find((c) => c.id === ultimo.cantiere_id);
 
+  // La trasferta segue la posizione, non solo il cantiere: se il timbro di ingresso
+  // (o l'ultimo timbro della giornata) è in sede, quella tratta vale 0 km e non
+  // genera trasferta anche se il cantiere è lontano.
+  const partenzaDaSede = timbroInSede(primo, capannone);
+  const rientroInSede = timbroInSede(tims[tims.length - 1], capannone);
+
   // km stimati di strada (linea d'aria + fattore di correzione): capannone <-> cantiere
-  const kmAndata = primoCantiere?.latitudine != null
-    ? distanzaKmStrada(capannone.lat, capannone.lon, primoCantiere.latitudine, primoCantiere.longitudine)
-    : null;
-  const kmRitorno = ultimoCantiere?.latitudine != null
-    ? distanzaKmStrada(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
-    : null;
-  if (kmAndata == null && kmRitorno == null) return null;
+  const kmAndata = partenzaDaSede ? 0
+    : primoCantiere?.latitudine != null
+      ? distanzaKmStrada(capannone.lat, capannone.lon, primoCantiere.latitudine, primoCantiere.longitudine)
+      : null;
+  const kmRitorno = rientroInSede ? 0
+    : ultimoCantiere?.latitudine != null
+      ? distanzaKmStrada(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
+      : null;
+  if (!kmAndata && !kmRitorno) return null;
 
   const split = classificaTrasfertaSplit(kmAndata, kmRitorno, config);
   return {
