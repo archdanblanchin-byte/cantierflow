@@ -40,17 +40,17 @@ function LavorazioniExtra({ data, onChange }) {
           onCheckedChange={(checked) => {
             onChange({
               has_lavorazioni_extra: checked,
-              lavorazioni_extra: checked && extras.length === 0 ? [{ descrizione: "", ore: 0 }] : extras,
+              lavorazioni_extra: checked && extras.length === 0 ? [{ descrizione: "", ore: 0 }] : extras
             });
-          }}
-        />
+          }} />
+        
         <span className="text-sm font-medium">Ci sono lavorazioni extra?</span>
       </div>
 
-      {hasExtra && (
-        <div className="space-y-2 pl-2 border-l-2 border-amber-200">
-          {extras.map((extra, i) => (
-            <div key={i} className="rounded-xl border border-border p-3 bg-card">
+      {hasExtra &&
+      <div className="space-y-2 pl-2 border-l-2 border-amber-200">
+          {extras.map((extra, i) =>
+        <div key={i} className="rounded-xl border border-border p-3 bg-card">
               <div className="flex items-end gap-2">
                 <span className="w-6 h-6 mb-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
                   {i + 1}
@@ -59,18 +59,18 @@ function LavorazioniExtra({ data, onChange }) {
                   <div className="sm:col-span-2">
                     <Label className="text-[11px] text-muted-foreground">Descrizione</Label>
                     <Input
-                      value={extra.descrizione || ""}
-                      onChange={(e) => updateExtra(i, "descrizione", e.target.value)}
-                      className="mt-1"
-                      placeholder="Descrivi la lavorazione extra..."
-                    />
+                  value={extra.descrizione || ""}
+                  onChange={(e) => updateExtra(i, "descrizione", e.target.value)}
+                  className="mt-1"
+                  placeholder="Descrivi la lavorazione extra..." />
+                
                   </div>
                   <div>
                     <Label className="text-[11px] text-muted-foreground">Ore</Label>
                     <OreInput
-                      value={extra.ore ?? 0}
-                      onChange={(v) => updateExtra(i, "ore", v)}
-                    />
+                  value={extra.ore ?? 0}
+                  onChange={(v) => updateExtra(i, "ore", v)} />
+                
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive flex-shrink-0" onClick={() => removeExtra(i)}>
@@ -78,25 +78,25 @@ function LavorazioniExtra({ data, onChange }) {
                 </Button>
               </div>
             </div>
-          ))}
+        )}
           <Button variant="outline" size="sm" onClick={addExtra} className="gap-2">
             <Plus className="w-3 h-3" />
             Aggiungi voce extra
           </Button>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
 // ─── LAVORAZIONI NORMALI ──────────────────────────────────────────────────────
 
 function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
   const lavorazioni = data.lavorazioni_normali || [];
-  const oreLavoratori = (data.collaboratori || []).reduce((sum, c) => sum + (c.ore_lavorate || 0), 0)
-    || (data.ore_totali_squadra || 0);
-  const oreExtra = data.has_lavorazioni_extra
-    ? (data.lavorazioni_extra || []).reduce((sum, l) => sum + (l.ore || 0), 0) : 0;
+  const oreLavoratori = (data.collaboratori || []).reduce((sum, c) => sum + (c.ore_lavorate || 0), 0) ||
+  data.ore_totali_squadra || 0;
+  const oreExtra = data.has_lavorazioni_extra ?
+  (data.lavorazioni_extra || []).reduce((sum, l) => sum + (l.ore || 0), 0) : 0;
   const oreNormali = lavorazioni.reduce((sum, l) => sum + (l.ore_totali || 0), 0);
   const delta = oreLavoratori - oreExtra - oreNormali;
   const isValid = Math.abs(delta) < 0.01;
@@ -106,9 +106,9 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
   const addLavorazione = () => {
     onChange({
       lavorazioni_normali: [
-        ...lavorazioni,
-        { tipo_lavorazione_id: "", tipo_lavorazione_nome: "", descrizione_custom: "", ore_totali: 0, modalita_calcolo: "manuale", numero_persone: 0, ore_per_persona: 0 },
-      ],
+      ...lavorazioni,
+      { tipo_lavorazione_id: "", tipo_lavorazione_nome: "", descrizione_custom: "", ore_totali: 0, modalita_calcolo: "manuale", numero_persone: 0, ore_per_persona: 0 }]
+
     });
   };
 
@@ -127,8 +127,8 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
 
   return (
     <div className="space-y-3">
-      {lavorazioni.map((lav, i) => (
-        <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
+      {lavorazioni.map((lav, i) =>
+      <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
           {/* Riga 1 — numero, categoria, tipo, ore voci, elimina */}
           <div className="flex items-start gap-2 p-3">
             <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
@@ -139,65 +139,65 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
               <div>
                 <Label className="text-[11px] text-muted-foreground">Categoria</Label>
                 <SheetSelect
-                  value={lav.categoria || ""}
-                  onValueChange={(val) => updateLav(i, { categoria: val, tipo_lavorazione_id: "", tipo_lavorazione_nome: "", descrizione_custom: "" })}
-                  options={[
-                    ...[...new Set(tipiLavorazione.map(t => t.categoria).filter(Boolean))].map(cat => ({ value: cat, label: cat })),
-                    { value: "__custom__", label: "✏️ Personalizzata" },
-                  ]}
-                  placeholder="Seleziona categoria..."
-                />
+                value={lav.categoria || ""}
+                onValueChange={(val) => updateLav(i, { categoria: val, tipo_lavorazione_id: "", tipo_lavorazione_nome: "", descrizione_custom: "" })}
+                options={[
+                ...[...new Set(tipiLavorazione.map((t) => t.categoria).filter(Boolean))].map((cat) => ({ value: cat, label: cat })),
+                { value: "__custom__", label: "✏️ Personalizzata" }]
+                }
+                placeholder="Seleziona categoria..." />
+              
               </div>
 
               {/* Tipo (filtrato per categoria) oppure descrizione libera */}
-              {lav.categoria && lav.categoria !== "__custom__" && (
-                <div>
+              {lav.categoria && lav.categoria !== "__custom__" &&
+            <div>
                   <Label className="text-[11px] text-muted-foreground">Tipo lavorazione</Label>
                   <SheetSelect
-                    value={lav.tipo_lavorazione_id || ""}
-                    onValueChange={(val) => {
-                      if (val === "__custom_tipo__") {
-                        updateLav(i, { tipo_lavorazione_id: "", tipo_lavorazione_nome: "", descrizione_custom: "" });
-                      } else {
-                        const tipo = tipiLavorazione.find((t) => t.id === val);
-                        updateLav(i, { tipo_lavorazione_id: val, tipo_lavorazione_nome: tipo?.nome || "", descrizione_custom: "" });
-                      }
-                    }}
-                    options={[
-                      ...tipiLavorazione.filter(t => t.categoria === lav.categoria).map((t) => ({ value: t.id, label: t.nome })),
-                      { value: "__custom_tipo__", label: "✏️ Non trovata — scrivi manualmente" },
-                    ]}
-                    placeholder="Seleziona tipo..."
-                  />
-                  {!lav.tipo_lavorazione_id && (
-                    <Input
-                      value={lav.descrizione_custom || ""}
-                      onChange={(e) => updateLav(i, { descrizione_custom: e.target.value, tipo_lavorazione_nome: e.target.value })}
-                      className="mt-1"
-                      placeholder="Scrivi il tipo di lavorazione..."
-                    />
-                  )}
-                </div>
-              )}
+                value={lav.tipo_lavorazione_id || ""}
+                onValueChange={(val) => {
+                  if (val === "__custom_tipo__") {
+                    updateLav(i, { tipo_lavorazione_id: "", tipo_lavorazione_nome: "", descrizione_custom: "" });
+                  } else {
+                    const tipo = tipiLavorazione.find((t) => t.id === val);
+                    updateLav(i, { tipo_lavorazione_id: val, tipo_lavorazione_nome: tipo?.nome || "", descrizione_custom: "" });
+                  }
+                }}
+                options={[
+                ...tipiLavorazione.filter((t) => t.categoria === lav.categoria).map((t) => ({ value: t.id, label: t.nome })),
+                { value: "__custom_tipo__", label: "✏️ Non trovata — scrivi manualmente" }]
+                }
+                placeholder="Seleziona tipo..." />
+              
+                  {!lav.tipo_lavorazione_id &&
+              <Input
+                value={lav.descrizione_custom || ""}
+                onChange={(e) => updateLav(i, { descrizione_custom: e.target.value, tipo_lavorazione_nome: e.target.value })}
+                className="mt-1"
+                placeholder="Scrivi il tipo di lavorazione..." />
 
-              {lav.categoria === "__custom__" && (
-                <div>
+              }
+                </div>
+            }
+
+              {lav.categoria === "__custom__" &&
+            <div>
                   <Label className="text-[11px] text-muted-foreground">Descrizione</Label>
                   <Input
-                    value={lav.descrizione_custom || ""}
-                    onChange={(e) => updateLav(i, { descrizione_custom: e.target.value, tipo_lavorazione_id: "", tipo_lavorazione_nome: e.target.value })}
-                    className="mt-1"
-                    placeholder="Descrivi la lavorazione..."
-                  />
+                value={lav.descrizione_custom || ""}
+                onChange={(e) => updateLav(i, { descrizione_custom: e.target.value, tipo_lavorazione_id: "", tipo_lavorazione_nome: e.target.value })}
+                className="mt-1"
+                placeholder="Descrivi la lavorazione..." />
+              
                 </div>
-              )}
+            }
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              {Number(lav.ore_totali) > 0 && (
-                <span className="text-[11px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5 tabular-nums">
+              {Number(lav.ore_totali) > 0 &&
+            <span className="text-[11px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5 tabular-nums">
                   {fmtH(lav.ore_totali)}h
                 </span>
-              )}
+            }
               <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeLav(i)}>
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -207,11 +207,11 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
           {/* Riga 2 — cosa / dove */}
           <div className="px-3">
             <Textarea
-              value={lav.descrizione || ""}
-              onChange={(e) => updateLav(i, { descrizione: e.target.value })}
-              className="min-h-[38px] resize-y text-sm"
-              placeholder="Descrizione (cosa / dove) — es. facciata nord, prime due stanze..."
-            />
+            value={lav.descrizione || ""}
+            onChange={(e) => updateLav(i, { descrizione: e.target.value })}
+            className="min-h-[38px] resize-y text-sm"
+            placeholder="Descrizione (cosa / dove) — es. facciata nord, prime due stanze..." />
+          
           </div>
 
           {/* Riga 3 — modalità ore + ore */}
@@ -219,10 +219,10 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
             <div>
               <Label className="text-[11px] text-muted-foreground">Modalità ore</Label>
               <RadioGroup
-                value={lav.modalita_calcolo || "manuale"}
-                onValueChange={(val) => updateLav(i, { modalita_calcolo: val })}
-                className="flex items-center gap-3 h-9"
-              >
+              value={lav.modalita_calcolo || "manuale"}
+              onValueChange={(val) => updateLav(i, { modalita_calcolo: val })}
+              className="flex items-center gap-3 h-9">
+              
                 <div className="flex items-center gap-1.5">
                   <RadioGroupItem value="manuale" id={`man-${i}`} />
                   <Label htmlFor={`man-${i}`} className="text-sm cursor-pointer">Manuale</Label>
@@ -235,41 +235,41 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
             </div>
 
             <div className="flex items-end gap-2 ml-auto">
-              {lav.modalita_calcolo === "per_persone" ? (
-                <>
-                  <div className="w-[4.5rem]">
+              {lav.modalita_calcolo === "per_persone" ?
+            <>
+                  <div className="w-[4.5rem] mx-8">
                     <Label className="text-[11px] text-muted-foreground">Persone</Label>
                     <OreInput
-                      value={lav.numero_persone ?? 0}
-                      step={1}
-                      onChange={(v) => updateLav(i, { numero_persone: v })}
-                    />
+                  value={lav.numero_persone ?? 0}
+                  step={1}
+                  onChange={(v) => updateLav(i, { numero_persone: v })} />
+                
                   </div>
                   <div className="w-24">
                     <Label className="text-[11px] text-muted-foreground">Ore/persona</Label>
                     <OreInput
-                      value={lav.ore_per_persona ?? 0}
-                      onChange={(v) => updateLav(i, { ore_per_persona: v })}
-                    />
+                  value={lav.ore_per_persona ?? 0}
+                  onChange={(v) => updateLav(i, { ore_per_persona: v })} />
+                
                   </div>
                   <div className="w-[4.5rem]">
                     <Label className="text-[11px] text-muted-foreground">Totale</Label>
                     <Input type="text" inputMode="decimal" value={lav.ore_totali ?? 0} disabled className="mt-1 bg-muted font-semibold text-center tabular-nums" />
                   </div>
-                </>
-              ) : (
-                <div className="w-28">
+                </> :
+
+            <div className="w-28">
                   <Label className="text-[11px] text-muted-foreground">Ore totali</Label>
                   <OreInput
-                    value={lav.ore_totali ?? 0}
-                    onChange={(v) => updateLav(i, { ore_totali: v })}
-                  />
+                value={lav.ore_totali ?? 0}
+                onChange={(v) => updateLav(i, { ore_totali: v })} />
+              
                 </div>
-              )}
+            }
             </div>
           </div>
         </div>
-      ))}
+      )}
 
       <Button variant="outline" onClick={addLavorazione} className="gap-2 w-full border-dashed">
         <Plus className="w-4 h-4" />
@@ -298,7 +298,7 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
             "flex justify-between items-center px-4 py-3 text-sm font-bold border-t-2",
             isValid && "border-green-300 bg-green-50 text-green-800",
             isMancante && "border-amber-300 bg-amber-50 text-amber-800",
-            isSforato && "border-red-300 bg-red-50 text-red-700",
+            isSforato && "border-red-300 bg-red-50 text-red-700"
           )}>
             <div className="flex items-center gap-2">
               {isValid && <CheckCircle2 className="w-4 h-4" />}
@@ -314,8 +314,8 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── STEP UNIFICATO ───────────────────────────────────────────────────────────
@@ -324,9 +324,9 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
   const handleExtraResult = (items) => {
     onChange({
       lavorazioni_extra: [
-        ...(data.lavorazioni_extra || []),
-        ...items.map((e) => ({ descrizione: e.descrizione, ore: e.ore || 0 })),
-      ],
+      ...(data.lavorazioni_extra || []),
+      ...items.map((e) => ({ descrizione: e.descrizione, ore: e.ore || 0 }))]
+
     });
   };
 
@@ -337,16 +337,16 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
       const modalita_calcolo = n.modalita_calcolo === "per_persone" ? "per_persone" : "manuale";
       const numero_persone = n.numero_persone || 0;
       const ore_per_persona = n.ore_per_persona || 0;
-      const ore_totali = modalita_calcolo === "per_persone"
-        ? Math.round((numero_persone * ore_per_persona) * 100) / 100
-        : (n.ore_totali || 0);
+      const ore_totali = modalita_calcolo === "per_persone" ?
+      Math.round(numero_persone * ore_per_persona * 100) / 100 :
+      n.ore_totali || 0;
       const base = { ore_totali, modalita_calcolo, numero_persone, ore_per_persona };
       const catMatch = availableCats.find((c) => c.toLowerCase() === String(n.categoria).toLowerCase());
       if (catMatch) {
         const tipoMatch = tipiLavorazione.find(
           (t) => t.categoria === catMatch && t.nome.toLowerCase() === String(n.tipo).toLowerCase()
         );
-      if (tipoMatch) {
+        if (tipoMatch) {
           return { ...base, categoria: catMatch, tipo_lavorazione_id: tipoMatch.id, tipo_lavorazione_nome: tipoMatch.nome, descrizione_custom: "", descrizione };
         }
         return { ...base, categoria: catMatch, tipo_lavorazione_id: "", tipo_lavorazione_nome: n.tipo, descrizione_custom: n.tipo, descrizione };
@@ -378,12 +378,12 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
           <span className="text-xs text-amber-700 ml-1">(concordate, non in preventivo)</span>
         </div>
         <LavorazioniExtra data={data} onChange={onChange} />
-        {hasExtra && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+        {hasExtra &&
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <AudioLavorazioniRecorder mode="extra" tipiLavorazione={tipiLavorazione} onResult={handleExtraResult} />
             <span className="text-xs text-muted-foreground">Parla: l'IA aggiunge le voci extra e compila le ore che dici. Puoi rivederle e modificarle dopo.</span>
           </div>
-        )}
+        }
       </div>
 
       {/* Sezione 2 — Lavorazioni Preventivate */}
@@ -399,6 +399,6 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
         </div>
         <LavorazioniNormali data={data} onChange={onChange} tipiLavorazione={tipiLavorazione} />
       </div>
-    </div>
-  );
+    </div>);
+
 }
