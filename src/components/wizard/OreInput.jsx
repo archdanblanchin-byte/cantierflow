@@ -7,9 +7,11 @@ import { Minus, Plus } from "lucide-react";
  * - bottoni + e − laterali (incremento/decremento di `step`, default 0.25 = un quarto d'ora)
  * - niente frecce su/giù del browser
  */
-export default function OreInput({ value, onChange, step = 0.25, min = 0, className, disabled }) {
+export default function OreInput({ value, onChange, step = 0.25, min = 0, className, disabled, compact = false }) {
   const round = (v) => Math.round(v * 100) / 100;
   const clamp = (v) => (min != null && v < min ? min : v);
+  const btnW = compact ? "w-7" : "w-9";
+  const iconSize = compact ? "w-3.5 h-3.5" : "w-4 h-4";
 
   const inc = () => onChange(clamp(round((parseFloat(value) || 0) + step)));
   const dec = () => onChange(clamp(round((parseFloat(value) || 0) - step)));
@@ -20,10 +22,10 @@ export default function OreInput({ value, onChange, step = 0.25, min = 0, classN
         type="button"
         onClick={dec}
         disabled={disabled}
-        className="flex items-center justify-center w-9 rounded-md border border-input bg-transparent shadow-sm text-destructive hover:bg-accent disabled:opacity-50"
+        className={`flex items-center justify-center ${btnW} rounded-md border border-input bg-transparent shadow-sm text-destructive hover:bg-accent disabled:opacity-50`}
         aria-label="Diminuisci"
       >
-        <Minus className="w-4 h-4" />
+        <Minus className={`${iconSize} shrink-0`} />
       </button>
       <Input
         type="text"
@@ -37,16 +39,16 @@ export default function OreInput({ value, onChange, step = 0.25, min = 0, classN
           const parsed = parseFloat(raw);
           onChange(isNaN(parsed) ? 0 : clamp(round(parsed)));
         }}
-        className="text-center font-semibold tabular-nums"
+        className="min-w-0 px-1 text-center font-semibold tabular-nums"
       />
       <button
         type="button"
         onClick={inc}
         disabled={disabled}
-        className="flex items-center justify-center w-9 rounded-md border border-input bg-transparent shadow-sm text-primary hover:bg-accent disabled:opacity-50"
+        className={`flex items-center justify-center ${btnW} rounded-md border border-input bg-transparent shadow-sm text-primary hover:bg-accent disabled:opacity-50`}
         aria-label="Aumenta"
       >
-        <Plus className="w-4 h-4" />
+        <Plus className={`${iconSize} shrink-0`} />
       </button>
     </div>
   );

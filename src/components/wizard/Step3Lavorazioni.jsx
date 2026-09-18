@@ -215,7 +215,7 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
           </div>
 
           {/* Riga 3 — modalità ore + ore */}
-          <div className="flex flex-wrap items-end gap-x-4 gap-y-2 p-3 pt-2">
+          <div className="flex flex-wrap items-end gap-x-3 gap-y-2 p-3 pt-2">
             <div>
               <Label className="text-[11px] text-muted-foreground">Modalità ore</Label>
               <RadioGroup
@@ -234,33 +234,37 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
               </RadioGroup>
             </div>
 
-            <div className="flex items-end gap-2 ml-auto">
+            <div className="flex flex-wrap items-end gap-2 ml-auto">
               {lav.modalita_calcolo === "per_persone" ?
             <>
-                  <div className="w-[4.5rem] ml-8 mr-8">
-                    <Label className="text-[11px] text-muted-foreground">Persone</Label>
+                  <div className="w-32">
+                    <Label className="text-[11px] text-muted-foreground">N° persone</Label>
                     <OreInput
+                  compact
                   value={lav.numero_persone ?? 0}
                   step={1}
                   onChange={(v) => updateLav(i, { numero_persone: v })} />
                 
                   </div>
-                  <div className="w-24">
+                  <div className="w-32">
                     <Label className="text-[11px] text-muted-foreground">Ore/persona</Label>
                     <OreInput
+                  compact
                   value={lav.ore_per_persona ?? 0}
                   onChange={(v) => updateLav(i, { ore_per_persona: v })} />
                 
                   </div>
-                  <div className="w-[4.5rem]">
-                    <Label className="text-[11px] text-muted-foreground">Totale</Label>
-                    <Input type="text" inputMode="decimal" value={lav.ore_totali ?? 0} disabled className="mt-1 bg-muted font-semibold text-center tabular-nums" />
+                  <div className="h-9 flex items-center">
+                    <span className="text-sm font-semibold text-primary tabular-nums whitespace-nowrap">
+                      = {fmtH(lav.ore_totali)}h
+                    </span>
                   </div>
                 </> :
 
-            <div className="w-28">
+            <div className="w-32">
                   <Label className="text-[11px] text-muted-foreground">Ore totali</Label>
                   <OreInput
+                compact
                 value={lav.ore_totali ?? 0}
                 onChange={(v) => updateLav(i, { ore_totali: v })} />
               
