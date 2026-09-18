@@ -10,8 +10,9 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Users, Route, CalendarDays
 import BottomNav from "@/components/BottomNav";
 import { format, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import { it } from "date-fns/locale";
-import { fmtOre, arrotondaOre, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
+import { fmtOre, arrotondaOre, classificaTrasfertaSplit, getCapannone } from "@/lib/timbratureUtils";
 import { buildDettaglioGiorno, calcolaSpostamenti, calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
+import { distanzeStradali } from "@/lib/percorsiMaps";
 import CalendarioMese from "@/components/orelavoratori/CalendarioMese";
 import GiornoDetailDialog from "@/components/orelavoratori/GiornoDetailDialog";
 
@@ -21,6 +22,8 @@ export default function OreLavoratori() {
   const [mese, setMese] = useState(startOfMonth(new Date()));
   const [giornoKey, setGiornoKey] = useState(null);
   const [me, setMe] = useState(null);
+  // Distanze reali di strada (Google Maps) per andata/ritorno dal capannone, per giorno
+  const [distanzeGiorni, setDistanzeGiorni] = useState({});
 
   useEffect(() => { base44.auth.me().then(setMe).catch(() => {}); }, []);
 
@@ -137,6 +140,51 @@ export default function OreLavoratori() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timbrature, selectedCollab, email, mese]);
 
+  // Calcolo in blocco delle distanze stradali (Google Maps, percorso più corto)
+  // capannone -> primo cantiere e ultimo cantiere -> capannone, per ogni giorno del mese.
+  useEffect(() => {
+    let attivo = true;
+    const capannone = getCapannone(config);
+    const keys = [];
+    const tratte = [];
+
+    Object.entries(timbGiornoMap).forEach(([key, tims]) => {
+      const ingressi = (tims || [])
+        .slice()
+        .sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora))
+        .filter((t) => t.tipo_evento === "ingresso");
+      if (!ingressi.length) return;
+      const primo = cantieri.find((c) => c.id === ingressi[0].cantiere_id);
+      const ultimo = cantieri.find((c) => c.id === ingressi[ingressi.length - 1].cantiere_id);
+      keys.push(key);
+      tratte.push(primo?.latitudine != null
+        ? { from: { lat: capannone.lat, lon: capannone.lon }, to: { lat: primo.latitudine, lon: primo.longitudine } }
+        : null);
+      tratte.push(ultimo?.latitudine != null
+        ? { from: { lat: ultimo.latitudine, lon: ultimo.longitudine }, to: { lat: capannone.lat, lon: capannone.lon } }
+        : null);
+    });
+
+    if (!tratte.length) {
+      setDistanzeGiorni({});
+      return;
+    }
+
+    distanzeStradali(tratte).then((d) => {
+      if (!attivo) return;
+      const map = {};
+      keys.forEach((k, i) => {
+        map[k] = { kmAndata: d[i * 2], kmRitorno: d[i * 2 + 1] };
+      });
+      setDistanzeGiorni(map);
+    });
+
+    return () => {
+      attivo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timbGiornoMap, cantieri, config]);
+
   // Trasferte confermate dal DB per giorno del collaboratore (match email O nome)
   const trasferteMap = useMemo(() => {
     const map = {};
@@ -183,7 +231,9 @@ export default function OreLavoratori() {
       const oreSpost = spost.reduce((s, sp) => s + sp.durata, 0);
       const ore = arrotondaOre(oreCantieri + oreSpost);
       const trasfertaConfermata = trasferteMap[key];
-      const trasfertaAuto = timsGiorno.length ? calcolaTrasfertaGiorno(timsGiorno, cantieri, config) : null;
+      const trasfertaAuto = timsGiorno.length
+        ? calcolaTrasfertaGiorno(timsGiorno, cantieri, config, distanzeGiorni[key] || null)
+        : null;
       sintesi[key] = {
         ore,
         oreSpost: arrotondaOre(oreSpost),
@@ -193,7 +243,7 @@ export default function OreLavoratori() {
     });
     return sintesi;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vociGiornoMap, timbGiornoMap, trasferteMap, cantieri, config]);
+  }, [vociGiornoMap, timbGiornoMap, trasferteMap, cantieri, config, distanzeGiorni]);
 
   // Totali mese
   const { totaleOreCantieri, totaleOreSpost, totaleKmMese, giorniLavoratiMese } = useMemo(() => {

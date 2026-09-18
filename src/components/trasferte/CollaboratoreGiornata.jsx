@@ -13,9 +13,10 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { MapPin, Navigation, Clock, Save, CheckCircle2, Car, AlertTriangle, Settings, ChevronDown } from "lucide-react";
 import {
-  STEP_CONFIG, arrotondaQuarti, fmtOre, distanzaKm,
+  STEP_CONFIG, arrotondaQuarti, fmtOre,
   CAPANNONE, classificaTrasfertaSplit, getCapannone, TRASFERTA_CONFIG,
 } from "@/lib/timbratureUtils";
+import { useDistanzeStradali } from "@/hooks/useDistanzeStradali";
 
 export default function CollaboratoreGiornata({ email, nome, trackingPosizione, timbrature, cantieri, data, trasfertaEsistente, config, onSalvata, editable, onTimbraturaCambiata }) {
   const capannone = getCapannone(config);
@@ -67,12 +68,18 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
   const primoCantiere = primoIngresso ? cantieri.find(c => c.id === primoIngresso.cantiere_id) : null;
   const ultimoCantiere = ultimoIngresso ? cantieri.find(c => c.id === ultimoIngresso.cantiere_id) : null;
 
-  const kmAndataCalc = primoCantiere?.latitudine
-    ? distanzaKm(capannone.lat, capannone.lon, primoCantiere.latitudine, primoCantiere.longitudine)
-    : null;
-  const kmRitornoCalc = ultimoCantiere?.latitudine
-    ? distanzaKm(ultimoCantiere.latitudine, ultimoCantiere.longitudine, capannone.lat, capannone.lon)
-    : null;
+  // Distanze reali di strada (Google Maps, percorso più corto): capannone <-> cantiere
+  const distanzeTrasferta = useDistanzeStradali([
+    primoCantiere?.latitudine != null
+      ? { from: { lat: capannone.lat, lon: capannone.lon }, to: { lat: primoCantiere.latitudine, lon: primoCantiere.longitudine } }
+      : null,
+    ultimoCantiere?.latitudine != null
+      ? { from: { lat: ultimoCantiere.latitudine, lon: ultimoCantiere.longitudine }, to: { lat: capannone.lat, lon: capannone.lon } }
+      : null,
+  ]);
+
+  const kmAndataCalc = distanzeTrasferta?.[0] ?? null;
+  const kmRitornoCalc = distanzeTrasferta?.[1] ?? null;
 
   const splitCalc = classificaTrasfertaSplit(kmAndataCalc, kmRitornoCalc, config);
   const tipoCalc = splitCalc.tipo_trasferta;
