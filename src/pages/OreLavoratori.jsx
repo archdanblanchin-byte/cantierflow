@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Users, Route, CalendarDays, Navigation } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Users, Route, CalendarDays, Navigation, Table2 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { format, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import { it } from "date-fns/locale";
@@ -14,6 +14,8 @@ import { fmtOre, arrotondaOre, classificaTrasfertaSplit } from "@/lib/timbrature
 import { buildDettaglioGiorno, calcolaSpostamenti, calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
 import CalendarioMese from "@/components/orelavoratori/CalendarioMese";
 import GiornoDetailDialog from "@/components/orelavoratori/GiornoDetailDialog";
+import RiepilogoMensile from "@/components/orelavoratori/RiepilogoMensile";
+import { buildRiepilogoMensile } from "@/lib/riepilogoMensile";
 
 export default function OreLavoratori() {
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ export default function OreLavoratori() {
   const [mese, setMese] = useState(startOfMonth(new Date()));
   const [giornoKey, setGiornoKey] = useState(null);
   const [me, setMe] = useState(null);
+  const [vista, setVista] = useState("elenco");
 
   useEffect(() => { base44.auth.me().then(setMe).catch(() => {}); }, []);
 
@@ -62,7 +65,7 @@ export default function OreLavoratori() {
         "-data_ora",
         5000
       ),
-    enabled: !!selectedCollab,
+    enabled: !!selectedCollab || vista === "riepilogo",
   });
 
   // Tutte le trasferte del mese
@@ -74,7 +77,7 @@ export default function OreLavoratori() {
         "-data",
         2000
       ),
-    enabled: !!selectedCollab,
+    enabled: !!selectedCollab || vista === "riepilogo",
   });
 
   // Match collaboratore <-> timbratura/trasferta
@@ -215,6 +218,12 @@ export default function OreLavoratori() {
     };
   }, [giorniSintesi]);
 
+  // Foglio riepilogativo: tutti i dipendenti × tutte le giornate del mese
+  const riepilogo = useMemo(
+    () => buildRiepilogoMensile({ collaboratori, rapportini, timbrature, trasferte, cantieri, config, me, mese }),
+    [collaboratori, rapportini, timbrature, trasferte, cantieri, config, me, mese]
+  );
+
   const giornoSelezionato = giornoKey ? new Date(giornoKey + "T00:00:00") : null;
   const dettaglioGiorno = giornoKey
     ? buildDettaglioGiorno(vociGiornoMap[giornoKey] || [], timbGiornoMap[giornoKey] || [])
@@ -302,6 +311,48 @@ export default function OreLavoratori() {
     );
   }
 
+  if (vista === "riepilogo") {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="bg-card border-b border-border sticky top-0 z-10">
+          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => setVista("elenco")}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <h1 className="font-bold text-lg">Riepilogo mensile</h1>
+              <p className="text-xs text-muted-foreground">
+                Tutti i dipendenti, giorno per giorno: ore, trasferte e cantieri
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 py-4 space-y-4">
+          <div className="flex items-center justify-between max-w-xs">
+            <Button variant="outline" size="icon" onClick={prevMese}>
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <p className="font-semibold capitalize">{format(mese, "MMMM yyyy", { locale: it })}</p>
+            <Button variant="outline" size="icon" onClick={nextMese}>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {loadingTimb ? (
+            <Skeleton className="h-64 rounded-xl" />
+          ) : riepilogo.righe.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground py-8">Nessun collaboratore in anagrafe</p>
+          ) : (
+            <RiepilogoMensile {...riepilogo} />
+          )}
+        </div>
+
+        <BottomNav />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="bg-card border-b border-border sticky top-0 z-10">
@@ -329,6 +380,21 @@ export default function OreLavoratori() {
             <p className="text-[10px] text-muted-foreground">Mese corrente</p>
           </Card>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setVista("riepilogo")}
+          className="w-full rounded-xl border bg-card p-3 flex items-center gap-3 text-left hover:bg-accent/40 transition-colors"
+        >
+          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <Table2 className="w-4 h-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">Riepilogo mensile</p>
+            <p className="text-xs text-muted-foreground">Tutti i dipendenti e tutte le giornate del mese</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+        </button>
 
         <div className="space-y-2">
           {loadingCollab ? (
