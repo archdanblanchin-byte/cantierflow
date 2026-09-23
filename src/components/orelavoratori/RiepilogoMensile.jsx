@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, HardHat } from "lucide-react";
+import { Download, HardHat, RefreshCw } from "lucide-react";
 import { fmtOre, TRASFERTA_CONFIG } from "@/lib/timbratureUtils";
 import { cantieriDelMese, estraiRiepilogoCantiere, fmtOreBreve, fmtOrePermesso } from "@/lib/riepilogoMensile";
 import { esportaRiepilogoMensile } from "@/lib/riepilogoExcel";
@@ -28,7 +28,15 @@ const siglaConOre = (cella) => {
  * Il colore di ogni cella indica la trasferta del giorno (grigio = in sede,
  * T0–T4 = fascia di trasferta). Tocca una cella per il dettaglio del giorno.
  */
-export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, onGiornoClick }) {
+export default function RiepilogoMensile({
+  giorni,
+  righe,
+  totaliGiorno,
+  mese,
+  onGiornoClick,
+  onAggiornaPermessi,
+  loadingPermessi,
+}) {
   const [cantiereAperto, setCantiereAperto] = useState(null);
   const totaleSquadra = righe.reduce((s, r) => s + (r.totOre || 0), 0);
   const cantieri = cantieriDelMese({ righe });
@@ -58,10 +66,23 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
             </button>
           ))
         )}
+        {onAggiornaPermessi && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+            onClick={onAggiornaPermessi}
+            disabled={loadingPermessi}
+            title="Rileggi permessi e ferie dal calendario Google"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loadingPermessi ? "animate-spin" : ""}`} />
+            {loadingPermessi ? "Aggiorno..." : "Permessi"}
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
-          className="ml-auto"
+          className={onAggiornaPermessi ? "" : "ml-auto"}
           onClick={() => esportaRiepilogoMensile({ giorni, righe }, mese)}
         >
           <Download className="w-3.5 h-3.5 mr-1.5" /> Excel

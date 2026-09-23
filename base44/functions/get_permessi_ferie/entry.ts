@@ -12,8 +12,10 @@ const ICAL_URL = `https://calendar.google.com/calendar/ical/${encodeURIComponent
 const CACHE_TTL_MS = 15 * 60 * 1000;
 let cacheIcs = { testo: null, istante: 0 };
 
-async function leggiCalendario() {
-  if (cacheIcs.testo && Date.now() - cacheIcs.istante < CACHE_TTL_MS) {
+// `forza` = true salta la copia in memoria: serve al pulsante di aggiornamento
+// per rileggere subito il calendario dopo una modifica fatta su Google.
+async function leggiCalendario(forza = false) {
+  if (!forza && cacheIcs.testo && Date.now() - cacheIcs.istante < CACHE_TTL_MS) {
     return cacheIcs.testo;
   }
   const res = await fetch(ICAL_URL, { method: "GET" });
@@ -217,7 +219,7 @@ export default async function(req) {
       );
     }
 
-    const ics = await leggiCalendario();
+    const ics = await leggiCalendario(body.forza === true);
     const events = parseIcal(ics);
 
     const permessiDelGiorno = (giorno) => {

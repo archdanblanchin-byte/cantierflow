@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -82,16 +82,30 @@ export default function OreLavoratori() {
 
   // Permessi e ferie del mese, letti dal calendario Google collegato.
   // Sempre attiva e con cache lunga: le sigle restano visibili anche cambiando vista.
-  const { data: permessiFerie = {} } = useQuery({
+  // Il pulsante di aggiornamento alza questo flag: la prossima lettura salta
+  // la copia in cache (frontend e backend) e rilegge il calendario da Google.
+  const forzaPermessi = useRef(false);
+  const {
+    data: permessiFerie = {},
+    isFetching: loadingPermessi,
+    refetch: refetchPermessi,
+  } = useQuery({
     queryKey: ["permessi-ferie-mese", inizioStr, fineStr],
     queryFn: async () => {
-      const res = await base44.functions.invoke("get_permessi_ferie", { da: inizioStr, a: fineStr });
+      const forza = forzaPermessi.current;
+      forzaPermessi.current = false;
+      const res = await base44.functions.invoke("get_permessi_ferie", { da: inizioStr, a: fineStr, forza });
       return res.data?.permessi_per_giorno || {};
     },
     staleTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: 2,
   });
+
+  const aggiornaPermessi = () => {
+    forzaPermessi.current = true;
+    refetchPermessi();
+  };
 
   // Match collaboratore <-> timbratura/trasferta
   // 1) per user_email del collaboratore
@@ -393,6 +407,8 @@ export default function OreLavoratori() {
             <RiepilogoMensile
               {...riepilogo}
               mese={mese}
+              onAggiornaPermessi={aggiornaPermessi}
+              loadingPermessi={loadingPermessi}
               onGiornoClick={(collab, key) => {
                 setSelectedCollab(collab);
                 setGiornoKey(key);
