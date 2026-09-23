@@ -1,0 +1,67 @@
+{
+  "name": "SincronizzazionePermessi",
+  "type": "object",
+  "properties": {
+    "mese": {
+      "type": "string",
+      "description": "Mese caricato dal calendario Google (yyyy-MM)"
+    },
+    "ultima_sync": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quando il mese \u00e8 stato sincronizzato l'ultima volta"
+    },
+    "giorni_salvati": {
+      "type": "number",
+      "description": "Numero di giorni di permesso/feria trovati nell'ultima sincronizzazione"
+    }
+  },
+  "required": [
+    "mese"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    }
+  }
+}

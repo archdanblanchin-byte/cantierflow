@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,7 +15,10 @@ import { buildDettaglioGiorno, calcolaSpostamenti, calcolaTrasfertaGiorno } from
 import CalendarioMese from "@/components/orelavoratori/CalendarioMese";
 import GiornoDetailDialog from "@/components/orelavoratori/GiornoDetailDialog";
 import RiepilogoMensile from "@/components/orelavoratori/RiepilogoMensile";
+import PermessiMeseBanner from "@/components/orelavoratori/PermessiMeseBanner";
 import { buildRiepilogoMensile } from "@/lib/riepilogoMensile";
+import { raggruppaPermessiPerGiorno } from "@/lib/permessiFerieUtils";
+import { usePermessi } from "@/hooks/usePermessi";
 
 export default function OreLavoratori() {
   const navigate = useNavigate();
@@ -24,6 +27,8 @@ export default function OreLavoratori() {
   const [giornoKey, setGiornoKey] = useState(null);
   const [me, setMe] = useState(null);
   const [vista, setVista] = useState("elenco");
+  // Solo amministratori e responsabili tecnici possono salvare i permessi
+  const { isGestore } = usePermessi();
 
   useEffect(() => { base44.auth.me().then(setMe).catch(() => {}); }, []);
 
@@ -80,31 +85,46 @@ export default function OreLavoratori() {
     enabled: !!selectedCollab || vista === "riepilogo",
   });
 
-  // Permessi e ferie del mese, letti dal calendario Google collegato.
-  // Sempre attiva e con cache lunga: le sigle restano visibili anche cambiando vista.
-  // Il pulsante di aggiornamento alza questo flag: la prossima lettura salta
-  // la copia in cache (frontend e backend) e rilegge il calendario da Google.
-  const forzaPermessi = useRef(false);
-  const {
-    data: permessiFerie = {},
-    isFetching: loadingPermessi,
-    refetch: refetchPermessi,
-  } = useQuery({
-    queryKey: ["permessi-ferie-mese", inizioStr, fineStr],
-    queryFn: async () => {
-      const forza = forzaPermessi.current;
-      forzaPermessi.current = false;
-      const res = await base44.functions.invoke("get_permessi_ferie", { da: inizioStr, a: fineStr, forza });
-      return res.data?.permessi_per_giorno || {};
-    },
-    staleTime: 15 * 60 * 1000,
+  // Permessi e ferie del mese: letti dal database, dove restano salvati una
+  // volta caricati. L'app non interroga più il calendario Google a ogni
+  // apertura: solo il pulsante «Permessi» rilegge Google e salva le novità.
+  const queryClient = useQueryClient();
+  const meseKey = format(mese, "yyyy-MM");
+
+  const { data: permessiSalvati = [] } = useQuery({
+    queryKey: ["permessi-ferie-salvati", inizioStr, fineStr],
+    queryFn: () =>
+      base44.entities.PermessoGiorno.filter(
+        { data: { $gte: inizioStr, $lte: fineStr } },
+        "data",
+        2000
+      ),
     refetchOnWindowFocus: false,
-    retry: 2,
   });
 
-  const aggiornaPermessi = () => {
-    forzaPermessi.current = true;
-    refetchPermessi();
+  // Marcatore del mese: dice se è già stato caricato almeno una volta
+  const { data: sincronizzazioni = [], isLoading: loadingSyncMese } = useQuery({
+    queryKey: ["permessi-ferie-sync", meseKey],
+    queryFn: () => base44.entities.SincronizzazionePermessi.filter({ mese: meseKey }),
+    refetchOnWindowFocus: false,
+  });
+
+  const permessiFerie = useMemo(
+    () => raggruppaPermessiPerGiorno(permessiSalvati),
+    [permessiSalvati]
+  );
+  const meseCaricato = sincronizzazioni.length > 0;
+
+  const [loadingPermessi, setLoadingPermessi] = useState(false);
+  const aggiornaPermessi = async () => {
+    setLoadingPermessi(true);
+    try {
+      await base44.functions.invoke("sync_permessi_ferie", { da: inizioStr, a: fineStr });
+      await queryClient.invalidateQueries({ queryKey: ["permessi-ferie-salvati"] });
+      await queryClient.invalidateQueries({ queryKey: ["permessi-ferie-sync"] });
+    } finally {
+      setLoadingPermessi(false);
+    }
   };
 
   // Match collaboratore <-> timbratura/trasferta
@@ -365,6 +385,15 @@ export default function OreLavoratori() {
               onGiornoClick={(key) => setGiornoKey(key)}
             />
           </Card>
+
+          {isGestore && !loadingSyncMese && !meseCaricato && (
+            <PermessiMeseBanner
+              meseLabel={format(mese, "MMMM yyyy", { locale: it })}
+              onScarica={aggiornaPermessi}
+              loading={loadingPermessi}
+            />
+          )}
+
           <p className="text-[11px] text-muted-foreground text-center">
             Tocca un giorno con dati per vedere cantieri, spostamenti, luoghi di lavoro, trasferta e note
           </p>
@@ -413,6 +442,14 @@ export default function OreLavoratori() {
             </Button>
           </div>
 
+          {isGestore && !loadingSyncMese && !meseCaricato && (
+            <PermessiMeseBanner
+              meseLabel={format(mese, "MMMM yyyy", { locale: it })}
+              onScarica={aggiornaPermessi}
+              loading={loadingPermessi}
+            />
+          )}
+
           {loadingTimb ? (
             <Skeleton className="h-64 rounded-xl" />
           ) : riepilogo.righe.length === 0 ? (
@@ -421,7 +458,7 @@ export default function OreLavoratori() {
             <RiepilogoMensile
               {...riepilogo}
               mese={mese}
-              onAggiornaPermessi={aggiornaPermessi}
+              onAggiornaPermessi={isGestore ? aggiornaPermessi : undefined}
               loadingPermessi={loadingPermessi}
               onGiornoClick={(collab, key) => {
                 setSelectedCollab(collab);

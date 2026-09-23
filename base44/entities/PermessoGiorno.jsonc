@@ -1,0 +1,87 @@
+{
+  "name": "PermessoGiorno",
+  "type": "object",
+  "properties": {
+    "chiave": {
+      "type": "string",
+      "description": "Chiave univoca del giorno: data|tipo|nome normalizzato"
+    },
+    "data": {
+      "type": "string",
+      "format": "date",
+      "description": "Giorno del permesso o della feria (yyyy-MM-dd)"
+    },
+    "nome": {
+      "type": "string",
+      "description": "Nome della persona letto dal titolo dell'evento sul calendario Google"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "permesso",
+        "ferie"
+      ],
+      "description": "Tipo di assenza"
+    },
+    "ore": {
+      "type": "number",
+      "description": "Ore di permesso (valorizzate solo per i permessi parziali)"
+    },
+    "ultima_sync": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quando il dato \u00e8 stato salvato o aggiornato dal calendario Google"
+    }
+  },
+  "required": [
+    "chiave",
+    "data",
+    "nome",
+    "tipo"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    }
+  }
+}
