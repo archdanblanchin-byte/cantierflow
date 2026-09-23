@@ -262,6 +262,18 @@ export default function OreLavoratori() {
     [collaboratori, rapportini, timbrature, trasferte, cantieri, config, me, permessiFerie, mese]
   );
 
+  // Permessi/ferie del collaboratore aperto nel calendario individuale
+  // (dalle celle già abbinate dal riepilogo, così la lettura resta unica)
+  const permessiCollabMap = useMemo(() => {
+    if (!selectedCollab) return {};
+    const riga = riepilogo.righe.find((r) => r.collaboratore.id === selectedCollab.id);
+    const map = {};
+    Object.entries(riga?.celle || {}).forEach(([k, c]) => {
+      if (c.permesso) map[k] = { tipo: c.permesso, ore: c.permessoOre ?? null };
+    });
+    return map;
+  }, [riepilogo, selectedCollab]);
+
   const giornoSelezionato = giornoKey ? new Date(giornoKey + "T00:00:00") : null;
   const dettaglioGiorno = giornoKey
     ? buildDettaglioGiorno(vociGiornoMap[giornoKey] || [], timbGiornoMap[giornoKey] || [])
@@ -349,6 +361,7 @@ export default function OreLavoratori() {
             <CalendarioMese
               mese={mese}
               giorniSintesi={giorniSintesi}
+              permessi={permessiCollabMap}
               onGiornoClick={(key) => setGiornoKey(key)}
             />
           </Card>
@@ -364,6 +377,7 @@ export default function OreLavoratori() {
           dettaglio={dettaglioGiorno}
           trasferta={trasfertaGiorno}
           collaboratoreNome={selectedCollab.nome}
+          permesso={giornoPermesso}
         />
 
         <BottomNav />

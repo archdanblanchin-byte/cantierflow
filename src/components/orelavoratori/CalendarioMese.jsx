@@ -3,13 +3,17 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, MapPin } from "lucide-react";
 import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
+import { fmtOrePermesso } from "@/lib/riepilogoMensile";
 
 const GIORNI_SETT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
+const COLORE_FERIE = "bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-900/40 dark:text-violet-200";
+const COLORE_PERMESSO = "bg-teal-100 text-teal-700 border-teal-300 dark:bg-teal-900/40 dark:text-teal-200";
 
 /**
  * giorniSintesi: { [yyyy-MM-dd]: { ore: number, luoghi: string[], trasferta: { tipo_trasferta, km_totali, label } | null } }
+ * permessi:      { [yyyy-MM-dd]: { tipo: "ferie"|"permesso", ore: number|null } }
  */
-export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
+export default function CalendarioMese({ mese, giorniSintesi, permessi = {}, onGiornoClick }) {
   const primo = startOfMonth(mese);
   const ultimo = endOfMonth(mese);
   const offset = (getDay(primo) + 6) % 7;
@@ -36,7 +40,8 @@ export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
           const fascia = trasferta?.tipo_trasferta;
           const cfg = fascia ? TRASFERTA_CONFIG[fascia] : null;
           const inSede = !!trasferta?.nessuna_trasferta;
-          const haDati = ore > 0 || !!trasferta;
+          const permesso = permessi[key] || null;
+          const haDati = ore > 0 || !!trasferta || !!permesso;
           const luoghi = s?.luoghi || [];
           const hasNote = !!s?.hasNote;
           const oggi = isToday(d);
@@ -75,6 +80,17 @@ export default function CalendarioMese({ mese, giorniSintesi, onGiornoClick }) {
               {cfg && !inSede && (
                 <Badge variant="outline" className={`text-[8px] px-1 py-0 mt-0.5 leading-none ${cfg.color}`}>
                   {cfg.label} {trasferta.km_totali != null ? `${trasferta.km_totali}km` : ""}
+                </Badge>
+              )}
+              {permesso && (
+                <Badge
+                  variant="outline"
+                  className={`text-[8px] px-1 py-0 mt-0.5 leading-none max-w-full truncate ${
+                    permesso.tipo === "ferie" ? COLORE_FERIE : COLORE_PERMESSO
+                  }`}
+                >
+                  {permesso.tipo === "ferie" ? "F" : "P"}
+                  {fmtOrePermesso(permesso.ore) ? ` ${fmtOrePermesso(permesso.ore)}` : ""}
                 </Badge>
               )}
             </button>
