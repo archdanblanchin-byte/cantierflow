@@ -233,7 +233,7 @@ export default function OreLavoratori() {
   const prevMese = () => setMese((m) => startOfMonth(addMonths(m, -1)));
   const nextMese = () => setMese((m) => startOfMonth(addMonths(m, 1)));
 
-  if (selectedCollab) {
+  if (selectedCollab && vista === "elenco") {
     return (
       <div className="min-h-screen bg-background pb-20">
         <div className="bg-card border-b border-border sticky top-0 z-10">
@@ -344,9 +344,31 @@ export default function OreLavoratori() {
           ) : riepilogo.righe.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">Nessun collaboratore in anagrafe</p>
           ) : (
-            <RiepilogoMensile {...riepilogo} />
+            <RiepilogoMensile
+              {...riepilogo}
+              mese={mese}
+              onGiornoClick={(collab, key) => {
+                setSelectedCollab(collab);
+                setGiornoKey(key);
+              }}
+            />
           )}
         </div>
+
+        <GiornoDetailDialog
+          open={!!giornoKey && !!selectedCollab}
+          onOpenChange={(v) => {
+            if (!v) {
+              setGiornoKey(null);
+              setSelectedCollab(null);
+            }
+          }}
+          data={giornoSelezionato}
+          dettaglio={dettaglioGiorno}
+          trasferta={trasfertaGiorno}
+          collaboratoreNome={selectedCollab?.nome || ""}
+          onApriCalendario={() => setVista("elenco")}
+        />
 
         <BottomNav />
       </div>

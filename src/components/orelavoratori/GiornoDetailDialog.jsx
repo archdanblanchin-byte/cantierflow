@@ -1,13 +1,14 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Navigation, Route, Clock, Truck, AlertTriangle, Home, Warehouse } from "lucide-react";
+import { MapPin, Navigation, Route, Clock, Truck, AlertTriangle, Home, Warehouse, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
 import { formatDataBreve } from "@/lib/oreLavoratoriUtils";
 
-export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio, trasferta, collaboratoreNome }) {
+export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio, trasferta, collaboratoreNome, onApriCalendario }) {
   const cantieri = dettaglio?.cantieri || [];
   const spostamenti = dettaglio?.spostamenti || [];
   const oreTotali = dettaglio?.oreTotali || 0;
@@ -218,6 +219,12 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
 
         {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && note.length === 0 && luoghiLavoro.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-6">Nessun dato per questa giornata</p>
+        )}
+
+        {onApriCalendario && (
+          <Button variant="outline" className="w-full" onClick={onApriCalendario}>
+            <CalendarDays className="w-4 h-4 mr-1.5" /> Apri nel calendario di {collaboratoreNome}
+          </Button>
         )}
       </DialogContent>
     </Dialog>

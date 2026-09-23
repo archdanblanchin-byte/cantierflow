@@ -1,22 +1,62 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Download, HardHat } from "lucide-react";
 import { fmtOre, TRASFERTA_CONFIG } from "@/lib/timbratureUtils";
-import { fmtOreBreve } from "@/lib/riepilogoMensile";
+import { cantieriDelMese, estraiRiepilogoCantiere, fmtOreBreve } from "@/lib/riepilogoMensile";
+import { esportaRiepilogoMensile } from "@/lib/riepilogoExcel";
+import DettaglioCantiereDialog from "@/components/orelavoratori/DettaglioCantiereDialog";
 
 const FINE_SETTIMANA = [0, 6];
+const COLORE_SEDE = "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200";
 
 /**
  * Foglio riepilogativo del mese: dipendenti in riga, giorni in colonna.
- * Ogni cella è colorata con il colore del cantiere e mostra ore, fascia
- * trasferta ed eventuali luoghi di lavoro fuori cantiere.
+ * Il colore di ogni cella indica la trasferta del giorno (grigio = in sede,
+ * T0–T4 = fascia di trasferta). Tocca una cella per il dettaglio del giorno.
  */
-export default function RiepilogoMensile({ giorni, righe, totaliGiorno, colori }) {
+export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, onGiornoClick }) {
+  const [cantiereAperto, setCantiereAperto] = useState(null);
   const totaleSquadra = righe.reduce((s, r) => s + (r.totOre || 0), 0);
-  const cantieriInUso = Object.keys(colori);
+  const cantieri = cantieriDelMese({ righe });
+
+  const dettaglioCantiere = cantiereAperto
+    ? estraiRiepilogoCantiere({ giorni, righe }, cantiereAperto)
+    : null;
 
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Cantieri del mese
+        </span>
+        {cantieri.length === 0 ? (
+          <span className="text-[11px] text-muted-foreground">nessuno</span>
+        ) : (
+          cantieri.map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setCantiereAperto(n)}
+              className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-[11px] hover:bg-accent/50 transition-colors"
+            >
+              <HardHat className="w-3 h-3 text-primary shrink-0" />
+              <span className="max-w-[180px] truncate">{n}</span>
+            </button>
+          ))
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto"
+          onClick={() => esportaRiepilogoMensile({ giorni, righe }, mese)}
+        >
+          <Download className="w-3.5 h-3.5 mr-1.5" /> Excel
+        </Button>
+      </div>
+
       <div className="overflow-auto rounded-lg border bg-card max-h-[68vh]">
         <table className="border-collapse text-[10px]">
           <thead>
@@ -42,8 +82,7 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, colori }
               })}
               <th className="sticky top-0 z-20 w-16 border-b border-r bg-primary/10 px-1 py-1 text-center">Tot ore</th>
               <th className="sticky top-0 z-20 w-16 border-b border-r bg-muted px-1 py-1 text-center">Spost.</th>
-              <th className="sticky top-0 z-20 w-16 border-b border-r bg-muted px-1 py-1 text-center">Trasf.</th>
-              <th className="sticky top-0 z-20 w-40 border-b px-2 py-1 text-left">Cantieri</th>
+              <th className="sticky top-0 z-20 w-16 border-b bg-muted px-1 py-1 text-center">Trasf.</th>
             </tr>
           </thead>
 
@@ -59,16 +98,17 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, colori }
                   const key = format(d, "yyyy-MM-dd");
                   const cella = r.celle[key];
                   const weekend = FINE_SETTIMANA.includes(d.getDay());
-                  const colore = cella?.cantiere ? colori[cella.cantiere] : null;
                   const cfg = cella?.fascia ? TRASFERTA_CONFIG[cella.fascia] : null;
                   const vuota = !cella || (cella.ore <= 0 && !cella.trasferta);
+                  const colore = cella?.inSede ? COLORE_SEDE : cfg ? cfg.color : "";
                   return (
                     <td
                       key={key}
+                      onClick={vuota ? undefined : () => onGiornoClick(r.collaboratore, key)}
                       title={
                         cella
                           ? [
-                              cella.cantiere || "",
+                              cella.cantieri.join(", "),
                               cella.ore > 0 ? fmtOre(cella.ore) : "",
                               cella.luoghi.length ? `Lavoro a ${cella.luoghi.join(", ")}` : "",
                               cella.inSede ? "In sede" : cfg ? `Trasferta ${cella.fascia}` : "",
@@ -78,8 +118,8 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, colori }
                               .join(" · ")
                           : ""
                       }
-                      className={`border-b border-r p-0 text-center align-middle ${
-                        colore ? colore.cella : vuota ? (weekend ? "bg-muted/50" : "") : "bg-muted/30"
+                      className={`border-b border-r p-0 text-center align-middle ${colore} ${
+                        vuota ? (weekend ? "bg-muted/50" : "") : "cursor-pointer hover:brightness-95"
                       }`}
                     >
                       <div className="w-12 h-10 flex flex-col items-center justify-center leading-tight">
@@ -111,7 +151,7 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, colori }
                 <td className="border-b border-r text-center text-orange-700 dark:text-orange-400">
                   {fmtOreBreve(r.totSpost) || "—"}
                 </td>
-                <td className="border-b border-r text-center">
+                <td className="border-b text-center">
                   {r.nTrasferte > 0 ? (
                     <div className="leading-tight">
                       <div className="font-semibold">{r.nTrasferte} gg</div>
@@ -121,29 +161,13 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, colori }
                     <span className="text-muted-foreground">—</span>
                   )}
                 </td>
-                <td className="border-b px-2 py-1 align-middle">
-                  <div className="flex flex-wrap gap-x-2 gap-y-0.5 max-w-[150px]">
-                    {r.cantieriUsati.length === 0 ? (
-                      <span className="text-muted-foreground">—</span>
-                    ) : (
-                      r.cantieriUsati.map((n) => (
-                        <span key={n} className="inline-flex items-center gap-1 truncate max-w-[140px]">
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${colori[n]?.pallino || "bg-muted-foreground"}`} />
-                          <span className="truncate">{n}</span>
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </td>
               </tr>
             ))}
           </tbody>
 
           <tfoot>
             <tr>
-              <th className="sticky left-0 bottom-0 z-30 bg-muted border-r px-2 py-1 text-left">
-                Totale giorno
-              </th>
+              <th className="sticky left-0 bottom-0 z-30 bg-muted border-r px-2 py-1 text-left">Totale giorno</th>
               {giorni.map((d) => {
                 const key = format(d, "yyyy-MM-dd");
                 const ore = totaliGiorno[key] || 0;
@@ -162,38 +186,34 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, colori }
                 {fmtOreBreve(totaleSquadra) || "—"}
               </td>
               <td className="sticky bottom-0 z-20 border-r bg-muted" />
-              <td className="sticky bottom-0 z-20 border-r bg-muted" />
               <td className="sticky bottom-0 z-20 bg-muted" />
             </tr>
           </tfoot>
         </table>
       </div>
 
-      {cantieriInUso.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border bg-card px-3 py-2">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Cantieri</span>
-          {cantieriInUso.map((n) => (
-            <span key={n} className="inline-flex items-center gap-1.5 text-[11px]">
-              <span className={`w-3 h-3 rounded-sm border ${colori[n]?.cella || ""}`} />
-              {n}
-            </span>
-          ))}
-        </div>
-      )}
-
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
         <span className="font-semibold uppercase tracking-wider text-[10px]">Legenda</span>
-        <span>Ogni colore = un cantiere</span>
         <span className="inline-flex items-center gap-1">
-          <Badge variant="outline" className="text-[9px] px-1 py-0 bg-slate-100 text-slate-600 border-slate-300">sede</Badge>
+          <Badge variant="outline" className={`text-[9px] px-1 py-0 ${COLORE_SEDE}`}>sede</Badge>
           nessuna trasferta
         </span>
         {["T0", "T1", "T2", "T3", "T4"].map((f) => (
           <span key={f} className="inline-flex items-center gap-1">
-            <Badge variant="outline" className={`text-[9px] px-1 py-0 ${TRASFERTA_CONFIG[f].color}`}>{f}</Badge>
+            <Badge variant="outline" className={`text-[9px] px-1 py-0 ${TRASFERTA_CONFIG[f].color}`}>
+              {TRASFERTA_CONFIG[f].label}
+            </Badge>
           </span>
         ))}
+        <span>Tocca una cella per il dettaglio del giorno</span>
       </div>
+
+      <DettaglioCantiereDialog
+        open={!!cantiereAperto}
+        onOpenChange={(v) => !v && setCantiereAperto(null)}
+        dettaglio={dettaglioCantiere}
+        mese={mese}
+      />
     </div>
   );
 }
