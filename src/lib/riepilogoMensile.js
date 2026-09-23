@@ -28,7 +28,7 @@ function creaMatcher(collab, me) {
   };
 }
 
-const cellaVuota = () => ({ oreCantieri: 0, oreSpost: 0, cantieri: [], perCantiere: {}, luoghi: [], nota: "" });
+const cellaVuota = () => ({ oreCantieri: 0, oreSpost: 0, cantieri: [], perCantiere: {}, luoghi: [], nota: "", permesso: null });
 
 /**
  * Foglio riepilogativo del mese: una riga per dipendente, una colonna per giorno.
@@ -43,6 +43,7 @@ export function buildRiepilogoMensile({
   cantieri = [],
   config = null,
   me = null,
+  permessi = {},
   mese,
 }) {
   const primo = startOfMonth(mese);
@@ -103,7 +104,23 @@ export function buildRiepilogoMensile({
       };
     });
 
-    // 4) sintesi della giornata
+    // 4) permessi e ferie letti in automatico dal calendario Google collegato
+    const nomeCollabNorm = norm(collab.nome);
+    const primoNome = nomeCollabNorm.split(" ")[0];
+    giorni.forEach((d) => {
+      const k = chiave(d);
+      const lista = permessi[k];
+      if (!lista || !lista.length) return;
+      const trovato = lista.find((p) => {
+        if (p.tipo !== "ferie" && p.tipo !== "permesso") return false;
+        const pn = norm(p.nome);
+        if (!pn) return false;
+        return pn === primoNome || pn === nomeCollabNorm || nomeCollabNorm.startsWith(pn + " ");
+      });
+      if (trovato) get(k).permesso = trovato.tipo;
+    });
+
+    // 5) sintesi della giornata
     const nomiCantieri = new Set();
     let totOre = 0;
     let totSpost = 0;

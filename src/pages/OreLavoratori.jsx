@@ -80,6 +80,16 @@ export default function OreLavoratori() {
     enabled: !!selectedCollab || vista === "riepilogo",
   });
 
+  // Permessi e ferie del mese, letti dal calendario Google collegato
+  const { data: permessiFerie = {} } = useQuery({
+    queryKey: ["permessi-ferie-mese", inizioStr, fineStr],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("get_permessi_ferie", { da: inizioStr, a: fineStr });
+      return res.data?.permessi_per_giorno || {};
+    },
+    enabled: vista === "riepilogo",
+  });
+
   // Match collaboratore <-> timbratura/trasferta
   // 1) per user_email del collaboratore
   // 2) per nome denormalizzato (user_nome === collaboratore.nome)
@@ -220,8 +230,19 @@ export default function OreLavoratori() {
 
   // Foglio riepilogativo: tutti i dipendenti × tutte le giornate del mese
   const riepilogo = useMemo(
-    () => buildRiepilogoMensile({ collaboratori, rapportini, timbrature, trasferte, cantieri, config, me, mese }),
-    [collaboratori, rapportini, timbrature, trasferte, cantieri, config, me, mese]
+    () =>
+      buildRiepilogoMensile({
+        collaboratori,
+        rapportini,
+        timbrature,
+        trasferte,
+        cantieri,
+        config,
+        me,
+        permessi: permessiFerie,
+        mese,
+      }),
+    [collaboratori, rapportini, timbrature, trasferte, cantieri, config, me, permessiFerie, mese]
   );
 
   const giornoSelezionato = giornoKey ? new Date(giornoKey + "T00:00:00") : null;

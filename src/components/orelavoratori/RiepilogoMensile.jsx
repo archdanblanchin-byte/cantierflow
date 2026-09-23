@@ -11,6 +11,10 @@ import DettaglioCantiereDialog from "@/components/orelavoratori/DettaglioCantier
 
 const FINE_SETTIMANA = [0, 6];
 const COLORE_SEDE = "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200";
+const COLORE_FERIE = "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200";
+const COLORE_PERMESSO = "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-200";
+// Sigla mostrata nella cella: F = ferie, P = permesso
+const SIGLA_PERMESSO = { ferie: "F", permesso: "P" };
 
 /**
  * Foglio riepilogativo del mese: dipendenti in riga, giorni in colonna.
@@ -99,12 +103,20 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
                   const cella = r.celle[key];
                   const weekend = FINE_SETTIMANA.includes(d.getDay());
                   const cfg = cella?.fascia ? TRASFERTA_CONFIG[cella.fascia] : null;
-                  const vuota = !cella || (cella.ore <= 0 && !cella.trasferta);
-                  const colore = cella?.inSede ? COLORE_SEDE : cfg ? cfg.color : "";
+                  const permesso = cella?.permesso || null;
+                  const haLavoro = !!cella && ((cella.ore || 0) > 0 || !!cella.trasferta);
+                  const vuota = !haLavoro && !permesso;
+                  const colore = !haLavoro && permesso
+                    ? (permesso === "ferie" ? COLORE_FERIE : COLORE_PERMESSO)
+                    : cella?.inSede
+                    ? COLORE_SEDE
+                    : cfg
+                    ? cfg.color
+                    : "";
                   return (
                     <td
                       key={key}
-                      onClick={vuota ? undefined : () => onGiornoClick(r.collaboratore, key)}
+                      onClick={!haLavoro ? undefined : () => onGiornoClick(r.collaboratore, key)}
                       title={
                         cella
                           ? [
@@ -112,6 +124,7 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
                               cella.ore > 0 ? fmtOre(cella.ore) : "",
                               cella.luoghi.length ? `Lavoro a ${cella.luoghi.join(", ")}` : "",
                               cella.inSede ? "In sede" : cfg ? `Trasferta ${cella.fascia}` : "",
+                              permesso === "ferie" ? "Ferie" : permesso === "permesso" ? "Permesso" : "",
                               cella.nota || "",
                             ]
                               .filter(Boolean)
@@ -119,12 +132,18 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
                           : ""
                       }
                       className={`border-b border-r p-0 text-center align-middle ${colore} ${
-                        vuota ? (weekend ? "bg-muted/50" : "") : "cursor-pointer hover:brightness-95"
+                        haLavoro
+                          ? "cursor-pointer hover:brightness-95"
+                          : !permesso && weekend
+                          ? "bg-muted/50"
+                          : ""
                       }`}
                     >
                       <div className="w-12 h-10 flex flex-col items-center justify-center leading-tight">
                         {vuota ? (
                           <span className="text-[10px] text-muted-foreground/60">/</span>
+                        ) : !haLavoro ? (
+                          <span className="text-[11px] font-bold">{SIGLA_PERMESSO[permesso]}</span>
                         ) : (
                           <>
                             <span className="text-[10px] font-bold">{fmtOreBreve(cella.ore) || "—"}</span>
@@ -139,6 +158,9 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
                               <span className="text-[8px] font-semibold opacity-80 truncate max-w-[44px]">
                                 {cella.luoghi[0]}
                               </span>
+                            )}
+                            {permesso && (
+                              <span className="text-[8px] font-semibold opacity-80">{SIGLA_PERMESSO[permesso]}</span>
                             )}
                           </>
                         )}
@@ -197,6 +219,14 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
         <span className="inline-flex items-center gap-1">
           <Badge variant="outline" className={`text-[9px] px-1 py-0 ${COLORE_SEDE}`}>sede</Badge>
           nessuna trasferta
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Badge variant="outline" className={`text-[9px] px-1 py-0 ${COLORE_FERIE}`}>F</Badge>
+          ferie
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Badge variant="outline" className={`text-[9px] px-1 py-0 ${COLORE_PERMESSO}`}>P</Badge>
+          permesso
         </span>
         {["T0", "T1", "T2", "T3", "T4"].map((f) => (
           <span key={f} className="inline-flex items-center gap-1">

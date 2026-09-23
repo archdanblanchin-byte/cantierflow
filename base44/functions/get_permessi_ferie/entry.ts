@@ -94,6 +94,8 @@ function covers(event, target) {
 
 // "Ferie Erica" -> { tipo: "ferie", nome: "Erica" }
 // "Permesso Alessio" -> { tipo: "permesso", nome: "Alessio" }
+// "Erica ferie" -> { tipo: "ferie", nome: "Erica" }
+// "Alessio permesso" -> { tipo: "permesso", nome: "Alessio" }
 function parseSummary(summary) {
   if (!summary) return null;
   const s = summary.trim();
@@ -103,6 +105,10 @@ function parseSummary(summary) {
   }
   if (lower.startsWith("permesso")) {
     return { tipo: "permesso", nome: s.slice(8).trim() };
+  }
+  const m = lower.match(/^(.*?)\s+(ferie|permesso)$/);
+  if (m) {
+    return { tipo: m[2], nome: s.slice(0, m[1].length).trim() };
   }
   return { tipo: "altro", nome: s };
 }
@@ -120,9 +126,14 @@ export default async function(req) {
       // payload vuoto
     }
     const data = body.data;
-    if (!data || !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    const da = body.da;
+    const a = body.a;
+    const isSingle = !!data && /^\d{4}-\d{2}-\d{2}$/.test(data);
+    const isRange =
+      !!da && !!a && /^\d{4}-\d{2}-\d{2}$/.test(da) && /^\d{4}-\d{2}-\d{2}$/.test(a);
+    if (!isSingle && !isRange) {
       return Response.json(
-        { error: "Parametro 'data' non valido (YYYY-MM-DD)" },
+        { error: "Parametri non validi: usa 'data' oppure 'da' e 'a' (YYYY-MM-DD)" },
         { status: 400 }
       );
     }
@@ -137,19 +148,37 @@ export default async function(req) {
     const ics = await res.text();
     const events = parseIcal(ics);
 
-    const result = [];
-    const seen = new Set();
-    for (const ev of events) {
-      if (!covers(ev, data)) continue;
-      const parsed = parseSummary(ev.summary);
-      if (!parsed || !parsed.nome) continue;
-      const key = `${parsed.tipo}:${parsed.nome.toLowerCase()}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      result.push({ nome: parsed.nome, tipo: parsed.tipo });
+    const permessiDelGiorno = (giorno) => {
+      const result = [];
+      const seen = new Set();
+      for (const ev of events) {
+        if (!covers(ev, giorno)) continue;
+        const parsed = parseSummary(ev.summary);
+        if (!parsed || !parsed.nome) continue;
+        const key = `${parsed.tipo}:${parsed.nome.toLowerCase()}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        result.push({ nome: parsed.nome, tipo: parsed.tipo });
+      }
+      return result;
+    };
+
+    if (isSingle) {
+      return Response.json({ data, permessi: permessiDelGiorno(data) });
     }
 
-    return Response.json({ data, permessi: result });
+    // Intervallo di giorni (es. un mese): un elenco di permessi per ogni giorno
+    const permessiPerGiorno = {};
+    let giorno = da;
+    let guardia = 0;
+    while (giorno <= a && guardia < 62) {
+      const lista = permessiDelGiorno(giorno);
+      if (lista.length) permessiPerGiorno[giorno] = lista;
+      giorno = addOneDay(giorno);
+      guardia++;
+    }
+
+    return Response.json({ da, a, permessi_per_giorno: permessiPerGiorno });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
