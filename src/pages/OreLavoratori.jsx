@@ -254,11 +254,14 @@ export default function OreLavoratori() {
     : null;
   const trasfertaGiorno = giornoKey ? (giorniSintesi[giornoKey]?.trasferta || null) : null;
 
-  // Permesso/ferie della cella aperta nel riepilogo
-  const giornoPermesso =
+  // Permesso/ferie della cella aperta nel riepilogo (con le ore lette dal titolo)
+  const cellaGiorno =
     giornoKey && selectedCollab
-      ? riepilogo.righe.find((r) => r.collaboratore.id === selectedCollab.id)?.celle?.[giornoKey]?.permesso || null
+      ? riepilogo.righe.find((r) => r.collaboratore.id === selectedCollab.id)?.celle?.[giornoKey]
       : null;
+  const giornoPermesso = cellaGiorno?.permesso
+    ? { tipo: cellaGiorno.permesso, ore: cellaGiorno.permessoOre ?? null }
+    : null;
 
   // Dati per correggere la trasferta del giorno direttamente dalla cella
   const correzioneTrasferta =

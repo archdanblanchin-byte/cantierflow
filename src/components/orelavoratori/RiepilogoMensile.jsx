@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download, HardHat } from "lucide-react";
 import { fmtOre, TRASFERTA_CONFIG } from "@/lib/timbratureUtils";
-import { cantieriDelMese, estraiRiepilogoCantiere, fmtOreBreve } from "@/lib/riepilogoMensile";
+import { cantieriDelMese, estraiRiepilogoCantiere, fmtOreBreve, fmtOrePermesso } from "@/lib/riepilogoMensile";
 import { esportaRiepilogoMensile } from "@/lib/riepilogoExcel";
 import DettaglioCantiereDialog from "@/components/orelavoratori/DettaglioCantiereDialog";
 
@@ -15,6 +15,13 @@ const COLORE_FERIE = "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:t
 const COLORE_PERMESSO = "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-200";
 // Sigla mostrata nella cella: F = ferie, P = permesso
 const SIGLA_PERMESSO = { ferie: "F", permesso: "P" };
+// Sigla con le ore lette dal titolo del calendario: "P 4h", "F", ...
+const siglaConOre = (cella) => {
+  const s = SIGLA_PERMESSO[cella?.permesso] || "";
+  if (!s) return "";
+  const ore = fmtOrePermesso(cella?.permessoOre);
+  return ore ? `${s} ${ore}` : s;
+};
 
 /**
  * Foglio riepilogativo del mese: dipendenti in riga, giorni in colonna.
@@ -116,7 +123,7 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
                   return (
                     <td
                       key={key}
-                      onClick={!haLavoro ? undefined : () => onGiornoClick(r.collaboratore, key)}
+                      onClick={!haLavoro && !permesso ? undefined : () => onGiornoClick(r.collaboratore, key)}
                       title={
                         cella
                           ? [
@@ -124,7 +131,11 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
                               cella.ore > 0 ? fmtOre(cella.ore) : "",
                               cella.luoghi.length ? `Lavoro a ${cella.luoghi.join(", ")}` : "",
                               cella.inSede ? "In sede" : cfg ? `Trasferta ${cella.fascia}` : "",
-                              permesso === "ferie" ? "Ferie" : permesso === "permesso" ? "Permesso" : "",
+                              permesso
+                                ? `${permesso === "ferie" ? "Ferie" : "Permesso"}${
+                                    cella.permessoOre ? ` ${fmtOrePermesso(cella.permessoOre)}` : ""
+                                  }`
+                                : "",
                               cella.nota || "",
                             ]
                               .filter(Boolean)
@@ -132,7 +143,7 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
                           : ""
                       }
                       className={`border-b border-r p-0 text-center align-middle ${colore} ${
-                        haLavoro
+                        haLavoro || permesso
                           ? "cursor-pointer hover:brightness-95"
                           : !permesso && weekend
                           ? "bg-muted/50"
@@ -143,7 +154,7 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
                         {vuota ? (
                           <span className="text-[10px] text-muted-foreground/60">/</span>
                         ) : !haLavoro ? (
-                          <span className="text-[11px] font-bold">{SIGLA_PERMESSO[permesso]}</span>
+                          <span className="text-[11px] font-bold">{siglaConOre(cella)}</span>
                         ) : (
                           <>
                             <span className="text-[10px] font-bold">{fmtOreBreve(cella.ore) || "—"}</span>
@@ -160,7 +171,7 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
                               </span>
                             )}
                             {permesso && (
-                              <span className="text-[8px] font-semibold opacity-80">{SIGLA_PERMESSO[permesso]}</span>
+                              <span className="text-[8px] font-semibold opacity-80">{siglaConOre(cella)}</span>
                             )}
                           </>
                         )}
@@ -174,14 +185,26 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
                   {fmtOreBreve(r.totSpost) || "—"}
                 </td>
                 <td className="border-b text-center">
-                  {r.nTrasferte > 0 ? (
-                    <div className="leading-tight">
-                      <div className="font-semibold">{r.nTrasferte} gg</div>
-                      <div className="text-[8px] text-muted-foreground">{r.totKm.toFixed(0)} km</div>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                  <div className="leading-tight">
+                    {r.nTrasferte > 0 ? (
+                      <>
+                        <div className="font-semibold">{r.nTrasferte} gg</div>
+                        <div className="text-[8px] text-muted-foreground">{r.totKm.toFixed(0)} km</div>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                    {r.totPermessoOre > 0 && (
+                      <div className="text-[8px] font-semibold text-teal-700 dark:text-teal-300">
+                        P {fmtOrePermesso(r.totPermessoOre)}
+                      </div>
+                    )}
+                    {r.giorniFerie > 0 && (
+                      <div className="text-[8px] font-semibold text-violet-700 dark:text-violet-300">
+                        F {r.giorniFerie} gg
+                      </div>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -227,6 +250,10 @@ export default function RiepilogoMensile({ giorni, righe, totaliGiorno, mese, on
         <span className="inline-flex items-center gap-1">
           <Badge variant="outline" className={`text-[9px] px-1 py-0 ${COLORE_PERMESSO}`}>P</Badge>
           permesso
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Badge variant="outline" className={`text-[9px] px-1 py-0 ${COLORE_PERMESSO}`}>P 4h</Badge>
+          ore di permesso lette dal titolo del calendario
         </span>
         {["T0", "T1", "T2", "T3", "T4"].map((f) => (
           <span key={f} className="inline-flex items-center gap-1">

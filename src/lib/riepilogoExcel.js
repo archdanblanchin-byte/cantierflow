@@ -2,6 +2,7 @@ import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { arrotondaOre } from "@/lib/timbratureUtils";
+import { fmtOreBreve, fmtOrePermesso } from "@/lib/riepilogoMensile";
 
 const nomeMese = (mese) => {
   const m = format(mese, "MMMM yyyy", { locale: it });
@@ -25,7 +26,16 @@ const valoreOre = (ore) => (ore > 0 ? ore : "");
 /** Scarica il foglio riepilogativo mensile (tutti i dipendenti × tutti i giorni). */
 export function esportaRiepilogoMensile({ giorni, righe }, mese) {
   const aoa = [
-    ["Dipendente", ...giorni.map((d) => format(d, "d")), "Tot ore", "Spostamenti", "Trasferte (gg)", "Km trasferta"],
+    [
+      "Dipendente",
+      ...giorni.map((d) => format(d, "d")),
+      "Tot ore",
+      "Spostamenti",
+      "Trasferte (gg)",
+      "Km trasferta",
+      "Permessi (h)",
+      "Ferie (gg)",
+    ],
   ];
 
   righe.forEach((r) => {
@@ -33,15 +43,18 @@ export function esportaRiepilogoMensile({ giorni, righe }, mese) {
       r.collaboratore.nome,
       ...giorni.map((d) => {
         const c = r.celle[format(d, "yyyy-MM-dd")];
-        if ((c?.ore || 0) > 0) return c.ore;
-        if (c?.permesso === "ferie") return "F";
-        if (c?.permesso === "permesso") return "P";
-        return "";
+        if (!c) return "";
+        const sigla = c.permesso ? (c.permesso === "ferie" ? "F" : "P") : "";
+        const perm = sigla ? `${sigla}${c.permessoOre ? ` ${fmtOrePermesso(c.permessoOre)}` : ""}` : "";
+        if ((c.ore || 0) > 0) return perm ? `${fmtOreBreve(c.ore)} + ${perm}` : c.ore;
+        return perm;
       }),
       r.totOre || 0,
       r.totSpost || 0,
       r.nTrasferte || 0,
       r.totKm || 0,
+      r.totPermessoOre || 0,
+      r.giorniFerie || 0,
     ]);
   });
 
@@ -55,11 +68,13 @@ export function esportaRiepilogoMensile({ giorni, righe }, mese) {
     "",
     "",
     "",
+    arrotondaOre(righe.reduce((s, r) => s + (r.totPermessoOre || 0), 0)),
+    "",
   ]);
 
   const wb = creaFoglio(
     aoa,
-    [24, ...giorni.map(() => 5), 9, 12, 13, 13],
+    [24, ...giorni.map(() => 9), 9, 12, 13, 13, 12, 10],
     "Riepilogo"
   );
   salva(wb, `Riepilogo ore ${nomeMese(mese)}`);

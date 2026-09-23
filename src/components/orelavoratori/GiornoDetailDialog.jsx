@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
 import { formatDataBreve } from "@/lib/oreLavoratoriUtils";
+import { fmtOrePermesso } from "@/lib/riepilogoMensile";
 import ModificaTrasfertaGiorno from "@/components/orelavoratori/ModificaTrasfertaGiorno";
 
 export default function GiornoDetailDialog({
@@ -60,14 +61,15 @@ export default function GiornoDetailDialog({
         {permesso && (
           <Card
             className={`p-3 flex items-center gap-2 ${
-              permesso === "ferie"
+              permesso.tipo === "ferie"
                 ? "border-violet-200 bg-violet-50/40 dark:bg-violet-900/10"
                 : "border-teal-200 bg-teal-50/40 dark:bg-teal-900/10"
             }`}
           >
             <CalendarDays className="w-4 h-4 shrink-0 text-muted-foreground" />
             <p className="text-sm font-semibold">
-              {permesso === "ferie" ? "Ferie" : "Permesso"}
+              {permesso.tipo === "ferie" ? "Ferie" : "Permesso"}
+              {permesso.ore ? <span className="font-bold"> · {fmtOrePermesso(permesso.ore)}</span> : null}
               <span className="font-normal text-muted-foreground"> · dal calendario</span>
             </p>
           </Card>

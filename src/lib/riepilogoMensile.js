@@ -10,6 +10,15 @@ export function fmtOreBreve(ore) {
   return min === 0 ? `${h}h` : `${h}h${String(min).padStart(2, "0")}`;
 }
 
+// Ore del permesso in forma compatta: 4 -> "4h", 3.5 -> "3h30", 0.5 -> "30min"
+export function fmtOrePermesso(ore) {
+  if (!ore || ore <= 0) return "";
+  const h = Math.floor(ore);
+  const min = Math.round((ore - h) * 60);
+  if (h === 0) return `${min}min`;
+  return min === 0 ? `${h}h` : `${h}h${String(min).padStart(2, "0")}`;
+}
+
 const norm = (s) => (s || "").toLowerCase().trim().replace(/\s+/g, " ");
 
 // Stesso abbinamento usato nel calendario: email del collaboratore, nome
@@ -28,7 +37,7 @@ function creaMatcher(collab, me) {
   };
 }
 
-const cellaVuota = () => ({ oreCantieri: 0, oreSpost: 0, cantieri: [], perCantiere: {}, luoghi: [], nota: "", permesso: null });
+const cellaVuota = () => ({ oreCantieri: 0, oreSpost: 0, cantieri: [], perCantiere: {}, luoghi: [], nota: "", permesso: null, permessoOre: null });
 
 /**
  * Foglio riepilogativo del mese: una riga per dipendente, una colonna per giorno.
@@ -115,9 +124,15 @@ export function buildRiepilogoMensile({
         if (p.tipo !== "ferie" && p.tipo !== "permesso") return false;
         const pn = norm(p.nome);
         if (!pn) return false;
-        return pn === primoNome || pn === nomeCollabNorm || nomeCollabNorm.startsWith(pn + " ");
+        if (pn === primoNome || pn === nomeCollabNorm || nomeCollabNorm.startsWith(pn + " ")) return true;
+        // Il titolo può contenere altre parole: basta che il nome sia una di quelle
+        return pn.split(" ").includes(primoNome);
       });
-      if (trovato) get(k).permesso = trovato.tipo;
+      if (trovato) {
+        const cella = get(k);
+        cella.permesso = trovato.tipo;
+        cella.permessoOre = trovato.ore ?? null;
+      }
     });
 
     // 5) sintesi della giornata
@@ -127,6 +142,8 @@ export function buildRiepilogoMensile({
     let totKm = 0;
     let nTrasferte = 0;
     let giorniLavorati = 0;
+    let totPermessoOre = 0;
+    let giorniFerie = 0;
 
     Object.values(celle).forEach((cella) => {
       const spost = cella.tims ? calcolaSpostamenti(cella.tims) : [];
@@ -143,6 +160,8 @@ export function buildRiepilogoMensile({
       totOre += cella.ore;
       totSpost += cella.oreSpost;
       if (cella.ore > 0) giorniLavorati++;
+      if (cella.permesso === "permesso" && cella.permessoOre) totPermessoOre += cella.permessoOre;
+      if (cella.permesso === "ferie") giorniFerie++;
       if (cella.trasferta?.km_totali) {
         totKm += cella.trasferta.km_totali;
         nTrasferte++;
@@ -159,6 +178,8 @@ export function buildRiepilogoMensile({
       totKm: Math.round(totKm * 10) / 10,
       nTrasferte,
       giorniLavorati,
+      totPermessoOre: arrotondaOre(totPermessoOre),
+      giorniFerie,
     };
   });
 

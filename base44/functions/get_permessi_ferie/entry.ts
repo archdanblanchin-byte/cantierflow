@@ -112,25 +112,84 @@ function covers(event, target) {
   return s.date <= target && target <= ev.date;
 }
 
-// "Ferie Erica" -> { tipo: "ferie", nome: "Erica" }
-// "Permesso Alessio" -> { tipo: "permesso", nome: "Alessio" }
-// "Erica ferie" -> { tipo: "ferie", nome: "Erica" }
-// "Alessio permesso" -> { tipo: "permesso", nome: "Alessio" }
+// Orario di riferimento della giornata: serve per ricavare le ore quando nel
+// titolo c'è solo un orario (es. «dalle 14.00» -> fino alle 18 -> 4 ore).
+const ORE_INIZIO_GIORNATA = 8;
+const ORE_FINE_GIORNATA = 18;
+const MEZZA_GIORNATA = 4;
+
+const toOre = (h, m) => h + (m ? m / 60 : 0);
+
+// Riconosce il tipo di assenza anche nelle forme abbreviate
+// ("ferie", "permesso", "perm.", "perm").
+function tipoDalTitolo(t) {
+  if (/\bferie\b/.test(t)) return "ferie";
+  if (/\bpermessi\b|\bpermesso\b|\bperm\b/.test(t)) return "permesso";
+  return "altro";
+}
+
+// Ricava le ore di permesso dal titolo:
+// «3 ore» -> 3 · «16-18» -> 2 · «dalle 14.00» -> 4 · «fino alle 8.30» -> 0,5
+// «pomeriggio» / «prima mattina» -> mezza giornata. Se non si ricava nulla -> null.
+function oreDalTitolo(t) {
+  let m = t.match(/(\d+(?:[.,]\d+)?)\s*(?:ore|ora|h)\b/);
+  if (m) return Math.min(8, parseFloat(m[1].replace(",", ".")));
+
+  m = t.match(/(\d{1,2})(?:[.,:](\d{2}))?\s*[-–]\s*(\d{1,2})(?:[.,:](\d{2}))?/);
+  if (m) {
+    const inizio = toOre(+m[1], m[2] ? +m[2] : 0);
+    const fine = toOre(+m[3], m[4] ? +m[4] : 0);
+    if (fine > inizio) return Math.min(8, fine - inizio);
+  }
+
+  m = t.match(/(?:dal|dalle|dalla)\s*(?:ore\s*)?(\d{1,2})(?:[.,:](\d{2}))?/);
+  if (m) {
+    const inizio = toOre(+m[1], m[2] ? +m[2] : 0);
+    if (inizio >= ORE_INIZIO_GIORNATA && inizio < ORE_FINE_GIORNATA) {
+      return ORE_FINE_GIORNATA - inizio;
+    }
+  }
+
+  m = t.match(/(?:fino|fin)\s*(?:a\s*)?(?:alle|alla|all'|le|la)?\s*(?:ore\s*)?(\d{1,2})(?:[.,:](\d{2}))?/);
+  if (m) {
+    const fine = toOre(+m[1], m[2] ? +m[2] : 0);
+    if (fine > ORE_INIZIO_GIORNATA && fine <= ORE_FINE_GIORNATA) {
+      return fine - ORE_INIZIO_GIORNATA;
+    }
+  }
+
+  if (/mezzogiorno|pomeriggio|mattina/.test(t)) return MEZZA_GIORNATA;
+  return null;
+}
+
+// Ripulisce il titolo per isolare il nome: toglie la parola dell'assenza,
+// gli orari e le indicazioni di tempo.
+// "Permesso 3 ore Alessio" -> "Alessio" · "perm. Aleksandro dalle 16.00" -> "Aleksandro"
+function nomeDalTitolo(t) {
+  return t
+    .replace(/\b(permessi|permesso|perm\.|perm|ferie)\b/gi, " ")
+    .replace(/\d{1,2}(?:[.,:]\d{2})?\s*[-–]\s*\d{1,2}(?:[.,:]\d{2})?/g, " ")
+    .replace(/\b\d+(?:[.,]\d+)?\s*(?:ore|ora|h)\b/gi, " ")
+    .replace(/\b(?:dal|dalle|dalla|fino|alle|alla|ore)\b/gi, " ")
+    .replace(/\b(?:mezzogiorno|pomeriggio|mattina|sera|prima)\b/gi, " ")
+    .replace(/\d+/g, " ")
+    .replace(/[.,;:()\-–]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// "Ferie Erica" -> { tipo: "ferie", nome: "Erica", ore: null }
+// "Permesso 3 ore Alessio" -> { tipo: "permesso", nome: "Alessio", ore: 3 }
 function parseSummary(summary) {
   if (!summary) return null;
   const s = summary.trim();
   const lower = s.toLowerCase();
-  if (lower.startsWith("ferie")) {
-    return { tipo: "ferie", nome: s.slice(5).trim() };
-  }
-  if (lower.startsWith("permesso")) {
-    return { tipo: "permesso", nome: s.slice(8).trim() };
-  }
-  const m = lower.match(/^(.*?)\s+(ferie|permesso)$/);
-  if (m) {
-    return { tipo: m[2], nome: s.slice(0, m[1].length).trim() };
-  }
-  return { tipo: "altro", nome: s };
+  const tipo = tipoDalTitolo(lower);
+  return {
+    tipo,
+    nome: nomeDalTitolo(s),
+    ore: tipo === "altro" ? null : oreDalTitolo(lower),
+  };
 }
 
 export default async function(req) {
@@ -171,7 +230,7 @@ export default async function(req) {
         const key = `${parsed.tipo}:${parsed.nome.toLowerCase()}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        result.push({ nome: parsed.nome, tipo: parsed.tipo });
+        result.push({ nome: parsed.nome, tipo: parsed.tipo, ore: parsed.ore ?? null });
       }
       return result;
     };
