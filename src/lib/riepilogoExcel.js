@@ -31,7 +31,13 @@ export function esportaRiepilogoMensile({ giorni, righe }, mese) {
   righe.forEach((r) => {
     aoa.push([
       r.collaboratore.nome,
-      ...giorni.map((d) => valoreOre(r.celle[format(d, "yyyy-MM-dd")]?.ore || 0)),
+      ...giorni.map((d) => {
+        const c = r.celle[format(d, "yyyy-MM-dd")];
+        if ((c?.ore || 0) > 0) return c.ore;
+        if (c?.permesso === "ferie") return "F";
+        if (c?.permesso === "permesso") return "P";
+        return "";
+      }),
       r.totOre || 0,
       r.totSpost || 0,
       r.nTrasferte || 0,

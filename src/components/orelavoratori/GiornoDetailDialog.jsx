@@ -7,8 +7,19 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
 import { formatDataBreve } from "@/lib/oreLavoratoriUtils";
+import ModificaTrasfertaGiorno from "@/components/orelavoratori/ModificaTrasfertaGiorno";
 
-export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio, trasferta, collaboratoreNome, onApriCalendario }) {
+export default function GiornoDetailDialog({
+  open,
+  onOpenChange,
+  data,
+  dettaglio,
+  trasferta,
+  collaboratoreNome,
+  onApriCalendario,
+  permesso,
+  correzioneTrasferta,
+}) {
   const cantieri = dettaglio?.cantieri || [];
   const spostamenti = dettaglio?.spostamenti || [];
   const oreTotali = dettaglio?.oreTotali || 0;
@@ -44,6 +55,23 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
             <p>Spostamenti: <span className="font-semibold text-foreground">{fmtOre(oreSpostamenti)}</span></p>
           </div>
         </Card>
+
+        {/* Permesso / ferie dal calendario Google */}
+        {permesso && (
+          <Card
+            className={`p-3 flex items-center gap-2 ${
+              permesso === "ferie"
+                ? "border-violet-200 bg-violet-50/40 dark:bg-violet-900/10"
+                : "border-teal-200 bg-teal-50/40 dark:bg-teal-900/10"
+            }`}
+          >
+            <CalendarDays className="w-4 h-4 shrink-0 text-muted-foreground" />
+            <p className="text-sm font-semibold">
+              {permesso === "ferie" ? "Ferie" : "Permesso"}
+              <span className="font-normal text-muted-foreground"> · dal calendario</span>
+            </p>
+          </Card>
+        )}
 
         {/* Cantieri */}
         {cantieri.length > 0 && (
@@ -202,6 +230,9 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
           </div>
         )}
 
+        {/* Correzione manuale della trasferta (timbrature e rapportini restano invariati) */}
+        {correzioneTrasferta && <ModificaTrasfertaGiorno {...correzioneTrasferta} />}
+
         {/* Note / Anomalie */}
         {note.length > 0 && (
           <div className="space-y-2">
@@ -217,7 +248,7 @@ export default function GiornoDetailDialog({ open, onOpenChange, data, dettaglio
           </div>
         )}
 
-        {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && note.length === 0 && luoghiLavoro.length === 0 && (
+        {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && !permesso && note.length === 0 && luoghiLavoro.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-6">Nessun dato per questa giornata</p>
         )}
 

@@ -80,14 +80,17 @@ export default function OreLavoratori() {
     enabled: !!selectedCollab || vista === "riepilogo",
   });
 
-  // Permessi e ferie del mese, letti dal calendario Google collegato
+  // Permessi e ferie del mese, letti dal calendario Google collegato.
+  // Sempre attiva e con cache lunga: le sigle restano visibili anche cambiando vista.
   const { data: permessiFerie = {} } = useQuery({
     queryKey: ["permessi-ferie-mese", inizioStr, fineStr],
     queryFn: async () => {
       const res = await base44.functions.invoke("get_permessi_ferie", { da: inizioStr, a: fineStr });
       return res.data?.permessi_per_giorno || {};
     },
-    enabled: vista === "riepilogo",
+    staleTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 
   // Match collaboratore <-> timbratura/trasferta
@@ -251,6 +254,25 @@ export default function OreLavoratori() {
     : null;
   const trasfertaGiorno = giornoKey ? (giorniSintesi[giornoKey]?.trasferta || null) : null;
 
+  // Permesso/ferie della cella aperta nel riepilogo
+  const giornoPermesso =
+    giornoKey && selectedCollab
+      ? riepilogo.righe.find((r) => r.collaboratore.id === selectedCollab.id)?.celle?.[giornoKey]?.permesso || null
+      : null;
+
+  // Dati per correggere la trasferta del giorno direttamente dalla cella
+  const correzioneTrasferta =
+    giornoKey && selectedCollab
+      ? {
+          dataKey: giornoKey,
+          collaboratore: selectedCollab,
+          trasfertaEsistente: trasferte.find((t) => t.data === giornoKey && matchCollab(t)) || null,
+          trasfertaCalcolata: trasfertaGiorno,
+          config,
+          onSalvata: () => setGiornoKey(null),
+        }
+      : null;
+
   const prevMese = () => setMese((m) => startOfMonth(addMonths(m, -1)));
   const nextMese = () => setMese((m) => startOfMonth(addMonths(m, 1)));
 
@@ -389,6 +411,8 @@ export default function OreLavoratori() {
           trasferta={trasfertaGiorno}
           collaboratoreNome={selectedCollab?.nome || ""}
           onApriCalendario={() => setVista("elenco")}
+          permesso={giornoPermesso}
+          correzioneTrasferta={correzioneTrasferta}
         />
 
         <BottomNav />

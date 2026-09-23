@@ -7,6 +7,26 @@ const ICAL_URL = `https://calendar.google.com/calendar/ical/${encodeURIComponent
   CALENDAR_ID
 )}/public/basic.ics`;
 
+// Copia in memoria del calendario: evita di scaricare l'ICS a ogni chiamata
+// (Google limita le richieste ripetute) e rende le risposte immediate.
+const CACHE_TTL_MS = 15 * 60 * 1000;
+let cacheIcs = { testo: null, istante: 0 };
+
+async function leggiCalendario() {
+  if (cacheIcs.testo && Date.now() - cacheIcs.istante < CACHE_TTL_MS) {
+    return cacheIcs.testo;
+  }
+  const res = await fetch(ICAL_URL, { method: "GET" });
+  if (!res.ok) {
+    // Se Google non risponde uso l'ultima copia valida, se esiste
+    if (cacheIcs.testo) return cacheIcs.testo;
+    throw new Error(`Impossibile leggere il calendario (status ${res.status})`);
+  }
+  const testo = await res.text();
+  cacheIcs = { testo, istante: Date.now() };
+  return testo;
+}
+
 // Converte una propertyline ICS (es. "DTSTART;VALUE=DATE:20260729") in { date, isAllDay }
 function parseDateValue(fullKey, val) {
   const isDate = fullKey.includes("VALUE=DATE");
@@ -138,14 +158,7 @@ export default async function(req) {
       );
     }
 
-    const res = await fetch(ICAL_URL, { method: "GET" });
-    if (!res.ok) {
-      return Response.json(
-        { error: `Impossibile leggere il calendario (status ${res.status})` },
-        { status: 502 }
-      );
-    }
-    const ics = await res.text();
+    const ics = await leggiCalendario();
     const events = parseIcal(ics);
 
     const permessiDelGiorno = (giorno) => {
