@@ -49,7 +49,7 @@ export default function TimbraturaEditDialog({
       setCantiereNome(timbratura.cantiere_nome || "");
       setPosizione(timbratura.confermato_capannone ? "sede" : "cantiere");
       setLuogoLavoro(timbratura.lavoro_altro_luogo ? timbratura.luogo_lavoro || "" : "");
-      setNote(timbratura.note || "");
+      setNote(timbratura.nota || "");
     }
   }, [timbratura]);
 
@@ -57,7 +57,7 @@ export default function TimbraturaEditDialog({
     setSaving(true);
     try {
       // Se canEditTime è false (utente non admin), si modifica solo il tipo evento
-      const payload = { tipo_evento: tipo, note };
+      const payload = { tipo_evento: tipo, nota: note };
       if (canEditTime) {
         payload.data_ora = new Date(dataOra).toISOString();
         const cantiere = cantieri.find((c) => c.id === cantiereId);

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users, Loader2, Navigation, CheckSquare, Trash2, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users, Loader2, Navigation, CheckSquare, Trash2, Search, Plus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
@@ -14,6 +14,7 @@ import { fmtOre } from "@/lib/timbratureUtils";
 import { calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
 import TimbraturaTimeline from "@/components/timbrature/TimbraturaTimeline";
 import TimbraturaEditDialog from "@/components/timbrature/TimbraturaEditDialog";
+import TimbraturaAddDialog from "@/components/timbrature/TimbraturaAddDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -35,6 +36,7 @@ export default function StoricoTimbrature({ mode = "own" }) {
   const [aperti, setAperti] = useState({});
   const [editTarget, setEditTarget] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
@@ -71,6 +73,17 @@ export default function StoricoTimbrature({ mode = "own" }) {
       [editTarget.data_ora, payload.data_ora].filter(Boolean).map((d) => new Date(d).toISOString())
     )];
     for (const g of giorni) await syncGiorno(g);
+    queryClient.invalidateQueries({ queryKey: ["storico-timbrature"] });
+    queryClient.invalidateQueries({ queryKey: ["timbrature-giornata"] });
+    queryClient.invalidateQueries({ queryKey: ["rapportini"] });
+  };
+
+  // L'amministratore inserisce un timbro a nome di un collaboratore: poi il
+  // rapportino della giornata viene riallineato come per ogni correzione.
+  const handleAdd = async (payload) => {
+    await base44.entities.Timbratura.create(payload);
+    toast({ title: "Timbratura aggiunta", description: `${payload.user_nome || payload.user_email}` });
+    await syncGiorno(payload.data_ora);
     queryClient.invalidateQueries({ queryKey: ["storico-timbrature"] });
     queryClient.invalidateQueries({ queryKey: ["timbrature-giornata"] });
     queryClient.invalidateQueries({ queryKey: ["rapportini"] });
@@ -202,6 +215,16 @@ export default function StoricoTimbrature({ mode = "own" }) {
               </p>
             </div>
           </div>
+          {isAdmin && (
+            <button
+              onClick={() => setAddOpen(true)}
+              className="ml-auto w-9 h-9 rounded-full bg-primary text-primary-foreground border border-primary flex items-center justify-center hover:bg-primary/90 transition-colors"
+              aria-label="Aggiungi timbratura"
+              title="Aggiungi timbratura a un collaboratore"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          )}
           {isAdmin && (
             <button
               onClick={() => { setSelectMode(!selectMode); if (selectMode) setSelectedDays(new Set()); }}
@@ -389,6 +412,14 @@ export default function StoricoTimbrature({ mode = "own" }) {
         onOpenChange={setEditOpen}
         onSave={handleSaveEdit}
         canEditTime={isAdmin}
+      />
+
+      {/* Aggiunta timbratura per un collaboratore (solo admin) */}
+      <TimbraturaAddDialog
+        open={addOpen}
+        cantieri={cantieri}
+        onOpenChange={setAddOpen}
+        onSave={handleAdd}
       />
 
       {/* Barra azione multipla (solo admin, modalità selezione) */}
