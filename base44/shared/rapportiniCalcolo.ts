@@ -59,6 +59,30 @@ const minutiDelGiorno = (hhmmStr) => {
   return h * 60 + m;
 };
 
+// Scarto tra l'ora italiana e l'UTC (in ms) per una data.
+const scartoRomaMs = (date) => {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Rome", hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const p = dtf.formatToParts(date).reduce((a, x) => ((a[x.type] = x.value), a), {});
+  const asUTC = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+  return asUTC - date.getTime();
+};
+
+// Fine della giornata italiana in cui è iniziata la sessione. Un turno senza
+// uscita timbrata non può superare la mezzanotte: altrimenti le ore continuano
+// a crescere fino a oggi (un timbro dimenticato arrivava a 27 ore).
+const fineGiornata = (startMs) => {
+  const giorno = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date(startMs));
+  const [y, m, d] = giorno.split("-").map(Number);
+  const mezzanotte = new Date(Date.UTC(y, m - 1, d + 1, 0, 0, 0));
+  return mezzanotte.getTime() - scartoRomaMs(mezzanotte);
+};
+
 // ─── Ore per cantiere + spostamenti automatici ────────────────────────────────
 // Una sessione si apre con "ingresso" e si chiude con "uscita" (o con l'ingresso
 // successivo, se la chiusura è stata dimenticata). Il tempo tra la chiusura di un
@@ -206,7 +230,12 @@ export function calcolaSquadra(timbrature, collaboratori = [], capannone = null)
 
   const rows = [...perUser.values()].map((u) => {
     const oreMs = u.sessions.reduce(
-      (s, x) => s + Math.max(0, (x.end || Date.now()) - x.start - (x.pausaMs || 0)),
+      (s, x) =>
+        s +
+        Math.max(
+          0,
+          Math.min(x.end || Date.now(), fineGiornata(x.start)) - x.start - (x.pausaMs || 0)
+        ),
       0
     );
     const coll = collaboratori.find(

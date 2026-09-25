@@ -47,11 +47,33 @@ export default function StoricoTimbrature({ mode = "own" }) {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  // Riallinea il rapportino della giornata: la posizione corretta (al cantiere o
+  // in sede) e il luogo di lavoro cambiano trasferta e squadra del rapportino.
+  const syncGiorno = async (iso) => {
+    const g = new Date(iso);
+    const i = new Date(g); i.setHours(0, 0, 0, 0);
+    const f = new Date(g); f.setHours(23, 59, 59, 999);
+    try {
+      await base44.functions.invoke("sync_rapportini_giornata", {
+        inizio: i.toISOString(),
+        fine: f.toISOString(),
+      });
+    } catch (e) {
+      // il rapportino si riallinea alla prossima timbratura
+    }
+  };
+
   const handleSaveEdit = async (payload) => {
     await base44.entities.Timbratura.update(editTarget.id, payload);
     toast({ title: "Timbratura aggiornata" });
+    // Giorno di origine e giorno di destinazione (l'ora può essere stata corretta)
+    const giorni = [...new Set(
+      [editTarget.data_ora, payload.data_ora].filter(Boolean).map((d) => new Date(d).toISOString())
+    )];
+    for (const g of giorni) await syncGiorno(g);
     queryClient.invalidateQueries({ queryKey: ["storico-timbrature"] });
     queryClient.invalidateQueries({ queryKey: ["timbrature-giornata"] });
+    queryClient.invalidateQueries({ queryKey: ["rapportini"] });
   };
 
   const handleDelete = async () => {
@@ -123,6 +145,12 @@ export default function StoricoTimbrature({ mode = "own" }) {
       return base44.entities.Timbratura.filter({ user_email: user.email }, "-data_ora", 1000);
     },
     enabled: !!user,
+  });
+
+  // Cantieri: servono alla correzione della posizione di un timbro (admin)
+  const { data: cantieri = [] } = useQuery({
+    queryKey: ["cantieri-all"],
+    queryFn: () => base44.entities.Cantiere.list(),
   });
 
   // Raggruppa per giorno (chiave locale yyyy-MM-dd)
@@ -253,20 +281,26 @@ export default function StoricoTimbrature({ mode = "own" }) {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold capitalize truncate">{dataLabel}</p>
                   <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                    <Badge variant="secondary" className="text-[10px] gap-1 font-medium">
-                      <Clock className="w-2.5 h-2.5" />
-                      {fmtOre(ore)}
-                    </Badge>
-                    {oreSpost > 0 && (
-                      <Badge variant="secondary" className="text-[10px] gap-1 font-medium text-orange-700">
-                        <Navigation className="w-2.5 h-2.5" />
-                        {fmtOre(oreSpost)}
-                      </Badge>
-                    )}
-                    {oreSpost > 0 && (
-                      <Badge className="text-[10px] gap-1 bg-primary/10 text-primary border-primary/20 font-semibold">
-                        Tot {fmtOre(ore + oreSpost)}
-                      </Badge>
+                    {/* In "Tutte le timbrature" la giornata raccoglie più persone:
+                        le ore di ognuno sono mostrate sotto il suo nome, non qui. */}
+                    {!canSeeAll && (
+                      <>
+                        <Badge variant="secondary" className="text-[10px] gap-1 font-medium">
+                          <Clock className="w-2.5 h-2.5" />
+                          {fmtOre(ore)}
+                        </Badge>
+                        {oreSpost > 0 && (
+                          <Badge variant="secondary" className="text-[10px] gap-1 font-medium text-orange-700">
+                            <Navigation className="w-2.5 h-2.5" />
+                            {fmtOre(oreSpost)}
+                          </Badge>
+                        )}
+                        {oreSpost > 0 && (
+                          <Badge className="text-[10px] gap-1 bg-primary/10 text-primary border-primary/20 font-semibold">
+                            Tot {fmtOre(ore + oreSpost)}
+                          </Badge>
+                        )}
+                      </>
                     )}
                     <Badge variant="secondary" className="text-[10px] gap-1 font-medium">
                       <MapPin className="w-2.5 h-2.5" />
@@ -302,17 +336,32 @@ export default function StoricoTimbrature({ mode = "own" }) {
                   ) : (
                     Object.entries(perUtente).map(([email, timbs]) => {
                       const u = timbs[0];
+                      const oreCollab = calcolaOrePerCantiere(timbs);
+                      const oreUtente = oreCollab.reduce((s, c) => s + (c.ore || 0), 0);
+                      const spostUtente = oreCollab.reduce((s, c) => s + (c.ore_spostamento || 0), 0);
                       return (
                         <div key={email} className="space-y-2 pt-2">
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold shrink-0">
                               {(u.user_nome || email || "?")[0].toUpperCase()}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold truncate">
                                 {u.user_nome || email}
                               </p>
                               <p className="text-[10px] text-muted-foreground truncate">{email}</p>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <Badge variant="secondary" className="text-[10px] gap-1 font-medium">
+                                <Clock className="w-2.5 h-2.5" />
+                                {fmtOre(oreUtente)}
+                              </Badge>
+                              {spostUtente > 0 && (
+                                <Badge variant="secondary" className="text-[10px] gap-1 font-medium text-orange-700">
+                                  <Navigation className="w-2.5 h-2.5" />
+                                  {fmtOre(spostUtente)}
+                                </Badge>
+                              )}
                             </div>
                           </div>
                           <TimbraturaTimeline
@@ -336,6 +385,7 @@ export default function StoricoTimbrature({ mode = "own" }) {
       <TimbraturaEditDialog
         open={editOpen}
         timbratura={editTarget}
+        cantieri={cantieri}
         onOpenChange={setEditOpen}
         onSave={handleSaveEdit}
         canEditTime={isAdmin}

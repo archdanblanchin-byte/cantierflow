@@ -4,6 +4,9 @@ import { calcolaSquadra, calcolaOrePerCantiere } from '../../shared/rapportiniCa
 // Crea o riallinea i rapportini di una giornata a partire dalle timbrature.
 // Gira con i permessi di servizio: così chi timbra vede sempre il rapportino
 // già esistente e non ne nascono doppioni per lo stesso cantiere e giornata.
+// Un solo rapportino per cantiere e giornata: se ne esistono più di uno, i
+// contenuti dei doppioni (lavorazioni, materiali, foto, note) vengono uniti in
+// quello mantenuto e i doppioni rimossi, così le ore non si sommano più volte.
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -102,30 +105,70 @@ export default async function (req) {
         ]),
       ];
 
+      // ─── Unione dei doppioni nel rapportino mantenuto ───────────────────────
+      const doppioni = esistenti.slice(1);
+      const tutti = [keeper, ...doppioni];
+
+      // Le voci identiche (stessa lavorazione/materiale/foto) non vanno ripetute.
+      const unisci = (campo) => {
+        const visti = new Set();
+        return tutti
+          .flatMap((r) => r[campo] || [])
+          .filter((voce) => {
+            const chiave = JSON.stringify(voce);
+            if (visti.has(chiave)) return false;
+            visti.add(chiave);
+            return true;
+          });
+      };
+      const primoValore = (campo) => {
+        const v = tutti.map((r) => r[campo]).find((x) => x != null && x !== '');
+        return v === undefined ? null : v;
+      };
+      const noteGenerali = [
+        ...new Set(tutti.map((r) => (r.note_generali || '').trim()).filter(Boolean)),
+      ].join(' · ');
+
+      const consolidato = doppioni.length
+        ? {
+            foto: unisci('foto'),
+            foto_annotate: unisci('foto_annotate'),
+            lavorazioni_normali: unisci('lavorazioni_normali'),
+            lavorazioni_extra: unisci('lavorazioni_extra'),
+            materiali: unisci('materiali'),
+            macchinari: unisci('macchinari'),
+            attrezzi: unisci('attrezzi'),
+            has_lavorazioni_extra: tutti.some(
+              (r) => r.has_lavorazioni_extra || (r.lavorazioni_extra || []).length
+            ),
+            note_generali: noteGenerali,
+            descrizione_noleggio_mezzi: primoValore('descrizione_noleggio_mezzi'),
+            ore_noleggio_mezzi: primoValore('ore_noleggio_mezzi'),
+            descrizione_noleggio_plexi: primoValore('descrizione_noleggio_plexi'),
+            ore_noleggio_plexi: primoValore('ore_noleggio_plexi'),
+            piattaforma: primoValore('piattaforma'),
+            ore_utilizzo_piattaforma: primoValore('ore_utilizzo_piattaforma'),
+            stato: tutti.some((r) => r.stato === 'inviato') ? 'inviato' : keeper.stato || 'bozza',
+          }
+        : {};
+
       await sr.entities.Rapportino.update(keeper.id, {
+        cantiere_nome: keeper.cantiere_nome || timb[0]?.cantiere_nome || '',
         ore_totali_squadra: oreTotali,
         ore_spostamento: oreSpostamento,
         collaboratori,
         partecipanti_email: partecipanti,
+        ...consolidato,
       });
 
-      // Rimuove i doppioni creati in passato, solo se ancora vuoti di contenuti
-      // (lavorazioni, materiali, foto) e non ancora inviati.
-      const duplicati = esistenti.slice(1).filter((d) =>
-        (d.stato || 'bozza') === 'bozza' &&
-        !(d.foto || []).length &&
-        !(d.foto_annotate || []).length &&
-        !(d.lavorazioni_normali || []).length &&
-        !(d.lavorazioni_extra || []).length &&
-        !(d.materiali || []).length
-      );
-      for (const d of duplicati) await sr.entities.Rapportino.delete(d.id);
+      // I doppioni sono ormai confluiti nel rapportino mantenuto: si rimuovono.
+      for (const d of doppioni) await sr.entities.Rapportino.delete(d.id);
 
       risultati.push({
         cantiere_id: cantiereId,
         azione: 'aggiornato',
         ore: oreTotali,
-        duplicati_rimossi: duplicati.length,
+        doppioni_uniti: doppioni.length,
       });
     }
 
