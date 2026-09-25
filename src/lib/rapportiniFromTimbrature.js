@@ -13,6 +13,14 @@ const minutiDelGiorno = (hhmmStr) => {
   return h * 60 + m;
 };
 
+// Fine della giornata locale in cui è iniziata la sessione. Un turno senza uscita
+// timbrata non può superare la mezzanotte: altrimenti le ore continuano a
+// crescere fino a oggi (un timbro dimenticato arrivava a oltre 30 ore).
+const fineGiornata = (startMs) => {
+  const d = new Date(startMs);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
+};
+
 // ─── ORE PER CANTIERE + SPOSTAMENTI AUTOMATICI ────────────────────────────────
 // Le timbrature sono la fonte unica. Una sessione si apre con "ingresso" e si
 // chiude con "uscita" (o con l'ingresso successivo, se la chiusura è stata
@@ -42,9 +50,11 @@ export function calcolaOrePerCantiere(timbrature) {
     const open = aperte.get(email);
     if (!open) return;
     const g = ensure(open.cantiere_id, open.cantiere_nome);
+    // La chiusura non può andare oltre la mezzanotte del giorno di inizio.
+    const fine = Math.min(ts, fineGiornata(open.start.getTime()));
     let pausaMs = open.pausaMs;
-    if (open.pausaIn) pausaMs += ts - open.pausaIn;
-    const ms = ts - open.start - pausaMs;
+    if (open.pausaIn) pausaMs += Math.max(0, fine - open.pausaIn);
+    const ms = fine - open.start - pausaMs;
     if (ms > 0) g.ore_ms += ms;
     aperte.delete(email);
   };
@@ -196,7 +206,9 @@ export function buildSquadraDaTimbrature(timbrature, collaboratoriList = []) {
 
   const rows = [...perUser.values()].map((u) => {
     const oreMs = u.sessions.reduce(
-      (s, x) => s + Math.max(0, (x.end || new Date()) - x.start - (x.pausaMs || 0)),
+      (s, x) =>
+        s +
+        Math.max(0, Math.min(x.end || new Date(), fineGiornata(x.start)) - x.start - (x.pausaMs || 0)),
       0
     );
     const coll = collaboratoriList.find(
