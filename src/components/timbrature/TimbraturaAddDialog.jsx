@@ -14,7 +14,6 @@ const TIPI = [
   { value: "pausa_inizio", label: "Inizio pausa" },
   { value: "pausa_fine", label: "Riprendi lavoro" },
   { value: "uscita", label: "Uscita" },
-  { value: "spostamento", label: "Spostamento" },
 ];
 
 const LUOGHI_COMUNI = ["Capannone", "Officina", "Casa del cliente", "Magazzino"];
