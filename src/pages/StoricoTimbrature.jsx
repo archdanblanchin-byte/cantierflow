@@ -37,6 +37,8 @@ export default function StoricoTimbrature({ mode = "own" }) {
   const [editTarget, setEditTarget] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  // Precompilazione della finestra "Aggiungi timbratura": collaboratore e giorno
+  const [addPrefill, setAddPrefill] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
@@ -217,7 +219,7 @@ export default function StoricoTimbrature({ mode = "own" }) {
           </div>
           {isAdmin && (
             <button
-              onClick={() => setAddOpen(true)}
+              onClick={() => { setAddPrefill(null); setAddOpen(true); }}
               className="ml-auto w-9 h-9 rounded-full bg-primary text-primary-foreground border border-primary flex items-center justify-center hover:bg-primary/90 transition-colors"
               aria-label="Aggiungi timbratura"
               title="Aggiungi timbratura a un collaboratore"
@@ -385,6 +387,21 @@ export default function StoricoTimbrature({ mode = "own" }) {
                                   {fmtOre(spostUtente)}
                                 </Badge>
                               )}
+                              {/* L'admin aggiunge un timbro a questo collaboratore,
+                                  già impostato su questo giorno */}
+                              {isAdmin && (
+                                <button
+                                  onClick={() => {
+                                    setAddPrefill({ email: email === "—" ? "" : email, data: giorno.key });
+                                    setAddOpen(true);
+                                  }}
+                                  className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
+                                  aria-label="Aggiungi timbratura"
+                                  title="Aggiungi timbratura a questo collaboratore"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           </div>
                           <TimbraturaTimeline
@@ -420,6 +437,8 @@ export default function StoricoTimbrature({ mode = "own" }) {
         cantieri={cantieri}
         onOpenChange={setAddOpen}
         onSave={handleAdd}
+        prefillEmail={addPrefill?.email || ""}
+        prefillData={addPrefill?.data || null}
       />
 
       {/* Barra azione multipla (solo admin, modalità selezione) */}

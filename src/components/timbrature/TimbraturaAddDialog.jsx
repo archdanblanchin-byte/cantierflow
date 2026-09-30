@@ -29,10 +29,23 @@ function toLocalInput(date) {
   return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
 }
 
+// Precompila data e ora: giorno indicato (yyyy-MM-dd) + ora attuale.
+function dataOraPerGiorno(giorno) {
+  if (!giorno) return toLocalInput(new Date());
+  const d = new Date(`${giorno}T00:00:00`);
+  const now = new Date();
+  d.setHours(now.getHours(), now.getMinutes(), 0, 0);
+  return toLocalInput(d);
+}
+
 // L'amministratore inserisce una timbratura a nome di un collaboratore
 // (es. timbro dimenticato o cellulare scarico). La posizione viene indicata
 // a mano: al cantiere (trasferta calcolata) oppure in sede (nessuna trasferta).
-export default function TimbraturaAddDialog({ open, cantieri = [], onOpenChange, onSave }) {
+// Con prefillEmail/prefillData la finestra si apre già sul collaboratore e sul
+// giorno scelti (es. dal "+" nella riga del collaboratore).
+export default function TimbraturaAddDialog({
+  open, cantieri = [], onOpenChange, onSave, prefillEmail = "", prefillData = null,
+}) {
   const [persone, setPersone] = useState([]);
   const [userEmail, setUserEmail] = useState("");
   const [tipo, setTipo] = useState("ingresso");
@@ -45,9 +58,9 @@ export default function TimbraturaAddDialog({ open, cantieri = [], onOpenChange,
 
   useEffect(() => {
     if (!open) return;
-    setUserEmail("");
+    setUserEmail(prefillEmail || "");
     setTipo("ingresso");
-    setDataOra(toLocalInput(new Date()));
+    setDataOra(dataOraPerGiorno(prefillData));
     setCantiereId("");
     setPosizione("cantiere");
     setLuogoLavoro("");
