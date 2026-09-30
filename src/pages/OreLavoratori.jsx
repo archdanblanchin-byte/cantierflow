@@ -11,7 +11,7 @@ import BottomNav from "@/components/BottomNav";
 import { format, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import { it } from "date-fns/locale";
 import { fmtOre, arrotondaOre, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
-import { buildDettaglioGiorno, calcolaSpostamenti, calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
+import { buildDettaglioGiorno, calcolaTrasfertaGiorno, oreGiornoDaTimbrature } from "@/lib/oreLavoratoriUtils";
 import CalendarioMese from "@/components/orelavoratori/CalendarioMese";
 import GiornoDetailDialog from "@/components/orelavoratori/GiornoDetailDialog";
 import RiepilogoMensile from "@/components/orelavoratori/RiepilogoMensile";
@@ -229,9 +229,13 @@ export default function OreLavoratori() {
       const hasNote = voci.some((v) => v.note_imprevisti);
       const oreCantieri = voci.reduce((s, v) => s + (v.ore || 0), 0);
       const timsGiorno = timbGiornoMap[key] || [];
-      const spost = timsGiorno.length ? calcolaSpostamenti(timsGiorno) : [];
-      const oreSpost = spost.reduce((s, sp) => s + sp.durata, 0);
-      const ore = arrotondaOre(oreCantieri + oreSpost);
+      // Le timbrature sono la fonte unica: se la giornata ha timbrature le ore
+      // vengono da lì (stesso conteggio del riepilogo timbrature), altrimenti si
+      // usa il rapportino (giornate storiche senza timbri).
+      const daTimb = timsGiorno.length ? oreGiornoDaTimbrature(timsGiorno) : null;
+      const oreLavoro = daTimb ? daTimb.oreCantieri : oreCantieri;
+      const oreSpost = daTimb ? daTimb.oreSpost : 0;
+      const ore = arrotondaOre(oreLavoro + oreSpost);
       const trasfertaConfermata = trasferteMap[key];
       const trasfertaAuto = timsGiorno.length ? calcolaTrasfertaGiorno(timsGiorno, cantieri, config) : null;
       // Luoghi dichiarati diversi dal cantiere (Capannone, officina, ...)

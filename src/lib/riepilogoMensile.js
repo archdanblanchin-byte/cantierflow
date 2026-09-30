@@ -1,6 +1,6 @@
 import { startOfMonth, endOfMonth, eachDayOfInterval, format } from "date-fns";
 import { arrotondaOre, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
-import { calcolaSpostamenti, calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
+import { oreGiornoDaTimbrature, calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
 
 // Ore in forma compatta per le celle del foglio: "8h", "7h45"
 export function fmtOreBreve(ore) {
@@ -37,7 +37,7 @@ function creaMatcher(collab, me) {
   };
 }
 
-const cellaVuota = () => ({ oreCantieri: 0, oreSpost: 0, cantieri: [], perCantiere: {}, luoghi: [], nota: "", permesso: null, permessoOre: null });
+const cellaVuota = () => ({ oreCantieri: 0, oreSpost: 0, cantieri: [], perCantiere: {}, oreRapportino: {}, luoghi: [], nota: "", permesso: null, permessoOre: null });
 
 /**
  * Foglio riepilogativo del mese: una riga per dipendente, una colonna per giorno.
@@ -65,7 +65,9 @@ export function buildRiepilogoMensile({
     const celle = {};
     const get = (k) => (celle[k] = celle[k] || cellaVuota());
 
-    // 1) ore lavorate dai rapportini del cantiere
+    // 1) rapportini: riserva usata solo per le giornate senza timbrature
+    //    (dati storici). Un solo rapportino per cantiere e giornata: eventuali
+    //    duplicati non si sommano due volte.
     rapportini.forEach((r) => {
       const d = new Date(r.data);
       if (d < primo || d > ultimo) return;
@@ -74,11 +76,8 @@ export function buildRiepilogoMensile({
         const ok = c.collaboratore_id === collab.id || (c.nome && collab.nome && c.nome === collab.nome);
         if (!ok) return;
         const cella = get(k);
-        const ore = c.ore_lavorate || 0;
-        cella.oreCantieri += ore;
-        if (r.cantiere_nome) {
-          if (!cella.cantieri.includes(r.cantiere_nome)) cella.cantieri.push(r.cantiere_nome);
-          cella.perCantiere[r.cantiere_nome] = (cella.perCantiere[r.cantiere_nome] || 0) + ore;
+        if (r.cantiere_nome && !(r.cantiere_nome in cella.oreRapportino)) {
+          cella.oreRapportino[r.cantiere_nome] = c.ore_lavorate || 0;
         }
         if (c.note_imprevisti) cella.nota = c.note_imprevisti;
       });
@@ -146,11 +145,25 @@ export function buildRiepilogoMensile({
     let giorniFerie = 0;
 
     Object.values(celle).forEach((cella) => {
-      const spost = cella.tims ? calcolaSpostamenti(cella.tims) : [];
-      cella.oreSpost = arrotondaOre(spost.reduce((s, sp) => s + sp.durata, 0));
-      cella.ore = arrotondaOre((cella.oreCantieri || 0) + cella.oreSpost);
-      if (!cella.trasferta && cella.tims?.length) {
-        cella.trasferta = calcolaTrasfertaGiorno(cella.tims, cantieri, config);
+      const tims = cella.tims || [];
+      if (tims.length) {
+        // Ore dalla fonte unica (le timbrature): stesso conteggio del riepilogo
+        // timbrature, così i due prospetti combaciano.
+        const calc = oreGiornoDaTimbrature(tims);
+        cella.oreCantieri = calc.oreCantieri;
+        cella.oreSpost = calc.oreSpost;
+        cella.perCantiere = calc.perCantiere;
+      } else {
+        // Nessuna timbratura nella giornata: si usano i rapportini (storico).
+        cella.perCantiere = cella.oreRapportino || {};
+        cella.oreCantieri = Object.values(cella.perCantiere).reduce((s, o) => s + o, 0);
+        cella.oreSpost = 0;
+        cella.cantieri = Object.keys(cella.perCantiere);
+      }
+      delete cella.oreRapportino;
+      cella.ore = arrotondaOre((cella.oreCantieri || 0) + (cella.oreSpost || 0));
+      if (!cella.trasferta && tims.length) {
+        cella.trasferta = calcolaTrasfertaGiorno(tims, cantieri, config);
       }
       cella.fascia = cella.trasferta?.tipo_trasferta || null;
       cella.inSede = !!cella.trasferta?.nessuna_trasferta;

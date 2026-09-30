@@ -128,10 +128,26 @@ export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
     cantieriMap[nome].ore += v.ore || 0;
     if (v.stato) cantieriMap[nome].stato = v.stato;
   });
-  const cantieri = Object.values(cantieriMap).map((c) => ({
+  const cantieriRapportini = Object.values(cantieriMap).map((c) => ({
     ...c,
     ore: arrotondaOreQuarti(c.ore),
   }));
+
+  // Le timbrature sono la fonte unica: se la giornata ha timbrature, ore e
+  // cantieri vengono da lì (stesso conteggio del riepilogo timbrature), così i
+  // due prospetti combaciano. I rapportini restano solo per le giornate senza
+  // timbrature (dati storici).
+  const daTimbrature = timbratureGiorno && timbratureGiorno.length
+    ? oreGiornoDaTimbrature(timbratureGiorno)
+    : null;
+
+  const cantieri = daTimbrature
+    ? Object.entries(daTimbrature.perCantiere).map(([nome, ore]) => ({
+        nome,
+        ore: arrotondaOreQuarti(ore),
+        stato: cantieriMap[nome]?.stato || null,
+      }))
+    : cantieriRapportini;
 
   const spostamenti = timbratureGiorno && timbratureGiorno.length
     ? calcolaSpostamenti(timbratureGiorno)
@@ -149,8 +165,12 @@ export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
     ? classificaSpostamentiGiornata(timbratureGiorno)
     : null;
 
-  const oreCantieri = cantieri.reduce((s, c) => s + c.ore, 0);
-  const oreSpostamenti = spostamenti.reduce((s, sp) => s + sp.durata, 0);
+  const oreCantieri = daTimbrature
+    ? daTimbrature.oreCantieri
+    : cantieri.reduce((s, c) => s + c.ore, 0);
+  const oreSpostamenti = daTimbrature
+    ? daTimbrature.oreSpost
+    : spostamenti.reduce((s, sp) => s + sp.durata, 0);
 
   // Note / anomalie (es. uscito prima, permesso) dal campo note_imprevisti del rapportino
   const note = [];
