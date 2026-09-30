@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { arrotondaOre, arrotondaQuarti, distanzaKm, distanzaKmStrada, getCapannone, classificaTrasfertaSplit, timbroInSede, coordinateTrasferta } from "@/lib/timbratureUtils";
-import { classificaSpostamentiGiornata } from "@/lib/rapportiniFromTimbrature";
+import { classificaSpostamentiGiornata, calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
 
 export function arrotondaOreQuarti(ore) {
   return arrotondaOre(ore);
@@ -30,6 +30,29 @@ export function calcolaSpostamenti(timbratureGiorno) {
       mezzo_proprio: s.mezzo_proprio,
     };
   });
+}
+
+/**
+ * Ore di lavoro di una giornata ricavate direttamente dalle timbrature: è la
+ * stessa base del riepilogo timbrature, così i due conteggi combaciano sempre.
+ * Restituisce le ore per cantiere e la quota di spostamenti (metà di ogni
+ * tratta attribuita al cantiere di partenza e a quello di arrivo).
+ */
+export function oreGiornoDaTimbrature(timbratureGiorno) {
+  const perCantiere = {};
+  let oreCantieri = 0;
+  let oreSpost = 0;
+  calcolaOrePerCantiere(timbratureGiorno).forEach((c) => {
+    const nome = c.cantiere_nome || "—";
+    perCantiere[nome] = (perCantiere[nome] || 0) + (c.ore || 0);
+    oreCantieri += c.ore || 0;
+    oreSpost += c.ore_spostamento || 0;
+  });
+  return {
+    oreCantieri: arrotondaOre(oreCantieri),
+    oreSpost: arrotondaOre(oreSpost),
+    perCantiere,
+  };
 }
 
 /**
