@@ -70,8 +70,14 @@ export default function CantiereForm() {
   const handleSave = async () => {
     if (!form.nome) { toast.error("Inserisci il nome del cantiere"); return; }
     setSaving(true);
+    // ore_stimate è un campo numerico: se il campo è vuoto ("" o null) va
+    // inviato null, altrimenti l'API rifiuta la stringa vuota.
+    const oreStimate = form.ore_stimate === "" || form.ore_stimate == null
+      ? null
+      : Number(form.ore_stimate);
     const payload = {
       ...form,
+      ore_stimate: Number.isFinite(oreStimate) ? oreStimate : null,
       attivo: form.stato === "aperto",
       anno: form.anno || currentYear,
       data_chiusura: form.stato === "chiuso" ? (form.data_chiusura || new Date().toISOString().slice(0, 10)) : form.data_chiusura || "",
