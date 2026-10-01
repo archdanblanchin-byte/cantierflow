@@ -12,10 +12,10 @@ export const RUOLI = [
 ];
 
 export const SEZIONI_APP = [
+  { key: "timbratura", label: "Timbratura", path: "/timbratura", icon: Clock, color: "bg-emerald-600" },
   { key: "rapportini", label: "Rapportino", path: "/rapportini", icon: ClipboardList, color: "bg-blue-500" },
   { key: "cantieri", label: "Cantiere", path: "/cantieri", icon: Building2, color: "bg-emerald-500" },
   { key: "archivio_cantieri", label: "Archivio Cantieri", path: "/archivio-cantieri", icon: Archive, color: "bg-emerald-700" },
-  { key: "timbratura", label: "Timbratura", path: "/timbratura", icon: Clock, color: "bg-emerald-600" },
   { key: "foto", label: "Foto", path: "/foto", icon: Camera, color: "bg-purple-500" },
   { key: "anagrafe", label: "Anagrafe", path: "/anagrafe", icon: BookUser, color: "bg-slate-600" },
   { key: "ore_lavoratori", label: "Ore Lavoratori", path: "/ore-lavoratori", icon: Clock, color: "bg-amber-500" },
