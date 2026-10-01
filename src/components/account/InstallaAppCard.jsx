@@ -1,21 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, Smartphone } from "lucide-react";
 import usePwaInstall from "@/hooks/usePwaInstall";
-import IstruzioniInstallazioneDialog from "@/components/account/IstruzioniInstallazioneDialog";
 
 export default function InstallaAppCard() {
-  const { promptDisponibile, installata, inCorso, installa, piattaforma } = usePwaInstall();
-  const [mostraIstruzioni, setMostraIstruzioni] = useState(false);
-
-  const handleInstalla = async () => {
-    if (promptDisponibile) {
-      await installa();
-    } else {
-      setMostraIstruzioni(true);
-    }
-  };
+  const { promptDisponibile, installata, inCorso, installa } = usePwaInstall();
 
   return (
     <Card className="p-4 space-y-3">
@@ -40,23 +30,26 @@ export default function InstallaAppCard() {
             <div className="min-w-0">
               <p className="font-semibold text-sm">Installa app sul dispositivo</p>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Installa EveryDay 4.0 sulla schermata Home per accedere più rapidamente. Userai lo
-                stesso account e gli stessi dati della versione web.
+                L'installazione parte in automatico al primo tocco sull'app. In alternativa, puoi
+                avviarla qui. Userai lo stesso account e gli stessi dati della versione web.
               </p>
             </div>
           </div>
-          <Button onClick={handleInstalla} disabled={inCorso} className="w-full gap-2">
+          <Button
+            onClick={installa}
+            disabled={inCorso || !promptDisponibile}
+            className="w-full gap-2"
+          >
             {inCorso ? <Loader2 className="w-4 h-4 animate-spin" /> : <Smartphone className="w-4 h-4" />}
             Installa app
           </Button>
+          {!promptDisponibile && (
+            <p className="text-[11px] text-muted-foreground">
+              Questo browser non permette l'installazione automatica dell'app.
+            </p>
+          )}
         </>
       )}
-
-      <IstruzioniInstallazioneDialog
-        open={mostraIstruzioni}
-        onOpenChange={setMostraIstruzioni}
-        piattaforma={piattaforma}
-      />
     </Card>
   );
 }
