@@ -293,10 +293,10 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
           {/* Riga 2 — Descrizione e dettaglio */}
           <div className="space-y-1.5">
             <Label className="text-[11px] text-muted-foreground">Descrizione e dettaglio</Label>
-            <Input
-                value={lav.descrizione_custom || ""}
-                onChange={(e) => updateLav(i, { descrizione_custom: e.target.value })}
-                placeholder="Descrizione lavorazione..." className="hidden" />
+            
+
+
+              
             <Textarea
                 value={lav.descrizione || ""}
                 onChange={(e) => updateLav(i, { descrizione: e.target.value })}
