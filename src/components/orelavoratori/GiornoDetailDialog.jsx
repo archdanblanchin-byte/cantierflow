@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Navigation, Route, Clock, Truck, AlertTriangle, Home, Warehouse, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { TRASFERTA_CONFIG, fmtOre } from "@/lib/timbratureUtils";
+import { TRASFERTA_CONFIG, STEP_CONFIG, fmtOre } from "@/lib/timbratureUtils";
 import { formatDataBreve } from "@/lib/oreLavoratoriUtils";
 import { fmtOrePermesso } from "@/lib/riepilogoMensile";
 import ModificaTrasfertaGiorno from "@/components/orelavoratori/ModificaTrasfertaGiorno";
@@ -20,7 +21,12 @@ export default function GiornoDetailDialog({
   onApriCalendario,
   permesso,
   correzioneTrasferta,
+  timbrature = [],
 }) {
+  const [mostraTimbrature, setMostraTimbrature] = useState(false);
+  const timbratureOrd = (timbrature || [])
+    .slice()
+    .sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
   const cantieri = dettaglio?.cantieri || [];
   const spostamenti = dettaglio?.spostamenti || [];
   const oreTotali = dettaglio?.oreTotali || 0;
@@ -252,6 +258,46 @@ export default function GiornoDetailDialog({
 
         {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && !permesso && note.length === 0 && luoghiLavoro.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-6">Nessun dato per questa giornata</p>
+        )}
+
+        {/* Timbrature della giornata */}
+        {timbratureOrd.length > 0 && (
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setMostraTimbrature((v) => !v)}
+            >
+              <Clock className="w-4 h-4 mr-1.5" />
+              {mostraTimbrature ? "Nascondi timbrature" : `Vedi timbrature del giorno (${timbratureOrd.length})`}
+            </Button>
+            {mostraTimbrature && (
+              <div className="space-y-1.5">
+                {timbratureOrd.map((t) => {
+                  const cfgT = STEP_CONFIG[t.tipo_evento] || {};
+                  const Icona = cfgT.icon || Clock;
+                  return (
+                    <div key={t.id} className="flex items-center gap-2 rounded-md border bg-muted/30 p-2">
+                      <Icona className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium">{cfgT.label || t.tipo_evento}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {format(new Date(t.data_ora), "HH:mm", { locale: it })} · {t.cantiere_nome || "—"}
+                          {t.luogo_lavoro ? ` · ${t.luogo_lavoro}` : ""}
+                        </p>
+                        {t.nota && <p className="text-[10px] italic text-primary truncate">📝 {t.nota}</p>}
+                      </div>
+                      {t.distanza_metri != null && (
+                        <span className="text-[10px] text-muted-foreground shrink-0">
+                          {(t.distanza_metri / 1000).toFixed(t.distanza_metri < 1000 ? 2 : 1)} km
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {onApriCalendario && (

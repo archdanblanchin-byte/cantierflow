@@ -411,6 +411,7 @@ export default function OreLavoratori() {
           trasferta={trasfertaGiorno}
           collaboratoreNome={selectedCollab.nome}
           permesso={giornoPermesso}
+          timbrature={giornoKey ? timbGiornoMap[giornoKey] || [] : []}
         />
 
         <BottomNav />
@@ -487,6 +488,7 @@ export default function OreLavoratori() {
           onApriCalendario={() => setVista("elenco")}
           permesso={giornoPermesso}
           correzioneTrasferta={correzioneTrasferta}
+          timbrature={giornoKey ? timbGiornoMap[giornoKey] || [] : []}
         />
 
         <BottomNav />
