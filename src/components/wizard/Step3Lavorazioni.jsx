@@ -73,18 +73,18 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
       {hasExtra &&
       <div className="space-y-2 pl-2 border-l-2 border-amber-200">
           {extras.map((extra, i) => {
-        const perPersone = extra.modalita_calcolo === "per_persone";
-        return (
-        <div key={i} className="rounded-xl border border-border p-3 bg-card space-y-2.5">
+          const perPersone = extra.modalita_calcolo === "per_persone";
+          return (
+            <div key={i} className="rounded-xl border border-border p-3 bg-card space-y-2.5">
               <div className="flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
                   {i + 1}
                 </span>
                 {perPersone &&
-              <span className="text-[11px] font-medium bg-muted text-muted-foreground rounded-full px-2 py-0.5 tabular-nums">
+                <span className="text-[11px] font-medium bg-muted text-muted-foreground rounded-full px-2 py-0.5 tabular-nums">
                     {extra.numero_persone || 0} × {fmtH(extra.ore_per_persona)} = {fmtH(extra.ore)}
                   </span>
-              }
+                }
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-auto flex-shrink-0" onClick={() => removeExtra(i)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -143,17 +143,17 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
                     <div className="w-28">
                       <Label className="text-[11px] text-muted-foreground">N° persone</Label>
                       <NumeroInput
-                        compact
-                        step={1}
-                        value={extra.numero_persone ?? 0}
-                        onChange={(v) => updateExtra(i, { numero_persone: v })} />
+                      compact
+                      step={1}
+                      value={extra.numero_persone ?? 0}
+                      onChange={(v) => updateExtra(i, { numero_persone: v })} />
                     </div>
                     <div className="w-28">
                       <Label className="text-[11px] text-muted-foreground">Ore/persona</Label>
                       <OreInput
-                        compact
-                        value={extra.ore_per_persona ?? 0}
-                        onChange={(v) => updateExtra(i, { ore_per_persona: v })} />
+                      compact
+                      value={extra.ore_per_persona ?? 0}
+                      onChange={(v) => updateExtra(i, { ore_per_persona: v })} />
                     </div>
                   </div>
                 }
@@ -174,10 +174,10 @@ function LavorazioniExtra({ data, onChange, tipiLavorazione }) {
           </Button>
 
           <NuovaLavorazioneDialog
-            open={nuovaLavIndex !== null}
-            onOpenChange={(o) => { if (!o) setNuovaLavIndex(null); }}
-            categorie={tutteCategorie}
-            onCreated={handleNuovaLavorazioneCreata} />
+          open={nuovaLavIndex !== null}
+          onOpenChange={(o) => {if (!o) setNuovaLavIndex(null);}}
+          categorie={tutteCategorie}
+          onCreated={handleNuovaLavorazioneCreata} />
         </div>
       }
     </div>);
@@ -245,22 +245,22 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
         const haCatalogo = Boolean(lav.categoria && lav.categoria !== "__custom__");
 
         return (
-        <div key={i} className="rounded-xl border border-border bg-card p-3 space-y-2.5">
+          <div key={i} className="rounded-xl border border-border bg-card p-3 space-y-2.5">
           {/* Intestazione riga */}
           <div className="flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
               {i + 1}
             </span>
             {haCatalogo &&
-            <span className="text-[11px] font-medium bg-primary/10 text-primary rounded-full px-2 py-0.5">
+              <span className="text-[11px] font-medium bg-primary/10 text-primary rounded-full px-2 py-0.5">
                 {lav.categoria}
               </span>
-            }
+              }
             {perPersone &&
-            <span className="text-[11px] font-medium bg-muted text-muted-foreground rounded-full px-2 py-0.5 tabular-nums">
+              <span className="text-[11px] font-medium bg-muted text-muted-foreground rounded-full px-2 py-0.5 tabular-nums">
                 {lav.numero_persone || 0} × {fmtH(lav.ore_per_persona)} = {fmtH(lav.ore_totali)}
               </span>
-            }
+              }
             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-auto flex-shrink-0" onClick={() => removeLav(i)}>
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -270,38 +270,38 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
           <div>
             <Label className="text-[11px] text-muted-foreground">Tipo lavorazione</Label>
             <SheetSelect
-              value={lav.tipo_lavorazione_id || undefined}
-              onValueChange={(val) => {
-                if (val === "__nuovo__") {
-                  setNuovaLavIndex(i);
-                  return;
+                value={lav.tipo_lavorazione_id || undefined}
+                onValueChange={(val) => {
+                  if (val === "__nuovo__") {
+                    setNuovaLavIndex(i);
+                    return;
+                  }
+                  const tipo = catalogo.find((t) => t.id === val);
+                  updateLav(i, {
+                    tipo_lavorazione_id: val,
+                    tipo_lavorazione_nome: tipo?.nome || "",
+                    categoria: tipo?.categoria || lav.categoria || ""
+                  });
+                }}
+                options={[
+                ...catalogo.map((t) => ({ value: t.id, label: t.nome })),
+                { value: "__nuovo__", label: "＋ Nuova lavorazione" }]
                 }
-                const tipo = catalogo.find((t) => t.id === val);
-                updateLav(i, {
-                  tipo_lavorazione_id: val,
-                  tipo_lavorazione_nome: tipo?.nome || "",
-                  categoria: tipo?.categoria || lav.categoria || ""
-                });
-              }}
-              options={[
-              ...catalogo.map((t) => ({ value: t.id, label: t.nome })),
-              { value: "__nuovo__", label: "＋ Nuova lavorazione" }]
-              }
-              placeholder="Seleziona lavorazione..." />
+                placeholder="Seleziona lavorazione..." />
           </div>
 
           {/* Riga 2 — Descrizione e dettaglio */}
           <div className="space-y-1.5">
             <Label className="text-[11px] text-muted-foreground">Descrizione e dettaglio</Label>
             <Input
-              value={lav.descrizione_custom || ""}
-              onChange={(e) => updateLav(i, { descrizione_custom: e.target.value })}
-              placeholder="Descrizione lavorazione..." />
+                value={lav.descrizione_custom || ""}
+                onChange={(e) => updateLav(i, { descrizione_custom: e.target.value })}
+                placeholder="Descrizione lavorazione..." className="hidden" />
             <Textarea
-              value={lav.descrizione || ""}
-              onChange={(e) => updateLav(i, { descrizione: e.target.value })}
-              className="min-h-[40px] resize-y text-sm"
-              placeholder="Dettaglio (cosa / dove) — es. facciata nord, prime due stanze..." />
+                value={lav.descrizione || ""}
+                onChange={(e) => updateLav(i, { descrizione: e.target.value })}
+                className="min-h-[40px] resize-y text-sm"
+                placeholder="Dettaglio (cosa / dove) — es. facciata nord, prime due stanze..." />
           </div>
 
           {/* Riga 3 — Modalità ore + Ore */}
@@ -311,20 +311,20 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
               <div className="flex items-center gap-2 h-9">
                 <span className="text-sm">{perPersone ? "Per persone" : "Manuale"}</span>
                 <button
-                  type="button"
-                  title="Calcola per persone"
-                  onClick={() => updateLav(i, { modalita_calcolo: perPersone ? "manuale" : "per_persone" })}
-                  className={cn(
-                    "h-9 w-9 rounded-full border flex items-center justify-center transition-colors",
-                    perPersone ? "bg-primary text-primary-foreground border-primary" : "border-input text-muted-foreground hover:bg-accent"
-                  )}>
+                    type="button"
+                    title="Calcola per persone"
+                    onClick={() => updateLav(i, { modalita_calcolo: perPersone ? "manuale" : "per_persone" })}
+                    className={cn(
+                      "h-9 w-9 rounded-full border flex items-center justify-center transition-colors",
+                      perPersone ? "bg-primary text-primary-foreground border-primary" : "border-input text-muted-foreground hover:bg-accent"
+                    )}>
                   <Users className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             {perPersone &&
-            <div className="flex flex-wrap items-end gap-2">
+              <div className="flex flex-wrap items-end gap-2">
                 <div className="w-28">
                   <Label className="text-[11px] text-muted-foreground">N° persone</Label>
                   <NumeroInput
@@ -341,14 +341,14 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
                     onChange={(v) => updateLav(i, { ore_per_persona: v })} />
                 </div>
               </div>
-            }
+              }
 
             <div className="w-28 ml-auto">
               <Label className="text-[11px] text-muted-foreground">Ore</Label>
               <OreInput
-                compact
-                value={lav.ore_totali ?? 0}
-                onChange={(v) => updateLav(i, { ore_totali: v, modalita_calcolo: "manuale" })} />
+                  compact
+                  value={lav.ore_totali ?? 0}
+                  onChange={(v) => updateLav(i, { ore_totali: v, modalita_calcolo: "manuale" })} />
             </div>
           </div>
         </div>);
@@ -362,7 +362,7 @@ function LavorazioniNormali({ data, onChange, tipiLavorazione }) {
 
       <NuovaLavorazioneDialog
         open={nuovaLavIndex !== null}
-        onOpenChange={(o) => { if (!o) setNuovaLavIndex(null); }}
+        onOpenChange={(o) => {if (!o) setNuovaLavIndex(null);}}
         categorie={tutteCategorie}
         onCreated={handleNuovaLavorazioneCreata} />
 
