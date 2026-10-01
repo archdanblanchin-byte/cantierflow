@@ -13,6 +13,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { ArrowLeft, LogIn, LogOut, Mail, User as UserIcon, Shield, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import InstallaAppCard from "@/components/account/InstallaAppCard";
 
 export default function Account() {
   const navigate = useNavigate();
@@ -106,6 +107,9 @@ export default function Account() {
             con la stessa email con cui sei stato invitato.
           </p>
         </Card>
+
+        {/* Installazione app sul dispositivo (PWA) */}
+        <InstallaAppCard />
 
         {/* Zona pericolosa - eliminazione account */}
         {isAuthenticated && (

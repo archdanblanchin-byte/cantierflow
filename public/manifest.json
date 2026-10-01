@@ -1,7 +1,9 @@
 {
   "name": "EveryDay 4.0",
-  "short_name": "EveryDay 4.0",
+  "short_name": "EveryDay",
   "description": "Gestione digitale dei rapportini di cantiere",
+  "lang": "it",
+  "scope": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
