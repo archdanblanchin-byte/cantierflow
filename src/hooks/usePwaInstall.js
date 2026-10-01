@@ -20,6 +20,17 @@ export function isStandalone() {
   );
 }
 
+// L'app è aperta dentro un iframe (anteprima dell'editor): i browser non
+// permettono l'installazione da un iframe, va aperta nel browser.
+export function inAnteprima() {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
 export function rilevaPiattaforma() {
   if (typeof navigator === "undefined") return "desktop";
   const ua = navigator.userAgent || "";
@@ -109,5 +120,6 @@ export default function usePwaInstall() {
     ...state,
     installa: eseguiPrompt,
     piattaforma: rilevaPiattaforma(),
+    inAnteprima: inAnteprima(),
   };
 }

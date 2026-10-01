@@ -1,11 +1,43 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Loader2, Smartphone } from "lucide-react";
+import { Check, Loader2, Smartphone, Share, MoreVertical, Monitor } from "lucide-react";
 import usePwaInstall from "@/hooks/usePwaInstall";
 
+function Istruzioni({ piattaforma, inAnteprima }) {
+  const passo = (Icona, testo) => (
+    <li className="flex items-start gap-2">
+      <Icona className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
+      <span className="text-[11px] text-muted-foreground leading-relaxed">{testo}</span>
+    </li>
+  );
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
+      <p className="text-[11px] font-semibold">Come installarla</p>
+      <ul className="space-y-1.5">
+        {inAnteprima && (
+          <li className="flex items-start gap-2">
+            <Smartphone className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
+            <span className="text-[11px] text-muted-foreground leading-relaxed">
+              Stai vedendo l'anteprima: per installare apri l'app dal suo link
+              (everyday-4-0.base44.app) nel browser del telefono.
+            </span>
+          </li>
+        )}
+        {!inAnteprima && piattaforma === "ios" &&
+          passo(Share, "Con Safari tocca «Condividi» e poi «Aggiungi a Home».")}
+        {!inAnteprima && piattaforma === "android" &&
+          passo(MoreVertical, "Con Chrome tocca il menu ⋮ e poi «Installa app» (o «Aggiungi a schermata Home»).")}
+        {!inAnteprima && piattaforma === "desktop" &&
+          passo(Monitor, "Nel browser compare l'icona di installazione nella barra degli indirizzi: toccala e conferma.")}
+      </ul>
+    </div>
+  );
+}
+
 export default function InstallaAppCard() {
-  const { promptDisponibile, installata, inCorso, installa } = usePwaInstall();
+  const { promptDisponibile, installata, inCorso, installa, piattaforma, inAnteprima } = usePwaInstall();
 
   return (
     <Card className="p-4 space-y-3">
@@ -30,24 +62,19 @@ export default function InstallaAppCard() {
             <div className="min-w-0">
               <p className="font-semibold text-sm">Installa app sul dispositivo</p>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                L'installazione parte in automatico al primo tocco sull'app. In alternativa, puoi
-                avviarla qui. Userai lo stesso account e gli stessi dati della versione web.
+                Userai lo stesso account e gli stessi dati della versione web.
               </p>
             </div>
           </div>
-          <Button
-            onClick={installa}
-            disabled={inCorso || !promptDisponibile}
-            className="w-full gap-2"
-          >
-            {inCorso ? <Loader2 className="w-4 h-4 animate-spin" /> : <Smartphone className="w-4 h-4" />}
-            Installa app
-          </Button>
-          {!promptDisponibile && (
-            <p className="text-[11px] text-muted-foreground">
-              Questo browser non permette l'installazione automatica dell'app.
-            </p>
+
+          {promptDisponibile && (
+            <Button onClick={installa} disabled={inCorso} className="w-full gap-2">
+              {inCorso ? <Loader2 className="w-4 h-4 animate-spin" /> : <Smartphone className="w-4 h-4" />}
+              Installa app
+            </Button>
           )}
+
+          <Istruzioni piattaforma={piattaforma} inAnteprima={inAnteprima} />
         </>
       )}
     </Card>
