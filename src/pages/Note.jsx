@@ -221,6 +221,7 @@ export default function Note() {
                     onChange={(e) => setQuickTask(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); salvaQuickTask(); } }}
                     placeholder="Scrivi un task e premi +"
+                    className="text-base sm:text-sm"
                   />
                   <Button onClick={salvaQuickTask} disabled={!quickTask.trim() || savingQuick} size="icon" className="shrink-0" aria-label="Aggiungi task">
                     {savingQuick ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}

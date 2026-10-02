@@ -15,7 +15,7 @@ function MultiPick({ titolo, options, selected, onToggle, emptyText }) {
     <div className="space-y-1">
       <div className="relative">
         <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Cerca ${titolo.toLowerCase()}…`} className="h-8 pl-7 text-xs" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Cerca ${titolo.toLowerCase()}…`} className="h-9 pl-7 text-base sm:h-8 sm:text-xs" />
       </div>
       <div className="max-h-32 overflow-y-auto rounded-lg border border-border p-1.5 space-y-0.5">
         {filtrati.length === 0 && <p className="text-xs text-muted-foreground p-2">{emptyText}</p>}

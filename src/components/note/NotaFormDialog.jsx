@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -42,11 +42,17 @@ export default function NotaFormDialog({ open, onOpenChange, initial, onSaved, m
   const [dubbio, setDubbio] = useState("");
   const [revealDest, setRevealDest] = useState(false);
 
+  // I campi si inizializzano SOLO all'apertura: senza questa guardia il testo
+  // scritto veniva azzerato quando i dati collegati si ricaricavano.
+  const inizializzatoRef = useRef(false);
+
   const destOptions = buildDestOptions(users, collaboratori);
   const tipoDefault = mode === "task" ? "task" : "personale";
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { inizializzatoRef.current = false; return; }
+    if (inizializzatoRef.current) return;
+    inizializzatoRef.current = true;
     const init = initial || {};
     setTesto(init.testo || "");
     setTipo(init.tipo || tipoDefault);
@@ -220,7 +226,7 @@ Testo dell'utente:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[85dvh] overflow-y-auto p-4 sm:p-6 top-[3%] translate-y-0 sm:top-[50%] sm:translate-y-[-50%]">
         <DialogHeader>
           <DialogTitle>
             {initial?.id ? "Modifica" : isComunicazione ? "Nuova comunicazione" : mode === "task" ? "Nuovo task" : "Nuova nota personale"}
@@ -229,7 +235,7 @@ Testo dell'utente:
         <div className="space-y-4">
           <div className="space-y-1">
             <Label>Contenuto</Label>
-            <Textarea rows={3} value={testo} onChange={(e) => setTesto(e.target.value)} placeholder="Es. Ricordami di caricare gli attrezzi nel furgone domani alle 8, cantiere Rossi..." />
+            <Textarea rows={4} value={testo} onChange={(e) => setTesto(e.target.value)} placeholder="Es. Ricordami di caricare gli attrezzi nel furgone domani alle 8, cantiere Rossi..." className="text-base sm:text-sm" />
             <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={runAi} disabled={aiLoading}>
               {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
               {aiLoading ? "L'IA sta lavorando…" : "AI · Migliora e struttura"}
@@ -257,7 +263,7 @@ Testo dell'utente:
               <Label>Voci lista</Label>
               {items.map((it, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <Input value={it.text} onChange={(e) => updateItem(i, e.target.value)} placeholder="es. Trapano" />
+                  <Input value={it.text} onChange={(e) => updateItem(i, e.target.value)} placeholder="es. Trapano" className="text-base sm:text-sm" />
                   <Button variant="ghost" size="icon" onClick={() => removeItem(i)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
               ))}
@@ -268,7 +274,7 @@ Testo dell'utente:
           {tipo === "promemoria" && (
             <div className="space-y-1">
               <Label>Quando ricordare</Label>
-              <Input type="datetime-local" value={dataPromemoria} onChange={(e) => setDataPromemoria(e.target.value)} />
+              <Input type="datetime-local" value={dataPromemoria} onChange={(e) => setDataPromemoria(e.target.value)} className="text-base sm:text-sm" />
             </div>
           )}
 

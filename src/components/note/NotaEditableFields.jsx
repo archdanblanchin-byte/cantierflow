@@ -30,7 +30,7 @@ export default function NotaEditableFields({ value, onChange, cantieri = [], fur
     <div className="space-y-3">
       <div className="space-y-1">
         <Label className="text-xs">Contenuto</Label>
-        <Textarea rows={2} value={value.testo} onChange={(e) => set({ testo: e.target.value })} placeholder="Cosa deve essere fatto / ricordato..." />
+        <Textarea rows={3} value={value.testo} onChange={(e) => set({ testo: e.target.value })} placeholder="Cosa deve essere fatto / ricordato..." className="text-base sm:text-sm" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
@@ -48,7 +48,7 @@ export default function NotaEditableFields({ value, onChange, cantieri = [], fur
           <Label className="text-xs">Voci lista</Label>
           {(value.items || []).map((it, i) => (
             <div key={i} className="flex items-center gap-2">
-              <Input value={it.text} onChange={(e) => updateItem(i, e.target.value)} placeholder="es. Trapano" />
+              <Input value={it.text} onChange={(e) => updateItem(i, e.target.value)} placeholder="es. Trapano" className="text-base sm:text-sm" />
               <Button variant="ghost" size="icon" onClick={() => removeItem(i)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
             </div>
           ))}
@@ -59,7 +59,7 @@ export default function NotaEditableFields({ value, onChange, cantieri = [], fur
       {value.tipo === "promemoria" && (
         <div className="space-y-1">
           <Label className="text-xs">Quando ricordare</Label>
-          <Input type="datetime-local" value={value.data_promemoria || ""} onChange={(e) => set({ data_promemoria: e.target.value })} />
+          <Input type="datetime-local" value={value.data_promemoria || ""} onChange={(e) => set({ data_promemoria: e.target.value })} className="text-base sm:text-sm" />
         </div>
       )}
 

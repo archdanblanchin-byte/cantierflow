@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -26,8 +26,14 @@ export default function NotaReviewDialog({ open, onOpenChange, notes = [], onSav
   const [list, setList] = useState([]);
   const [saving, setSaving] = useState(false);
 
+  // Inizializza la lista solo all'apertura: evita di perdere le modifiche
+  // quando i dati collegati si ricaricano.
+  const inizializzatoRef = useRef(false);
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) { inizializzatoRef.current = false; return; }
+    if (inizializzatoRef.current) return;
+    inizializzatoRef.current = true;
     setList((notes || []).map((n) => {
       const r = resolveNota(n, { cantieri, furgoni, destOptions, materiali: materialiList, attrezzi: attrezziList });
       const personale = mode !== "comunicazione";
@@ -60,7 +66,7 @@ export default function NotaReviewDialog({ open, onOpenChange, notes = [], onSav
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85dvh] overflow-y-auto p-4 sm:p-6 top-[3%] translate-y-0 sm:top-[50%] sm:translate-y-[-50%]">
         <DialogHeader>
           <DialogTitle>Revisiona ({list.length})</DialogTitle>
         </DialogHeader>
