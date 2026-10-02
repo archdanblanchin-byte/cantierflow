@@ -19,6 +19,8 @@ export default function NotaReviewDialog({ open, onOpenChange, notes = [], onSav
   const { data: furgoni = [] } = useQuery({ queryKey: ["furgoni"], queryFn: () => base44.entities.Furgone.list() });
   const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: () => base44.entities.User.list() });
   const { data: collaboratori = [] } = useQuery({ queryKey: ["collaboratori"], queryFn: () => base44.entities.Collaboratore.list() });
+  const { data: materialiList = [] } = useQuery({ queryKey: ["materiali-base"], queryFn: () => base44.entities.MaterialeBase.list() });
+  const { data: attrezziList = [] } = useQuery({ queryKey: ["attrezzi"], queryFn: () => base44.entities.AnagrafaAttrezzo.list() });
 
   const destOptions = buildDestOptions(users, collaboratori);
   const [list, setList] = useState([]);
@@ -27,15 +29,16 @@ export default function NotaReviewDialog({ open, onOpenChange, notes = [], onSav
   useEffect(() => {
     if (!open) return;
     setList((notes || []).map((n) => {
-      const r = resolveNota(n, { cantieri, furgoni, destOptions });
-      return mode === "comunicazione" ? { ...r, privata: false } : { ...r, privata: true };
+      const r = resolveNota(n, { cantieri, furgoni, destOptions, materiali: materialiList, attrezzi: attrezziList });
+      const personale = mode !== "comunicazione";
+      return { ...r, privata: personale, tipo: personale && mode === "task" ? "task" : r.tipo };
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, notes, cantieri, furgoni, users, collaboratori]);
+  }, [open, notes, cantieri, furgoni, users, collaboratori, materialiList, attrezziList]);
 
   const update = (i, v) => setList((l) => l.map((x, idx) => (idx === i ? v : x)));
   const remove = (i) => setList((l) => l.filter((_, idx) => idx !== i));
-  const addEmpty = () => setList((l) => [...l, { tipo: "personale", testo: "", items: [], privata: mode !== "comunicazione", cantiere_id: "", furgone_id: "", destinatari_email: [], data_promemoria: "", priorita: "media", origine: "vocale" }]);
+  const addEmpty = () => setList((l) => [...l, { tipo: mode === "task" ? "task" : "personale", testo: "", items: [], privata: mode !== "comunicazione", cantiere_id: "", furgone_id: "", materiali: [], attrezzi: [], destinatari_email: [], data_promemoria: "", priorita: "media", origine: "vocale" }]);
 
   const handleSave = async () => {
     const valid = list.filter((n) => (n.testo || "").trim());
@@ -45,7 +48,7 @@ export default function NotaReviewDialog({ open, onOpenChange, notes = [], onSav
       const payloads = valid.map((n) => buildNotaPayload(n, { cantieri, furgoni, destOptions }));
       const created = await base44.entities.Nota.bulkCreate(payloads);
       await Promise.all((created || []).map((c) => maybeMirrorNotaToFurgone(c)));
-      toast.success(`${payloads.length} note create`);
+      toast.success(`${payloads.length} elementi creati`);
       onSaved?.();
       onOpenChange(false);
     } catch (e) {
@@ -59,21 +62,21 @@ export default function NotaReviewDialog({ open, onOpenChange, notes = [], onSav
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Revisiona note ({list.length})</DialogTitle>
+          <DialogTitle>Revisiona ({list.length})</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          {list.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Nessuna nota riconosciuta. Puoi aggiungerne una manualmente.</p>}
+          {list.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Niente riconosciuto. Puoi aggiungerne uno manualmente.</p>}
           {list.map((n, i) => (
             <div key={i} className="rounded-xl border border-border p-3 space-y-2 bg-muted/30">
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-[10px]">Nota {i + 1}</Badge>
+                <Badge variant="secondary" className="text-[10px]">Elemento {i + 1}</Badge>
                 <Badge variant="outline" className="text-[10px]">{n.origine === "vocale" ? "vocale" : "manuale"}</Badge>
                 <Button variant="ghost" size="icon" className="ml-auto w-8 h-8" onClick={() => remove(i)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
               </div>
-              <NotaEditableFields value={n} onChange={(v) => update(i, v)} cantieri={cantieri} furgoni={furgoni} destOptions={destOptions} />
+              <NotaEditableFields value={n} onChange={(v) => update(i, v)} cantieri={cantieri} furgoni={furgoni} materialiList={materialiList} attrezziList={attrezziList} destOptions={destOptions} />
             </div>
           ))}
-          <Button variant="outline" size="sm" className="gap-1 w-full" onClick={addEmpty}><Plus className="w-4 h-4" />Aggiungi un'altra nota</Button>
+          <Button variant="outline" size="sm" className="gap-1 w-full" onClick={addEmpty}><Plus className="w-4 h-4" />Aggiungi un altro elemento</Button>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annulla</Button>

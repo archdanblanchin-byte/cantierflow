@@ -2,7 +2,8 @@
 // e per costruire il payload finale da salvare.
 
 export const TIPI = [
-  { value: "personale", label: "Personale" },
+  { value: "task", label: "Task (cosa da fare)" },
+  { value: "personale", label: "Nota personale" },
   { value: "promemoria", label: "Promemoria / Sveglia" },
   { value: "lista", label: "Lista (materiale/attrezzi)" },
   { value: "messaggio", label: "Messaggio a collega" },
@@ -34,8 +35,20 @@ export function buildDestOptions(users = [], collaboratori = []) {
   return opts;
 }
 
-// Risolve i nomi (cantiere/furgone/destinatari) dell'IA negli ID/email
-export function resolveNota(parsed = {}, { cantieri = [], furgoni = [], destOptions = [] } = {}) {
+// Risolve una lista di nomi citati dall'IA negli elementi dell'anagrafica
+function risolviLista(nomi, lista) {
+  const out = [];
+  (nomi || []).forEach((n) => {
+    const low = String(n || "").toLowerCase().trim();
+    if (!low) return;
+    const m = lista.find((o) => (o.nome || "").toLowerCase() === low || (o.nome || "").toLowerCase().includes(low));
+    if (m && !out.some((x) => x.id === m.id)) out.push({ id: m.id, nome: m.nome });
+  });
+  return out;
+}
+
+// Risolve i nomi (cantiere/furgone/destinatari/materiali/attrezzi) dell'IA negli ID
+export function resolveNota(parsed = {}, { cantieri = [], furgoni = [], destOptions = [], materiali = [], attrezzi = [] } = {}) {
   let cId = parsed.cantiere_id || "";
   if (!cId && parsed.cantiere_nome) {
     const low = parsed.cantiere_nome.toLowerCase();
@@ -57,6 +70,12 @@ export function resolveNota(parsed = {}, { cantieri = [], furgoni = [], destOpti
       if (m) destEmails.push(m.email);
     });
   }
+  const matSel = Array.isArray(parsed.materiali) && parsed.materiali.length
+    ? parsed.materiali.map((m) => ({ id: m.id || m.materiale_id, nome: m.nome }))
+    : risolviLista(parsed.materiali_nomi, materiali);
+  const attrSel = Array.isArray(parsed.attrezzi) && parsed.attrezzi.length
+    ? parsed.attrezzi.map((a) => ({ id: a.id || a.attrezzo_id, nome: a.nome }))
+    : risolviLista(parsed.attrezzi_nomi, attrezzi);
   return {
     tipo: parsed.tipo || "personale",
     testo: parsed.testo || "",
@@ -64,6 +83,8 @@ export function resolveNota(parsed = {}, { cantieri = [], furgoni = [], destOpti
     privata: parsed.privata !== undefined ? !!parsed.privata : true,
     cantiere_id: cId,
     furgone_id: fId,
+    materiali: matSel,
+    attrezzi: attrSel,
     destinatari_email: destEmails,
     data_promemoria: toLocalInput(parsed.data_promemoria),
     priorita: parsed.priorita || "media",
@@ -82,6 +103,8 @@ export function buildNotaPayload(n, { cantieri = [], furgoni = [], destOptions =
     cantiere_nome: n.cantiere_id ? cantieri.find((c) => c.id === n.cantiere_id)?.nome || null : null,
     furgone_id: n.furgone_id || null,
     furgone_nome: n.furgone_id ? furgoni.find((f) => f.id === n.furgone_id)?.nome || null : null,
+    materiali: n.materiali || [],
+    attrezzi: n.attrezzi || [],
     destinatari_email: n.destinatari_email || [],
     destinatari_nomi: (n.destinatari_email || []).map((e) => destOptions.find((o) => o.email === e)?.nome || e),
     data_promemoria: n.data_promemoria ? new Date(n.data_promemoria).toISOString() : null,

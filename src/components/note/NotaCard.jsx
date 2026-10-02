@@ -7,28 +7,32 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { MapPin, Car, Trash2, CheckCheck, Bell, Users, Pencil } from "lucide-react";
+import { MapPin, Car, Trash2, CheckCheck, Bell, Users, Pencil, Boxes, Wrench, ArrowDownLeft } from "lucide-react";
 import { toast } from "sonner";
 import NotaFormDialog from "./NotaFormDialog";
 
-const TIPO_LABEL = { personale: "Personale", promemoria: "Promemoria", lista: "Lista", messaggio: "Messaggio" };
+const TIPO_LABEL = { task: "Task", personale: "Personale", promemoria: "Promemoria", lista: "Lista", messaggio: "Messaggio" };
 const TIPO_COLOR = {
+  task: "bg-emerald-100 text-emerald-700 border-emerald-300",
   personale: "bg-slate-100 text-slate-700 border-slate-300",
   promemoria: "bg-amber-100 text-amber-700 border-amber-300",
   lista: "bg-sky-100 text-sky-700 border-sky-300",
   messaggio: "bg-violet-100 text-violet-700 border-violet-300",
 };
 
-export default function NotaCard({ nota, currentUser }) {
+export default function NotaCard({ nota, currentUser, variant }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const isTask = variant === "task";
   const isAuthor = nota.created_by === currentUser?.email;
   const isRecipient = (nota.destinatari_email || []).includes(currentUser?.email);
   const isRead = (nota.letto_da || []).includes(currentUser?.email);
+  const ricevuto = !isAuthor && isRecipient;
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["note"] });
     queryClient.invalidateQueries({ queryKey: ["note-ricevute"] });
+    queryClient.invalidateQueries({ queryKey: ["note-cantiere"] });
   };
 
   // Segna come letto se sono destinatario e non l'ho ancora letto
@@ -56,7 +60,7 @@ export default function NotaCard({ nota, currentUser }) {
       if (others.length > 0) {
         try {
           await base44.entities.Nota.create({
-            testo: `✓ ${nome} ha completato il task: "${nota.testo}"`,
+            testo: `✓ ${nome} ha completato: "${nota.testo}"`,
             tipo: "messaggio",
             privata: false,
             destinatari_email: others,
@@ -77,7 +81,7 @@ export default function NotaCard({ nota, currentUser }) {
   const handleDelete = async () => {
     try {
       await base44.entities.Nota.delete(nota.id);
-      toast.success("Nota eliminata");
+      toast.success("Elemento eliminato");
       refresh();
     } catch (e) {
       toast.error("Errore: " + e.message);
@@ -96,7 +100,20 @@ export default function NotaCard({ nota, currentUser }) {
         </span>
       </div>
 
-      <p className={`text-sm ${nota.completato ? "line-through" : ""}`}>{nota.testo}</p>
+      {ricevuto && (
+        <p className="flex items-center gap-1 text-[11px] text-primary">
+          <ArrowDownLeft className="w-3 h-3" /> Assegnato da {nota.created_by}
+        </p>
+      )}
+
+      {isTask ? (
+        <label className="flex items-start gap-2 cursor-pointer">
+          <Checkbox checked={!!nota.completato} onCheckedChange={toggleComplete} className="mt-0.5" />
+          <span className={`text-sm ${nota.completato ? "line-through text-muted-foreground" : ""}`}>{nota.testo}</span>
+        </label>
+      ) : (
+        <p className={`text-sm ${nota.completato ? "line-through" : ""}`}>{nota.testo}</p>
+      )}
 
       {nota.tipo === "lista" && (nota.items || []).length > 0 && (
         <div className="space-y-1 pt-1">
@@ -109,10 +126,12 @@ export default function NotaCard({ nota, currentUser }) {
         </div>
       )}
 
-      {(nota.cantiere_nome || nota.furgone_nome) && (
+      {(nota.cantiere_nome || nota.furgone_nome || (nota.materiali || []).length > 0 || (nota.attrezzi || []).length > 0) && (
         <div className="flex items-center gap-2 flex-wrap pt-1">
           {nota.cantiere_nome && <Badge variant="secondary" className="text-[10px] gap-1"><MapPin className="w-3 h-3" />{nota.cantiere_nome}</Badge>}
           {nota.furgone_nome && <Badge variant="secondary" className="text-[10px] gap-1"><Car className="w-3 h-3" />{nota.furgone_nome}</Badge>}
+          {(nota.materiali || []).map((m) => <Badge key={m.id || m.nome} variant="secondary" className="text-[10px] gap-1"><Boxes className="w-3 h-3" />{m.nome}</Badge>)}
+          {(nota.attrezzi || []).map((a) => <Badge key={a.id || a.nome} variant="secondary" className="text-[10px] gap-1"><Wrench className="w-3 h-3" />{a.nome}</Badge>)}
         </div>
       )}
 
@@ -129,7 +148,7 @@ export default function NotaCard({ nota, currentUser }) {
       )}
 
       <div className="flex items-center gap-1 pt-1 border-t border-border">
-        {(isAuthor || isRecipient || currentUser?.role === "admin") && (
+        {!isTask && (isAuthor || isRecipient || currentUser?.role === "admin") && (
           <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={toggleComplete}>
             <CheckCheck className="w-3.5 h-3.5" /> {nota.completato ? "Riapri" : "Completa"}
           </Button>

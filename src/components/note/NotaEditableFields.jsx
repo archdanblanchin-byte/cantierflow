@@ -7,15 +7,14 @@ import SheetSelect from "@/components/ui/sheet-select";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
 import { TIPI, PRIORITA } from "@/lib/notaResolve";
+import NotaLinkFields from "@/components/note/NotaLinkFields";
 
 /**
  * Campi editabili di una singola nota (controllato).
- * value = { tipo, testo, items, cantiere_id, furgone_id, destinatari_email, data_promemoria, priorita }
+ * value = { tipo, testo, items, cantiere_id, furgone_id, materiali, attrezzi, destinatari_email, data_promemoria, priorita }
  */
-export default function NotaEditableFields({ value, onChange, cantieri = [], furgoni = [], destOptions = [] }) {
+export default function NotaEditableFields({ value, onChange, cantieri = [], furgoni = [], materialiList = [], attrezziList = [], destOptions = [] }) {
   const set = (patch) => onChange({ ...value, ...patch });
-  const [revealCantiere, setRevealCantiere] = useState(false);
-  const [revealFurgone, setRevealFurgone] = useState(false);
   const [revealDest, setRevealDest] = useState(false);
 
   const toggleDest = (email) =>
@@ -64,36 +63,20 @@ export default function NotaEditableFields({ value, onChange, cantieri = [], fur
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        {(value.cantiere_id || revealCantiere) ? (
-          <div className="space-y-1 flex-1 min-w-[140px]">
-            <Label className="text-xs flex items-center justify-between">
-              Cantiere
-              {value.cantiere_id && <button type="button" onClick={() => set({ cantiere_id: "" })} className="text-[10px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>}
-            </Label>
-            <SheetSelect value={value.cantiere_id || ""} onValueChange={(v) => set({ cantiere_id: v })} options={cantieri.filter((c) => c.attivo !== false).map((c) => ({ value: c.id, label: c.nome }))} placeholder="Nessuno" />
-          </div>
-        ) : (
-          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setRevealCantiere(true)}><Plus className="w-3 h-3" /> Cantiere</Button>
-        )}
-        {(value.furgone_id || revealFurgone) ? (
-          <div className="space-y-1 flex-1 min-w-[140px]">
-            <Label className="text-xs flex items-center justify-between">
-              Furgone
-              {value.furgone_id && <button type="button" onClick={() => set({ furgone_id: "" })} className="text-[10px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>}
-            </Label>
-            <SheetSelect value={value.furgone_id || ""} onValueChange={(v) => set({ furgone_id: v })} options={furgoni.filter((f) => f.attivo !== false).map((f) => ({ value: f.id, label: f.nome }))} placeholder="Nessuno" />
-          </div>
-        ) : (
-          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setRevealFurgone(true)}><Plus className="w-3 h-3" /> Furgone</Button>
-        )}
-      </div>
+      <NotaLinkFields
+        value={value}
+        onChange={onChange}
+        cantieri={cantieri}
+        furgoni={furgoni}
+        materialiList={materialiList}
+        attrezziList={attrezziList}
+      />
 
-      {(value.tipo === "messaggio" || (value.destinatari_email || []).length > 0 || revealDest) ? (
+      {(value.tipo === "messaggio" || value.tipo === "task" || (value.destinatari_email || []).length > 0 || revealDest) ? (
         <div className="space-y-1">
           <Label className="text-xs flex items-center justify-between">
             Destinatari
-            {value.tipo !== "messaggio" && <button type="button" onClick={() => { setRevealDest(false); set({ destinatari_email: [] }); }} className="text-[10px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>}
+            <button type="button" onClick={() => { setRevealDest(false); set({ destinatari_email: [] }); }} className="text-[10px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>
           </Label>
           <div className="max-h-32 overflow-y-auto rounded-lg border border-border p-2 space-y-1">
             {destOptions.length === 0 && <p className="text-xs text-muted-foreground p-2">Nessun utente/collega con email.</p>}
@@ -104,7 +87,7 @@ export default function NotaEditableFields({ value, onChange, cantieri = [], fur
               </label>
             ))}
           </div>
-          <p className="text-[10px] text-muted-foreground">Senza destinatari la nota è personale (solo tu la vedi).</p>
+          <p className="text-[10px] text-muted-foreground">Senza destinatari la nota resta personale (solo tu la vedi).</p>
         </div>
       ) : (
         <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setRevealDest(true)}><Plus className="w-3 h-3" /> Invia a qualcuno</Button>

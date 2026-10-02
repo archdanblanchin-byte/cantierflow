@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, StickyNote, PenLine, Inbox, Send, User, Share2, MapPin, Car } from "lucide-react";
+import { ArrowLeft, StickyNote, PenLine, Inbox, Send, User, Share2, MapPin, Car, ListTodo, Plus, Mic, Boxes, Sparkles, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import NotaVocaleRecorder from "@/components/note/NotaVocaleRecorder";
 import NotaFormDialog from "@/components/note/NotaFormDialog";
 import NotaReviewDialog from "@/components/note/NotaReviewDialog";
@@ -15,14 +17,16 @@ export default function Note() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
-  const [section, setSection] = useState("personali"); // personali | comunicazioni
-  const [subCom, setSubCom] = useState("colleghi"); // colleghi | cantieri | furgoni
+  const [section, setSection] = useState("note"); // note | task | comunicazioni
+  const [subCom, setSubCom] = useState("colleghi"); // colleghi | cantieri | furgoni | materiali
   const [subCol, setSubCol] = useState("tutte"); // tutte | inviate | ricevute
-  const [recorderMode, setRecorderMode] = useState(null); // null | "personale" | "comunicazione"
+  const [recorderMode, setRecorderMode] = useState(null); // null | "personale" | "task" | "comunicazione"
   const [reviewMode, setReviewMode] = useState("personale");
-  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState(null); // null | "personale" | "task" | "comunicazione"
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewNotes, setReviewNotes] = useState([]);
+  const [quickTask, setQuickTask] = useState("");
+  const [savingQuick, setSavingQuick] = useState(false);
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
@@ -30,6 +34,8 @@ export default function Note() {
   const { data: furgoni = [] } = useQuery({ queryKey: ["furgoni"], queryFn: () => base44.entities.Furgone.list() });
   const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: () => base44.entities.User.list() });
   const { data: collaboratori = [] } = useQuery({ queryKey: ["collaboratori"], queryFn: () => base44.entities.Collaboratore.list() });
+  const { data: materialiList = [] } = useQuery({ queryKey: ["materiali-base"], queryFn: () => base44.entities.MaterialeBase.list() });
+  const { data: attrezziList = [] } = useQuery({ queryKey: ["attrezzi"], queryFn: () => base44.entities.AnagrafaAttrezzo.list() });
 
   const colleghi = [
     ...users.map((u) => ({ nome: u.full_name || u.email })),
@@ -38,18 +44,26 @@ export default function Note() {
 
   const { data: note = [], isLoading } = useQuery({
     queryKey: ["note"],
-    queryFn: () => base44.entities.Nota.list("-created_date", 200),
+    queryFn: () => base44.entities.Nota.list("-created_date", 300),
     enabled: !!user,
   });
 
-  // Personali: privata !== false (personali, anche con contesto cantiere/furgone)
-  const personali = note.filter((n) => n.privata !== false);
-  // Comunicazioni: privata === false (condivise)
+  // Note personali (escluse le cose da fare)
+  const personali = note.filter((n) => n.privata !== false && n.tipo !== "task");
+  // Task: miei (personali) + quelli che mi sono stati assegnati
+  const mieiTask = note.filter((n) => n.tipo === "task" && (
+    (n.privata !== false && n.created_by === user?.email) || (n.destinatari_email || []).includes(user?.email)
+  ));
+  // Comunicazioni condivise
   const comunicazioni = note.filter((n) => n.privata === false);
 
-  const comColleghi = comunicazioni.filter((n) => (n.destinatari_email || []).length > 0 && !n.cantiere_id && !n.furgone_id);
   const comCantieri = comunicazioni.filter((n) => !!n.cantiere_id);
-  const comFurgoni = comunicazioni.filter((n) => !!n.furgone_id && !n.cantiere_id);
+  const comFurgoni = comunicazioni.filter((n) => !n.cantiere_id && !!n.furgone_id);
+  const comColleghi = comunicazioni.filter((n) => !n.cantiere_id && !n.furgone_id && (n.destinatari_email || []).length > 0);
+  const comMateriali = comunicazioni.filter((n) =>
+    !n.cantiere_id && !n.furgone_id && !(n.destinatari_email || []).length &&
+    ((n.materiali || []).length > 0 || (n.attrezzi || []).length > 0));
+
   const colleghiInviate = comColleghi.filter((n) => n.created_by === user?.email);
   const colleghiRicevute = comColleghi.filter((n) => (n.destinatari_email || []).includes(user?.email));
   const colleghiFiltered = subCol === "inviate" ? colleghiInviate : subCol === "ricevute" ? colleghiRicevute : comColleghi;
@@ -61,8 +75,12 @@ export default function Note() {
     return new Date(b.created_date) - new Date(a.created_date);
   });
 
-  const activeCom = subCom === "cantieri" ? comCantieri : subCom === "furgoni" ? comFurgoni : colleghiFiltered;
-  const activeList = section === "personali" ? personali : activeCom;
+  const activeCom = subCom === "cantieri" ? comCantieri
+    : subCom === "furgoni" ? comFurgoni
+    : subCom === "materiali" ? comMateriali
+    : colleghiFiltered;
+
+  const activeList = section === "note" ? personali : section === "task" ? mieiTask : activeCom;
   const list = sortByCompletato(activeList);
   const listAperte = list.filter((n) => !n.completato);
   const listCompletate = list.filter((n) => n.completato);
@@ -80,12 +98,35 @@ export default function Note() {
     queryClient.invalidateQueries({ queryKey: ["note-cantiere"] });
   };
 
-  const formMode = section === "comunicazioni" ? "comunicazione" : "personale";
+  const salvaQuickTask = async () => {
+    const testo = quickTask.trim();
+    if (!testo) return;
+    setSavingQuick(true);
+    try {
+      await base44.entities.Nota.create({
+        testo, tipo: "task", privata: true, items: [],
+        destinatari_email: [], destinatari_nomi: [], materiali: [], attrezzi: [],
+        priorita: "media", origine: "manuale",
+      });
+      setQuickTask("");
+      onSaved();
+      toast.success("Task aggiunto");
+    } catch (e) {
+      toast.error("Errore: " + e.message);
+    } finally {
+      setSavingQuick(false);
+    }
+  };
+
   const emptyText =
-    section === "personali" ? "Nessuna nota personale"
-    : subCom === "cantieri" ? "Nessuna nota di cantiere"
-    : subCom === "furgoni" ? "Nessuna nota furgone"
+    section === "note" ? "Nessuna nota personale"
+    : section === "task" ? "Nessun task da fare"
+    : subCom === "cantieri" ? "Nessuna comunicazione di cantiere"
+    : subCom === "furgoni" ? "Nessuna comunicazione di furgone"
+    : subCom === "materiali" ? "Nessuna comunicazione su materiali o attrezzi"
     : "Nessuna comunicazione";
+
+  const recorderLabel = recorderMode === "task" ? "task" : recorderMode === "personale" ? "nota personale" : "comunicazione";
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -98,8 +139,8 @@ export default function Note() {
             <StickyNote className="w-5 h-5 text-teal-600" />
           </div>
           <div>
-            <h1 className="text-lg font-bold leading-tight">NoteTask</h1>
-            <p className="text-[11px] text-muted-foreground">Personali e comunicazioni, anche più in una registrazione</p>
+            <h1 className="text-lg font-bold leading-tight">Note, Task e Comunicazioni</h1>
+            <p className="text-[11px] text-muted-foreground">Il tuo spazio personale e i collegamenti con l'app</p>
           </div>
           <div className="ml-auto"><NotificationsBell /></div>
         </div>
@@ -107,60 +148,114 @@ export default function Note() {
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
         {/* Segmented control sezioni */}
-        <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-muted">
+        <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-muted">
           <button
-            onClick={() => setSection("personali")}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-colors ${section === "personali" ? "bg-card text-teal-600 shadow-sm" : "text-muted-foreground"}`}
+            onClick={() => { setSection("note"); setRecorderMode(null); }}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${section === "note" ? "bg-card text-teal-600 shadow-sm" : "text-muted-foreground"}`}
           >
-            <User className="w-4 h-4" /> Personali
+            <User className="w-4 h-4" /> Note
           </button>
           <button
-            onClick={() => setSection("comunicazioni")}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-colors ${section === "comunicazioni" ? "bg-card text-violet-600 shadow-sm" : "text-muted-foreground"}`}
+            onClick={() => { setSection("task"); setRecorderMode(null); }}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${section === "task" ? "bg-card text-emerald-600 shadow-sm" : "text-muted-foreground"}`}
+          >
+            <ListTodo className="w-4 h-4" /> Task
+          </button>
+          <button
+            onClick={() => { setSection("comunicazioni"); setRecorderMode(null); }}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${section === "comunicazioni" ? "bg-card text-violet-600 shadow-sm" : "text-muted-foreground"}`}
           >
             <Share2 className="w-4 h-4" /> Comunicazioni
           </button>
         </div>
 
-        {!recorderMode ? (
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setRecorderMode("personale")}
-                className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-4 hover:shadow-md hover:border-teal-500/30 transition-all"
-              >
-                <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center"><User className="w-5 h-5 text-teal-600" /></div>
-                <span className="text-sm font-semibold">Personale</span>
-                <span className="text-[11px] text-muted-foreground text-center">Solo tu le vedi</span>
-              </button>
-              <button
-                onClick={() => setRecorderMode("comunicazione")}
-                className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-4 hover:shadow-md hover:border-violet-500/30 transition-all"
-              >
-                <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center"><Share2 className="w-5 h-5 text-violet-600" /></div>
-                <span className="text-sm font-semibold">Comunicazione</span>
-                <span className="text-[11px] text-muted-foreground text-center">Colleghi, cantieri o furgoni</span>
-              </button>
-            </div>
-            <Button variant="outline" className="gap-2 h-10 w-full" onClick={() => { setReviewNotes([]); setFormOpen(true); }}>
-              <PenLine className="w-4 h-4" /> Scrivi manualmente una nota {section === "comunicazioni" ? "condivisa" : "personale"}
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-2">
+        {/* Registratore vocale (comune alle tre sezioni) */}
+        {recorderMode ? (
+          <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {recorderMode === "personale" ? "Nota personale" : "Nota di comunicazione"}
+                Dettatura · {recorderLabel}
               </span>
               <Button variant="ghost" size="sm" onClick={() => setRecorderMode(null)}>Annulla</Button>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              {recorderMode === "personale"
-                ? "Parla liberamente: l'IA crea una o più note personali (promemoria, liste)."
-                : "Parla liberamente: l'IA crea uno o più messaggi/liste per le persone, cantieri o furgoni citati."}
+              {recorderMode === "comunicazione"
+                ? "Parla liberamente: l'IA crea una o più comunicazioni per le persone, i cantieri, i furgoni o i materiali citati."
+                : recorderMode === "task"
+                ? "Parla liberamente: l'IA crea uno o più task da svolgere."
+                : "Parla liberamente: l'IA crea una o più note personali (promemoria, liste)."}
             </p>
-            <NotaVocaleRecorder mode={recorderMode} cantieri={cantieri} furgoni={furgoni} colleghi={colleghi} onResult={handleResult} />
+            <NotaVocaleRecorder
+              mode={recorderMode}
+              cantieri={cantieri}
+              furgoni={furgoni}
+              colleghi={colleghi}
+              materiali={materialiList}
+              attrezzi={attrezziList}
+              onResult={handleResult}
+            />
           </div>
+        ) : (
+          <>
+            {section === "note" && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" className="gap-2 h-11" onClick={() => setFormMode("personale")}>
+                    <PenLine className="w-4 h-4" /> Scrivi nota
+                  </Button>
+                  <Button variant="outline" className="gap-2 h-11" onClick={() => setRecorderMode("personale")}>
+                    <Mic className="w-4 h-4" /> Dettatura
+                  </Button>
+                </div>
+                <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                  <Sparkles className="w-3 h-3" /> Con «Scrivi nota» puoi anche far scrivere e strutturare la nota all'IA.
+                </p>
+              </div>
+            )}
+
+            {section === "task" && (
+              <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    value={quickTask}
+                    onChange={(e) => setQuickTask(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); salvaQuickTask(); } }}
+                    placeholder="Scrivi un task e premi +"
+                  />
+                  <Button onClick={salvaQuickTask} disabled={!quickTask.trim() || savingQuick} size="icon" className="shrink-0" aria-label="Aggiungi task">
+                    {savingQuick ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setFormMode("task")}>
+                    <ListTodo className="w-3.5 h-3.5" /> Task con dettagli
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setRecorderMode("task")}>
+                    <Mic className="w-3.5 h-3.5" /> Dettatura
+                  </Button>
+                </div>
+                <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                  <Sparkles className="w-3 h-3" /> In «Task con dettagli» puoi far strutturare il testo all'IA.
+                </p>
+              </div>
+            )}
+
+            {section === "comunicazioni" && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" className="gap-2 h-11" onClick={() => setFormMode("comunicazione")}>
+                    <Share2 className="w-4 h-4" /> Nuova comunicazione
+                  </Button>
+                  <Button variant="outline" className="gap-2 h-11" onClick={() => setRecorderMode("comunicazione")}>
+                    <Mic className="w-4 h-4" /> Dettatura
+                  </Button>
+                </div>
+                <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                  <Sparkles className="w-3 h-3" /> Puoi scriverla a mano o farla strutturare all'IA, con collegamenti a persone e cantieri.
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         {/* Sub-filtri comunicazioni */}
@@ -175,6 +270,9 @@ export default function Note() {
               </Button>
               <Button variant={subCom === "furgoni" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setSubCom("furgoni")}>
                 <Car className="w-3.5 h-3.5" /> Furgoni ({comFurgoni.length})
+              </Button>
+              <Button variant={subCom === "materiali" ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setSubCom("materiali")}>
+                <Boxes className="w-3.5 h-3.5" /> Materiali ({comMateriali.length})
               </Button>
             </div>
             {subCom === "colleghi" && (
@@ -196,16 +294,18 @@ export default function Note() {
           </div>
         ) : (
           <div className="space-y-2.5">
-            {listAperte.map((n) => <NotaCard key={n.id} nota={n} currentUser={user} />)}
+            {listAperte.map((n) => <NotaCard key={n.id} nota={n} currentUser={user} variant={section === "task" ? "task" : undefined} />)}
             {listCompletate.length > 0 && (
               <div className="pt-2">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-px flex-1 bg-border" />
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Completate</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {section === "task" ? "Completati" : "Completate"}
+                  </span>
                   <div className="h-px flex-1 bg-border" />
                 </div>
                 <div className="space-y-2.5">
-                  {listCompletate.map((n) => <NotaCard key={n.id} nota={n} currentUser={user} />)}
+                  {listCompletate.map((n) => <NotaCard key={n.id} nota={n} currentUser={user} variant={section === "task" ? "task" : undefined} />)}
                 </div>
               </div>
             )}
@@ -213,7 +313,13 @@ export default function Note() {
         )}
       </div>
 
-      <NotaFormDialog open={formOpen} onOpenChange={setFormOpen} initial={null} onSaved={onSaved} mode={formMode} />
+      <NotaFormDialog
+        open={!!formMode}
+        onOpenChange={(o) => !o && setFormMode(null)}
+        initial={null}
+        onSaved={onSaved}
+        mode={formMode || "personale"}
+      />
       <NotaReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} notes={reviewNotes} onSaved={onSaved} mode={reviewMode} />
     </div>
   );

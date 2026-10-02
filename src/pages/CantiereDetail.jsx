@@ -18,6 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import FotoCard from "@/components/foto/FotoCard";
+import CantiereComunicazioni from "@/components/cantiere/CantiereComunicazioni";
 import ReportPDFButton, { ReportPDFContent, captureToPdfFile } from "@/components/ReportPDF";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -268,6 +269,9 @@ export default function CantiereDetail() {
             </div>
           )}
         </div>
+
+        {/* Comunicazioni collegate al cantiere */}
+        <CantiereComunicazioni cantiere={cantiere} />
 
         {/* Statistiche ore */}
         <div>

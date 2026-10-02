@@ -4,18 +4,19 @@
   "properties": {
     "testo": {
       "type": "string",
-      "description": "Contenuto della nota / messaggio / promemoria"
+      "description": "Contenuto della nota / task / comunicazione"
     },
     "tipo": {
       "type": "string",
       "enum": [
+        "task",
         "personale",
         "promemoria",
         "lista",
         "messaggio"
       ],
       "default": "personale",
-      "description": "personale=privata, promemoria=sveglia/data, lista=elenco materiale/attrezzi, messaggio=rivolta a un collega"
+      "description": "task=cosa da fare, personale=nota privata, promemoria=sveglia/data, lista=elenco materiale/attrezzi, messaggio=comunicazione a colleghi"
     },
     "items": {
       "type": "array",
@@ -36,7 +37,7 @@
     "privata": {
       "type": "boolean",
       "default": true,
-      "description": "true = nota personale (visibile solo all'autore + admin). false = comunicazione condivisa: visibile a destinatari, oppure a tutti se collegata a cantiere/furgone."
+      "description": "true = nota/task personale (visibile solo all'autore + admin). false = comunicazione condivisa: visibile a destinatari, oppure a tutti se collegata a cantiere/furgone."
     },
     "cantiere_id": {
       "type": "string",
@@ -53,6 +54,36 @@
     "furgone_nome": {
       "type": "string",
       "description": "Nome furgone (denormalizzato)"
+    },
+    "materiali": {
+      "type": "array",
+      "description": "Materiali collegati alla comunicazione/nota",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "attrezzi": {
+      "type": "array",
+      "description": "Attrezzi collegati alla comunicazione/nota",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      }
     },
     "destinatari_email": {
       "type": "array",
@@ -92,7 +123,7 @@
     "completato": {
       "type": "boolean",
       "default": false,
-      "description": "Se la nota/lista \u00e8 stata completata"
+      "description": "Se la nota/lista/task \u00e8 stata completata"
     },
     "completato_da": {
       "type": "string",

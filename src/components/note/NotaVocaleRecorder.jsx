@@ -10,7 +10,7 @@ import { toast } from "sonner";
  * mode: "comunicazione" -> note destinate ad altri (messaggi/liste con destinatari, problemi furgone, ecc.)
  * onResult(notes[]) -> array di note parsed, aperto nella dialog di revisione.
  */
-export default function NotaVocaleRecorder({ mode = "personale", cantieri = [], furgoni = [], colleghi = [], onResult }) {
+export default function NotaVocaleRecorder({ mode = "personale", cantieri = [], furgoni = [], colleghi = [], materiali = [], attrezzi = [], onResult }) {
   const [status, setStatus] = useState("idle"); // idle | recording | processing
   const [seconds, setSeconds] = useState(0);
   const [procSec, setProcSec] = useState(0);
@@ -46,6 +46,31 @@ export default function NotaVocaleRecorder({ mode = "personale", cantieri = [], 
     const cantieriStr = cantieri.map((c) => c.nome).filter(Boolean).join(", ") || "(nessuno)";
     const furgoniStr = furgoni.map((f) => f.nome).filter(Boolean).join(", ") || "(nessuno)";
     const collStr = colleghi.map((c) => c.nome).filter(Boolean).join(", ") || "(nessuno)";
+    const matStr = materiali.map((m) => m.nome).filter(Boolean).join(", ") || "(nessuno)";
+    const attrStr = attrezzi.map((a) => a.nome).filter(Boolean).join(", ") || "(nessuno)";
+
+    if (mode === "task") {
+      return `Sei un assistente vocale per un'azienda edile. Dal resoconto vocale di un lavoratore, estrai UNA O PIÙ COSE DA FARE (task) personali, visibili SOLO a chi le crea. Non ci sono destinatari: non impostare mai destinatari_nomi.
+
+Tipi possibili:
+- "task": una cosa da fare (es. "chiamare il cliente", "preparare il preventivo", "portare la scala"). Il testo inizia con un verbo all'infinito.
+- "promemoria": una cosa da fare con una data/ora specifica (compila data_promemoria in formato ISO 8601).
+
+REGOLE:
+- DIVIDI in PIÙ task quando l'utente elenca attività distinte e separate: un task per attività.
+- Se l'utente cita materiale o attrezzi da portare o acquistare, collega materiali_nomi/attrezzi_nomi SOLO se nominati esplicitamente.
+- data_promemoria: se dice "domani", "oggi", "lunedì", "alle 14", "tra 3 giorni", calcola ISO 8601. Oggi è ${oggiStr} (timezone Europe/Rome). Se non dice un'ora, usa le 09:00.
+- testo: usa SOLO le parole e le informazioni dette dall'utente. NON aggiungere dettagli non citati. Non indovinare, non completare, non inferire.
+- priorita: "alta" se "urgente/subito/importante", "bassa" se "quando puoi", altrimenti "media".
+- Se il resoconto è vuoto o incomprensibile, restituisci un array vuoto.
+
+Cantieri conosciuti (usa cantiere_nome solo se esplicitamente citato): ${cantieriStr}
+Materiali conosciuti: ${matStr}
+Attrezzi conosciuti: ${attrStr}
+
+Resoconto vocale:
+"""${transcript}"""`;
+    }
 
     if (mode === "personale") {
       return `Sei un assistente vocale per un'azienda edile. Dal resoconto vocale di un lavoratore, estrai UNA O PIÙ NOTE PERSONALI, visibili SOLO a chi le crea. Non ci sono destinatari: non impostare mai destinatari_nomi.
@@ -75,6 +100,7 @@ Resoconto vocale:
 
 Tipi possibili:
 - "messaggio": comunicazione a una o più persone (compila destinatari_nomi). Collega cantiere_nome/furgone_nome se pertinente.
+- "task": un'attività da svolgere assegnata a una o più persone (compila destinatari_nomi).
 - "promemoria": se è anche un promemoria con data (compila data_promemoria ISO 8601) rivolto a qualcuno (compila anche destinatari_nomi).
 - "lista": se è un elenco da inviare a qualcuno (es. materiale da far acquistare al magazziniere): compila items + destinatari_nomi.
 
@@ -91,6 +117,8 @@ REGOLE:
 Cantieri conosciuti: ${cantieriStr}
 Furgoni conosciuti: ${furgoniStr}
 Colleghi conosciuti: ${collStr}
+Materiali conosciuti (usa materiali_nomi solo se esplicitamente citati): ${matStr}
+Attrezzi conosciuti (usa attrezzi_nomi solo se esplicitamente citati): ${attrStr}
 
 Resoconto vocale:
 """${transcript}"""`;
@@ -104,7 +132,7 @@ Resoconto vocale:
         items: {
           type: "object",
           properties: {
-            tipo: { type: "string", enum: ["personale", "promemoria", "lista", "messaggio"] },
+            tipo: { type: "string", enum: ["task", "personale", "promemoria", "lista", "messaggio"] },
             testo: { type: "string" },
             items: {
               type: "array",
@@ -112,6 +140,8 @@ Resoconto vocale:
             },
             cantiere_nome: { type: "string" },
             furgone_nome: { type: "string" },
+            materiali_nomi: { type: "array", items: { type: "string" } },
+            attrezzi_nomi: { type: "array", items: { type: "string" } },
             destinatari_nomi: { type: "array", items: { type: "string" } },
             data_promemoria: { type: "string" },
             priorita: { type: "string", enum: ["bassa", "media", "alta"] },
@@ -195,7 +225,7 @@ Resoconto vocale:
         <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
         <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
       </span>
-      <span className="font-semibold">Registra {mode === "personale" ? "nota personale" : "comunicazione"}</span>
+      <span className="font-semibold">Registra {mode === "personale" ? "nota personale" : mode === "task" ? "task" : "comunicazione"}</span>
     </Button>
   );
 }
