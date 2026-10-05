@@ -74,8 +74,14 @@ export default function ReportDetail() {
   };
 
   const isAdmin = currentUser?.role === "admin";
-  const canEdit = report && currentUser &&
-    (isAdmin || (report.user_email === currentUser.email && isToday(new Date(report.data))));
+  // Compilano il rapportino: l'admin, l'autore entro la giornata e tutta la
+  // squadra (partecipanti) finché il rapportino è in bozza.
+  const oggi = report ? isToday(new Date(report.data)) : false;
+  const isAutore = !!report && report.user_email === currentUser?.email;
+  const inSquadra = !!report && (report.partecipanti_email || [])
+    .some((e) => (e || "").toLowerCase() === (currentUser?.email || "").toLowerCase());
+  const canEdit = !!report && !!currentUser &&
+    (isAdmin || (isAutore && oggi) || (inSquadra && oggi && report.stato === "bozza"));
   // Classificazione spostamenti secondo la regola delle 8 ore (calcolo giornaliero)
   const { data: classificazione } = useClassificazioneSpostamento(report?.user_email, report?.data);
   const spoTipo = classificazione?.spostamentoTipo;

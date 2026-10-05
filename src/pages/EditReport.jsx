@@ -27,9 +27,17 @@ export default function EditReport() {
       const results = await base44.entities.Rapportino.filter({ id });
       const report = results[0];
       if (!report) { navigate("/"); return; }
-      // Controllo sicurezza: solo l'autore (entro la giornata) oppure un admin
+      // Chi compila il rapportino: l'admin sempre; l'autore entro la giornata;
+      // qualsiasi operatore della squadra finché il rapportino è in bozza.
       const admin = user?.role === "admin";
-      if (!admin && (report.user_email !== user?.email || !isToday(new Date(report.data)))) {
+      const oggi = isToday(new Date(report.data));
+      const isAutore = report.user_email === user?.email;
+      const inSquadra = (report.partecipanti_email || [])
+        .some((e) => (e || "").toLowerCase() === (user?.email || "").toLowerCase());
+      const puoCompilare = admin
+        || (isAutore && oggi)
+        || (inSquadra && oggi && report.stato !== "inviato");
+      if (!puoCompilare) {
         toast.error("Non puoi modificare questo rapportino");
         navigate(`/report/${id}`);
         return;

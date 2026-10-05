@@ -279,6 +279,20 @@
           "created_by_id": "{{user.id}}"
         },
         {
+          "$and": [
+            {
+              "data.partecipanti_email": {
+                "$in": [
+                  "{{user.email}}"
+                ]
+              }
+            },
+            {
+              "data.stato": "bozza"
+            }
+          ]
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
