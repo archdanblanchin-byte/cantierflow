@@ -500,14 +500,14 @@ export default function Timbratura() {
               disabled={!!loadingTipo || !activeSession || inPausa || pausaFatta}
               className="h-14 text-xs font-semibold gap-1.5 bg-amber-500 hover:bg-amber-600">
               {loadingTipo === "pausa_inizio" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Coffee className="w-4 h-4" />}
-              Inizia pausa pranzo in cantiere
+              Inizia pausa pranzo
             </Button>
             <Button
               onClick={() => handlePausa("pausa_fine")}
               disabled={!!loadingTipo || !inPausa}
               className="h-14 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700">
               {loadingTipo === "pausa_fine" ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
-              Fine pausa pranzo in cantiere
+              Fine pausa pranzo
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
