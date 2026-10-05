@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Navigation, Route, Clock, Truck, AlertTriangle, Home, Warehouse, CalendarDays } from "lucide-react";
+import { MapPin, Navigation, Route, Clock, Truck, AlertTriangle, Home, Warehouse, CalendarDays, NotebookPen } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { TRASFERTA_CONFIG, STEP_CONFIG, fmtOre } from "@/lib/timbratureUtils";
@@ -22,6 +22,7 @@ export default function GiornoDetailDialog({
   permesso,
   correzioneTrasferta,
   timbrature = [],
+  notaGiornata = null,
 }) {
   const [mostraTimbrature, setMostraTimbrature] = useState(false);
   const timbratureOrd = (timbrature || [])
@@ -229,6 +230,18 @@ export default function GiornoDetailDialog({
                   )}
                 </div>
               </div>
+              {trasferta.km_riconosciuti != null && !inSede && (
+                <div className="rounded-md bg-muted/50 px-2 py-1.5 space-y-0.5">
+                  <p className="text-[11px]">
+                    Trasferta riconosciuta: <span className="font-semibold">{trasferta.km_riconosciuti} km</span>
+                  </p>
+                  {trasferta.minuti_mancanti > 0 && (
+                    <p className="text-[10px] text-muted-foreground">
+                      −{trasferta.km_deficit} km per {trasferta.minuti_mancanti} min di lavoro mancanti alle 8h
+                    </p>
+                  )}
+                </div>
+              )}
               {trasferta.mezzo_proprio && (
                 <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                   <Truck className="w-3 h-3" /> Spostamento con mezzo proprio
@@ -240,6 +253,18 @@ export default function GiornoDetailDialog({
 
         {/* Correzione manuale della trasferta (timbrature e rapportini restano invariati) */}
         {correzioneTrasferta && <ModificaTrasfertaGiorno {...correzioneTrasferta} />}
+
+        {/* Nota della giornata scritta dal dipendente */}
+        {notaGiornata?.testo && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <NotebookPen className="w-3.5 h-3.5 text-primary" /> Note della giornata
+            </p>
+            <Card className="p-3 border-primary/30 bg-primary/5">
+              <p className="text-sm whitespace-pre-wrap">{notaGiornata.testo}</p>
+            </Card>
+          </div>
+        )}
 
         {/* Note / Anomalie */}
         {note.length > 0 && (
@@ -256,7 +281,7 @@ export default function GiornoDetailDialog({
           </div>
         )}
 
-        {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && !permesso && note.length === 0 && luoghiLavoro.length === 0 && (
+        {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && !permesso && note.length === 0 && luoghiLavoro.length === 0 && !notaGiornata?.testo && (
           <p className="text-center text-sm text-muted-foreground py-6">Nessun dato per questa giornata</p>
         )}
 

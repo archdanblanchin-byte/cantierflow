@@ -175,8 +175,10 @@ export function buildRiepilogoMensile({
       if (cella.ore > 0) giorniLavorati++;
       if (cella.permesso === "permesso" && cella.permessoOre) totPermessoOre += cella.permessoOre;
       if (cella.permesso === "ferie") giorniFerie++;
-      if (cella.trasferta?.km_totali) {
-        totKm += cella.trasferta.km_totali;
+      // Km di trasferta riconosciuti (media andata/ritorno meno il tempo mancante)
+      const kmTrasferta = cella.trasferta?.km_riconosciuti ?? cella.trasferta?.km_totali;
+      if (kmTrasferta) {
+        totKm += kmTrasferta;
         nTrasferte++;
       }
       delete cella.tims;

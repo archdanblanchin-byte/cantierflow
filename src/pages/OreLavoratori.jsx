@@ -217,6 +217,29 @@ export default function OreLavoratori() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trasferte, selectedCollab, email, mese, config]);
 
+  // Note della giornata scritte dai dipendenti (visibili a chi gestisce)
+  const { data: noteGiornata = [] } = useQuery({
+    queryKey: ["note-giornata-mese", inizioStr, fineStr],
+    queryFn: () =>
+      base44.entities.NotaGiornata.filter(
+        { data: { $gte: inizioStr, $lte: fineStr } },
+        "-data",
+        2000
+      ),
+    enabled: !!selectedCollab || vista === "riepilogo",
+  });
+
+  const notaGiornataMap = useMemo(() => {
+    const map = {};
+    noteGiornata.forEach((n) => {
+      if (!n.data) return;
+      if (selectedCollab && !matchCollab(n)) return;
+      map[n.data] = n;
+    });
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noteGiornata, selectedCollab, email, mese]);
+
   // Sintesi calendario: { [key]: { ore, oreSpost, trasferta } }
   // La trasferta è calcolata automaticamente dalle timbrature del giorno
   // (andata/ritorno dal capannone); se esiste una trasferta confermata dal DB
@@ -412,6 +435,7 @@ export default function OreLavoratori() {
           collaboratoreNome={selectedCollab.nome}
           permesso={giornoPermesso}
           timbrature={giornoKey ? timbGiornoMap[giornoKey] || [] : []}
+          notaGiornata={giornoKey ? notaGiornataMap[giornoKey] || null : null}
         />
 
         <BottomNav />
@@ -489,6 +513,7 @@ export default function OreLavoratori() {
           permesso={giornoPermesso}
           correzioneTrasferta={correzioneTrasferta}
           timbrature={giornoKey ? timbGiornoMap[giornoKey] || [] : []}
+          notaGiornata={giornoKey ? notaGiornataMap[giornoKey] || null : null}
         />
 
         <BottomNav />

@@ -43,6 +43,22 @@
       "type": "number",
       "description": "Km totali (andata + ritorno)"
     },
+    "km_media": {
+      "type": "number",
+      "description": "Km equivalenti della trasferta: media tra andata e ritorno"
+    },
+    "km_riconosciuti": {
+      "type": "number",
+      "description": "Km di trasferta riconosciuti: media andata/ritorno meno i km equivalenti al tempo di lavoro mancante alle 8 ore"
+    },
+    "km_deficit": {
+      "type": "number",
+      "description": "Km non riconosciuti per ore di lavoro mancanti (1 minuto mancante = 1 km)"
+    },
+    "minuti_mancanti": {
+      "type": "number",
+      "description": "Minuti di lavoro mancanti alle 8 ore giornaliere"
+    },
     "fascia_andata": {
       "type": "string",
       "enum": [
@@ -74,7 +90,7 @@
         "T3",
         "T4"
       ],
-      "description": "Fascia trasferta giornaliera (sulla media andata+ritorno)"
+      "description": "Fascia trasferta riconosciuta, calcolata sui km equivalenti (media andata/ritorno meno il tempo mancante)"
     },
     "mezzo_proprio": {
       "type": "boolean",

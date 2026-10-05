@@ -261,8 +261,8 @@ export default function CantiereForm() {
                 <Input
                   type="number"
                   min="0"
-                  value={form.raggio_metri ?? 1000}
-                  onChange={(e) => set("raggio_metri", parseInt(e.target.value) || 1000)}
+                  value={form.raggio_metri ?? 1500}
+                  onChange={(e) => set("raggio_metri", parseInt(e.target.value) || 1500)}
                   className="w-24"
                   placeholder="150"
                 />

@@ -25,6 +25,7 @@ import CantierePickerDialog from "@/components/timbrature/CantierePickerDialog";
 import NotaSpostamentoLavorativo from "@/components/timbrature/NotaSpostamentoLavorativo";
 import ConfermaPosizioneDialog from "@/components/timbrature/ConfermaPosizioneDialog";
 import DomandeGuidaDialog from "@/components/timbrature/DomandeGuidaDialog";
+import NotaGiornataCard from "@/components/timbrature/NotaGiornataCard";
 
 // Finestra di tempo entro cui un utente può annullare/modificare un timbro accidentale (1 ora)
 const UNDO_WINDOW_MS = 60 * 60 * 1000;
@@ -283,11 +284,14 @@ export default function Timbratura() {
     nota: "Lavoro dal capannone per questo cantiere"
   });
 
-  const confermaAltroLuogo = ({ luogo }) =>
+  // L'operatore conferma di lavorare per questo cantiere pur essendo fuori
+  // posizione: il timbro si registra con la posizione GPS reale, il cantiere
+  // selezionato resta, e la trasferta si calcola sulla posizione timbrata.
+  const confermaAltroLuogo = () =>
   registraConfermaPosizione({
     lavoro_altro_luogo: true,
-    luogo_lavoro: luogo,
-    nota: `Lavoro per il cantiere da: ${luogo}`
+    nota: `Timbratura fuori dal cantiere${
+    confermaPosizione?.distanza != null ? ` (${(confermaPosizione.distanza / 1000).toFixed(1)} km)` : ""}`
   });
 
   const handlePausa = async (tipoEvento) => {
@@ -659,7 +663,9 @@ export default function Timbratura() {
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {t.in_cantiere === false &&
-                  <Badge variant="destructive" className="text-[9px] gap-0.5 hidden"><AlertTriangle className="w-2.5 h-2.5" /> Fuori</Badge>
+                  <Badge variant="destructive" className="text-[9px] gap-0.5 bg-rose-100 text-rose-700 border-rose-300">
+                        <AlertTriangle className="w-2.5 h-2.5" /> Fuori cantiere
+                      </Badge>
                   }
                     {isAdmin && t.distanza_metri != null && t.distanza_metri > 5000 &&
                   <Badge variant="destructive" className="text-[9px] gap-0.5 bg-orange-100 text-orange-800 border-orange-300 hidden"><MapPin className="w-2.5 h-2.5" /> &gt;5km</Badge>
@@ -712,6 +718,9 @@ export default function Timbratura() {
             </Button>
           </Card>
         }
+
+        {/* Nota libera della giornata: spiegazioni su anomalie e spostamenti */}
+        <NotaGiornataCard />
       </div>
 
       <ConfermaPosizioneDialog

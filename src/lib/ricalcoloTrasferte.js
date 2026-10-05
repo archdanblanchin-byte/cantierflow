@@ -55,6 +55,10 @@ export async function ricalcolaTrasferte() {
       fascia_andata: calc.fascia_andata,
       fascia_ritorno: calc.fascia_ritorno,
       tipo_trasferta: calc.tipo_trasferta,
+      km_media: calc.km_media ?? null,
+      km_riconosciuti: calc.km_riconosciuti ?? null,
+      km_deficit: calc.km_deficit ?? null,
+      minuti_mancanti: calc.minuti_mancanti ?? null,
       primo_cantiere_nome: calc.primo_cantiere_nome || tr.primo_cantiere_nome,
       ultimo_cantiere_nome: calc.ultimo_cantiere_nome || tr.ultimo_cantiere_nome,
     });

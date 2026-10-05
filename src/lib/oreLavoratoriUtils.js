@@ -1,6 +1,11 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { arrotondaOre, arrotondaQuarti, distanzaKm, distanzaKmStrada, getCapannone, classificaTrasfertaSplit, timbroInSede, coordinateTrasferta } from "@/lib/timbratureUtils";
+import { arrotondaOre, arrotondaQuarti, distanzaKm, distanzaKmStrada, getCapannone, classificaTrasfertaSplit, classificaFascia, timbroInSede, coordinateTrasferta } from "@/lib/timbratureUtils";
+
+// Ore di lavoro previste nella giornata e conversione tempo/trasferta:
+// 1 minuto di lavoro mancante = 1 km di trasferta non riconosciuta.
+export const ORE_LAVORO_GIORNO = 8;
+export const KM_PER_MINUTO_MANCANTE = 1;
 import { classificaSpostamentiGiornata, calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
 
 export function arrotondaOreQuarti(ore) {
@@ -100,12 +105,38 @@ export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config) {
   if (kmAndata == null && kmRitorno == null) return null;
 
   // Entrambe le tratte a 0 km: giornata interamente in sede, nessuna trasferta.
-  const nessunaTrasferta = kmAndata === 0 && kmRitorno === 0;
+  const nessunaTrasfertaSede = kmAndata === 0 && kmRitorno === 0;
   const split = classificaTrasfertaSplit(kmAndata, kmRitorno, config);
+
+  // Andata e ritorno non sono due trasferte separate: si usa la media dei due
+  // percorsi come km equivalenti della giornata.
+  const kmMedia = split.km_media != null ? split.km_media : kmAndata != null ? kmAndata : kmRitorno;
+
+  // Regola delle 8 ore: la trasferta si riconosce solo per il lavoro
+  // effettivamente svolto. Ogni minuto mancante alle 8 ore vale 1 km in meno
+  // (es. 7h30 lavorate -> 30 min mancanti -> 30 km in meno di trasferta).
+  const classif = classificaSpostamentiGiornata(tims);
+  const minutiLavorati = Math.round((classif?.totLavorazione || 0) * 60);
+  const minutiMancanti = Math.max(0, ORE_LAVORO_GIORNO * 60 - minutiLavorati);
+  const kmDeficit = Math.round(minutiMancanti * KM_PER_MINUTO_MANCANTE * 10) / 10;
+  const kmRiconosciuti = kmMedia == null ? null : Math.max(0, Math.round((kmMedia - kmDeficit) * 10) / 10);
+  const fasciaRiconosciuta = kmRiconosciuti == null ? null : classificaFascia(kmRiconosciuti, config);
+  const nessunaTrasferta = nessunaTrasfertaSede || (kmRiconosciuti != null && kmRiconosciuti <= 0);
+  const label = nessunaTrasferta
+    ? "—"
+    : split.fascia_andata && split.fascia_ritorno && split.fascia_andata !== split.fascia_ritorno
+      ? split.label
+      : fasciaRiconosciuta;
+
   return {
     ...split,
-    tipo_trasferta: nessunaTrasferta ? null : split.tipo_trasferta,
-    label: nessunaTrasferta ? "—" : split.label,
+    km_media: kmMedia,
+    km_riconosciuti: kmRiconosciuti,
+    km_deficit: kmDeficit,
+    minuti_lavorati: minutiLavorati,
+    minuti_mancanti: minutiMancanti,
+    tipo_trasferta: nessunaTrasferta ? null : fasciaRiconosciuta,
+    label,
     partenza_da_sede: partenzaDaSede,
     rientro_in_sede: rientroInSede,
     nessuna_trasferta: nessunaTrasferta,

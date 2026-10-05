@@ -3,9 +3,15 @@ import { LogIn, Coffee, LogOut, PlayCircle, Navigation, Route } from "lucide-rea
 // Coordinate del capannone sede (Rivignano Teor, UD)
 export const CAPANNONE = { lat: 45.8533, lon: 12.9997, nome: "Rivignano Teor" };
 
-// Raggio entro il quale un timbro è accettato senza domande (1 km).
-// Configurabile per singolo cantiere tramite il campo raggio_metri.
-export const RAGGIO_ACCETTAZIONE_M = 1000;
+// Raggio entro il quale un timbro è accettato senza domande (1,5 km).
+// Vale per TUTTI gli utenti e TUTTI i ruoli: l'avviso "sei fuori dal cantiere"
+// non compare mai entro 1,5 km. Un cantiere può avere un raggio più ampio.
+export const RAGGIO_ACCETTAZIONE_M = 1500;
+
+// Raggio effettivo di accettazione di un cantiere (mai sotto la soglia generale).
+export function raggioAccettazione(cantiere) {
+  return Math.max(cantiere?.raggio_metri || 0, RAGGIO_ACCETTAZIONE_M);
+}
 
 // Quanto vicino al capannone deve essere la posizione per considerarla "al capannone"
 export const RAGGIO_CAPANNONE_M = 250;
@@ -71,7 +77,7 @@ export async function getPosizioneEDistanza(cantiere) {
   let inCantiere = true;
   if (gpsDisponibile && lat != null && cantiere?.latitudine && cantiere?.longitudine) {
     distanza = distanzaM(lat, lon, cantiere.latitudine, cantiere.longitudine);
-    inCantiere = distanza <= (cantiere.raggio_metri || RAGGIO_ACCETTAZIONE_M);
+    inCantiere = distanza <= raggioAccettazione(cantiere);
   }
   return { lat, lon, distanza, inCantiere, gpsDisponibile };
 }
@@ -85,15 +91,19 @@ export function kmTraCantieri(a, b) {
 // Valuta la posizione GPS rispetto al cantiere e al capannone:
 // entroRaggio = timbro accettato senza domande, alCapannone = serve la conferma.
 export function valutaPosizione(pos, cantiere, capannone) {
-  const raggio = cantiere?.raggio_metri || RAGGIO_ACCETTAZIONE_M;
+  const raggio = raggioAccettazione(cantiere);
+  const haPosizione = cantiere?.latitudine != null && cantiere?.longitudine != null;
   let distanza = null;
   let entroRaggio = true;
-  if (pos?.lat != null && pos?.lon != null && cantiere?.latitudine && cantiere?.longitudine) {
+  if (pos?.lat != null && pos?.lon != null && haPosizione) {
     distanza = distanzaM(pos.lat, pos.lon, cantiere.latitudine, cantiere.longitudine);
     entroRaggio = distanza <= raggio;
   }
+  // Attività senza una vera posizione di cantiere (corso, visita medica,
+  // sopralluogo, riunione...): non c'è nulla da confrontare, quindi nessun
+  // avviso. La posizione GPS viene comunque registrata sul timbro.
   let alCapannone = false;
-  if (pos?.lat != null && pos?.lon != null && capannone?.lat != null && capannone?.lon != null) {
+  if (haPosizione && pos?.lat != null && pos?.lon != null && capannone?.lat != null && capannone?.lon != null) {
     alCapannone = distanzaM(pos.lat, pos.lon, capannone.lat, capannone.lon) <= RAGGIO_CAPANNONE_M;
   }
   return { distanza, entroRaggio, alCapannone, raggio };
