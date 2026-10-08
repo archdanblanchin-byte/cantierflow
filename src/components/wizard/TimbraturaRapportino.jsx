@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { distanzaM, getPosizione, STEP_CONFIG, arrotondaQuarti, fmtOre, raggioAccettazione } from "@/lib/timbratureUtils";
+import { distanzaM, getPosizione, STEP_CONFIG, arrotondaQuarti, arrotondaMinutiSu, fmtOre, raggioAccettazione } from "@/lib/timbratureUtils";
 import { getRuoloLabel } from "@/lib/permissions";
 
 export default function TimbraturaRapportino({ cantiere, cantieri, rapportinoId, onEnsureDraft, onChange }) {
@@ -81,13 +81,14 @@ export default function TimbraturaRapportino({ cantiere, cantieri, rapportinoId,
   const calcolaOreTotali = () => {
     if (!t_ingresso) return 0;
     const end = t_uscita ? new Date(t_uscita.data_ora) : new Date();
+    // Si somma il tempo esatto della giornata e si arrotonda una volta sola, in su.
+    let ms = end - new Date(t_ingresso.data_ora);
     if (t_pausa_inizio && t_pausa_fine) {
-      return arrotondaQuarti(new Date(t_pausa_inizio.data_ora) - new Date(t_ingresso.data_ora)) + arrotondaQuarti(end - new Date(t_pausa_fine.data_ora));
+      ms -= new Date(t_pausa_fine.data_ora) - new Date(t_pausa_inizio.data_ora);
+    } else if (pausaInCorso) {
+      ms -= new Date() - new Date(t_pausa_inizio.data_ora);
     }
-    if (pausaInCorso) {
-      return arrotondaQuarti(new Date(t_pausa_inizio.data_ora) - new Date(t_ingresso.data_ora));
-    }
-    return arrotondaQuarti(end - new Date(t_ingresso.data_ora));
+    return arrotondaMinutiSu(ms);
   };
   const oreTotaliHours = calcolaOreTotali();
   const durataPausa = arrotondaQuarti(t_pausa_inizio && t_pausa_fine ? new Date(t_pausa_fine.data_ora) - new Date(t_pausa_inizio.data_ora) : 0);

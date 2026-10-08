@@ -163,13 +163,21 @@ export function arrotondaQuarti(ms) {
   return arrotondaOre(ms / 3600000);
 }
 
-// Arrotonda un valore in ms al multiplo di `stepMin` minuti più vicino (default 5 min).
-// Da usare SOLO sul totale finale, non sulle singole sessioni (che vanno lasciate esatte).
-export function arrotondaMinuti(ms, stepMin = ARROTONDAMENTO_MIN) {
-  if (!ms || ms < 0) return 0;
-  const totalMin = ms / 60000;
-  const roundedMin = Math.round(totalMin / stepMin) * stepMin;
-  return Math.round((roundedMin / 60) * 1000) / 1000;
+// Arrotonda un valore espresso in ORE al multiplo di 5 minuti SUCCESSIVO: è la
+// regola dei totali (8h32 -> 8h35, sempre in più). Un valore già esatto non cambia.
+export function arrotondaOreSu(ore) {
+  if (!ore || ore <= 0) return 0;
+  const minuti = Math.ceil((ore * 60) / ARROTONDAMENTO_MIN - 1e-9) * ARROTONDAMENTO_MIN;
+  return Math.round((minuti / 60) * 1000) / 1000;
+}
+
+// Arrotonda una durata in ms al multiplo di `stepMin` minuti SUCCESSIVO (in ore
+// decimali). Va applicata UNA volta sola, sul totale finale: le singole sessioni
+// restano esatte, così una giornata da 8h32 diventa 8h35 e non 8h30.
+export function arrotondaMinutiSu(ms, stepMin = ARROTONDAMENTO_MIN) {
+  if (!ms || ms <= 0) return 0;
+  const minuti = Math.ceil(ms / 60000 / stepMin - 1e-9) * stepMin;
+  return Math.round((minuti / 60) * 1000) / 1000;
 }
 
 export function fmtOre(oreQuarti) {

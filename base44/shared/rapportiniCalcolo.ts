@@ -11,10 +11,13 @@ const sortTimbri = (timbrature) =>
   (timbrature || []).slice().sort((a, b) => toMs(a.data_ora) - toMs(b.data_ora));
 const minutiDa = (ms) => Math.round((ms || 0) / 60000);
 
-const arrotondaMinuti = (ms, stepMin = ARROTONDAMENTO_MIN) => {
-  if (!ms || ms < 0) return 0;
-  const roundedMin = Math.round(ms / 60000 / stepMin) * stepMin;
-  return Math.round((roundedMin / 60) * 1000) / 1000;
+// Arrotonda una durata in ms al multiplo di `stepMin` minuti SUCCESSIVO (in ore
+// decimali): è la regola dei totali di giornata (8h32 -> 8h35, sempre in più),
+// applicata una volta sola sul totale e non sulle singole sessioni.
+const arrotondaMinuti = (ms: number, stepMin = ARROTONDAMENTO_MIN) => {
+  if (!ms || ms <= 0) return 0;
+  const minuti = Math.ceil(ms / 60000 / stepMin - 1e-9) * stepMin;
+  return Math.round((minuti / 60) * 1000) / 1000;
 };
 
 export function fmtOre(ore) {

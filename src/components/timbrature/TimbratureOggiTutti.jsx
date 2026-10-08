@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
 import TimbraturaTimeline from "@/components/timbrature/TimbraturaTimeline";
-import { arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
+import { arrotondaMinutiSu, fmtOre } from "@/lib/timbratureUtils";
 
 // Vista per amministratore: tutte le timbrature della giornata di tutti gli utenti,
 // raggruppate per collaboratore con la propria timeline.
@@ -78,7 +78,7 @@ function oreGiornata(timbs) {
       const pFin = g.filter((t) => t.tipo_evento === "pausa_fine");
       const n = Math.min(pIn.length, pFin.length);
       for (let i = 0; i < n; i++) ms -= new Date(pFin[i].data_ora) - new Date(pIn[i].data_ora);
-      tot += arrotondaQuarti(ms);
+      tot += arrotondaMinutiSu(ms);
     }
   });
   return tot;

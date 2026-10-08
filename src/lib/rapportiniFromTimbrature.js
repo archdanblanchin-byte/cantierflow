@@ -1,4 +1,4 @@
-import { arrotondaMinuti, fmtOre, timbroInSede } from "./timbratureUtils";
+import { arrotondaMinutiSu, fmtOre, timbroInSede } from "./timbratureUtils";
 import { base44 } from "@/api/base44Client";
 
 const byDataOra = (a, b) => new Date(a.data_ora) - new Date(b.data_ora);
@@ -111,8 +111,8 @@ export function calcolaOrePerCantiere(timbrature) {
     cantiere_id: g.cantiere_id,
     cantiere_nome: g.cantiere_nome,
     ingresso: g.ingresso,
-    ore: arrotondaMinuti(g.ore_ms),
-    ore_spostamento: arrotondaMinuti(g.spostamento_ms),
+    ore: arrotondaMinutiSu(g.ore_ms),
+    ore_spostamento: arrotondaMinutiSu(g.spostamento_ms),
   }));
 }
 
@@ -223,7 +223,7 @@ export function buildSquadraDaTimbrature(timbrature, collaboratoriList = []) {
       ora_uscita: !inCorso && u.ultimo ? hhmm(u.ultimo.data_ora) : "",
       pausa_minuti: minutiDa(u.pausaMs),
       spostamento_minuti: minutiDa(u.spostamentoMs),
-      ore_lavorate: arrotondaMinuti(oreMs),
+      ore_lavorate: arrotondaMinutiSu(oreMs),
       cantieri: u.cantieri,
       note_timbrature: [...new Set(u.note)].join(" · "),
       // Ha timbrato dalla sede (capannone di Rivignano): nessuna trasferta,

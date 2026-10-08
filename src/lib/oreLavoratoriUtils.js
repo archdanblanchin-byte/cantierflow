@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { arrotondaOre, arrotondaQuarti, distanzaKm, distanzaKmStrada, getCapannone, classificaTrasfertaSplit, classificaFascia, timbroInSede, coordinateTrasferta } from "@/lib/timbratureUtils";
+import { arrotondaOre, arrotondaOreSu, arrotondaQuarti, distanzaKm, distanzaKmStrada, getCapannone, classificaTrasfertaSplit, classificaFascia, timbroInSede, coordinateTrasferta } from "@/lib/timbratureUtils";
 
 // Ore di lavoro previste nella giornata e conversione tempo/trasferta:
 // 1 minuto di lavoro mancante = 1 km di trasferta non riconosciuta.
@@ -53,9 +53,10 @@ export function oreGiornoDaTimbrature(timbratureGiorno) {
     oreCantieri += c.ore || 0;
     oreSpost += c.ore_spostamento || 0;
   });
+  // Totale di giornata arrotondato una volta sola, sempre in su (8h32 -> 8h35).
   return {
-    oreCantieri: arrotondaOre(oreCantieri),
-    oreSpost: arrotondaOre(oreSpost),
+    oreCantieri: arrotondaOreSu(oreCantieri),
+    oreSpost: arrotondaOreSu(oreSpost),
     perCantiere,
   };
 }

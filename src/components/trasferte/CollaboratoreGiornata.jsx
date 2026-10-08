@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { MapPin, Navigation, Clock, Save, CheckCircle2, Car, AlertTriangle, Settings, ChevronDown } from "lucide-react";
 import {
-  STEP_CONFIG, arrotondaQuarti, fmtOre, distanzaKmStrada,
+  STEP_CONFIG, arrotondaMinutiSu, fmtOre, distanzaKmStrada,
   CAPANNONE, classificaTrasfertaSplit, getCapannone, TRASFERTA_CONFIG, timbroInSede,
 } from "@/lib/timbratureUtils";
 import { calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
@@ -52,7 +52,7 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
       const pOut = g.timbri.filter(t => t.tipo_evento === "pausa_fine");
       const n = Math.min(pIn.length, pOut.length);
       for (let i = 0; i < n; i++) tot -= new Date(pOut[i].data_ora) - new Date(pIn[i].data_ora);
-      ore = arrotondaQuarti(tot);
+      ore = arrotondaMinutiSu(tot);
     }
     return { id, ...g, ore, coords: cantieri.find(c => c.id === id) };
   });
