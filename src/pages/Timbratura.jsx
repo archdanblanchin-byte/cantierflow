@@ -193,6 +193,16 @@ export default function Timbratura() {
     }
   };
 
+  // La posizione è obbligatoria per tutti gli utenti: se il dispositivo non
+  // riesce a fornirla il timbro NON viene registrato e si chiede di attivarla.
+  const richiediPosizione = async () => {
+    try {
+      return await getPosizione();
+    } catch (e) {
+      throw new Error("Posizione non disponibile. Attiva il GPS del dispositivo e riprova a timbrare.");
+    }
+  };
+
   const registraTimbro = async (tipoEvento, cantiere, { pos, v, extra = {} } = {}) => {
     const record = await base44.entities.Timbratura.create({
       cantiere_id: cantiere.id,
@@ -225,8 +235,7 @@ export default function Timbratura() {
     setError(null);
     try {
       if (!user) throw new Error("Utente non autenticato");
-      const pos = await getPosizione().catch(() => null);
-      if (!pos) toast.info("Posizione non disponibile: timbro registrato senza GPS.");
+      const pos = await richiediPosizione();
       const v = valutaPosizione(pos, cantiere, capannone);
       if (v.alCapannone || !v.entroRaggio) {
         setConfermaPosizione({
@@ -298,7 +307,7 @@ export default function Timbratura() {
     setLoadingTipo(tipoEvento);
     setError(null);
     try {
-      const pos = await getPosizione().catch(() => null);
+      const pos = await richiediPosizione();
       const v = valutaPosizione(pos, activeCantiere, capannone);
       await registraTimbro(tipoEvento, activeCantiere, { pos, v });
     } catch (e) {
@@ -315,7 +324,7 @@ export default function Timbratura() {
     setError(null);
     try {
       if (!user) throw new Error("Utente non autenticato");
-      const pos = await getPosizione().catch(() => null);
+      const pos = await richiediPosizione();
       const v = valutaPosizione(pos, activeCantiere, capannone);
       if (v.alCapannone || !v.entroRaggio) {
         setConfermaPosizione({
