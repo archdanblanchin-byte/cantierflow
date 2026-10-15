@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users } from "lucide-react";
+import { AlertTriangle, Users } from "lucide-react";
 import TimbraturaTimeline from "@/components/timbrature/TimbraturaTimeline";
 import { arrotondaMinutiSu, fmtOre } from "@/lib/timbratureUtils";
 
@@ -36,6 +36,8 @@ export default function TimbratureOggiTutti({ timbrature = [] }) {
       <div className="space-y-4">
         {gruppi.map((g) => {
           const ore = oreGiornata(g.list);
+          // Timbrature registrate fuori dal cantiere: l'admin le vede subito
+          const fuoriPosto = g.list.filter((t) => t.in_cantiere === false).length;
           return (
             <div key={g.email} className="space-y-2">
               <div className="flex items-center gap-2">
@@ -49,6 +51,12 @@ export default function TimbratureOggiTutti({ timbrature = [] }) {
                 {ore > 0 && (
                   <Badge variant="secondary" className="text-[10px] font-medium">
                     {fmtOre(ore)}
+                  </Badge>
+                )}
+                {fuoriPosto > 0 && (
+                  <Badge className="text-[10px] gap-1 bg-amber-100 text-amber-800 border-amber-300 font-semibold">
+                    <AlertTriangle className="w-2.5 h-2.5" />
+                    {fuoriPosto} fuori posto
                   </Badge>
                 )}
               </div>

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronRight, ArrowLeft, Calendar, Clock, MapPin, User, Users, Loader2, Navigation, CheckSquare, Trash2, Search, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, ArrowLeft, AlertTriangle, Calendar, Clock, MapPin, User, Users, Loader2, Navigation, CheckSquare, Trash2, Search, Plus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
@@ -269,6 +269,9 @@ export default function StoricoTimbrature({ mode = "own" }) {
             giorno.list.map((t) => t.cantiere_id).filter(Boolean)
           ).size;
           const nTimbri = giorno.list.length;
+          // Timbrature fuori dal cantiere: in "Tutte le timbrature" l'admin deve
+          // vedere a colpo d'occhio se qualcuno ha timbrato fuori posto.
+          const fuoriPosto = giorno.list.filter((t) => t.in_cantiere === false).length;
           const nUtenti = canSeeAll
             ? new Set(giorno.list.map((t) => t.user_email).filter(Boolean)).size
             : 1;
@@ -334,6 +337,12 @@ export default function StoricoTimbrature({ mode = "own" }) {
                     <Badge variant="secondary" className="text-[10px] gap-1 font-medium">
                       {nTimbri} timbri
                     </Badge>
+                    {canSeeAll && fuoriPosto > 0 && (
+                      <Badge className="text-[10px] gap-1 bg-amber-100 text-amber-800 border-amber-300 font-semibold">
+                        <AlertTriangle className="w-2.5 h-2.5" />
+                        {fuoriPosto} fuori posto
+                      </Badge>
+                    )}
                     {canSeeAll && nUtenti > 1 && (
                       <Badge className="text-[10px] gap-1 bg-primary/10 text-primary border-primary/20">
                         <Users className="w-2.5 h-2.5" />
@@ -364,6 +373,8 @@ export default function StoricoTimbrature({ mode = "own" }) {
                       const oreCollab = calcolaOrePerCantiere(timbs);
                       const oreUtente = oreCollab.reduce((s, c) => s + (c.ore || 0), 0);
                       const spostUtente = oreCollab.reduce((s, c) => s + (c.ore_spostamento || 0), 0);
+                      // Segnala subito se questo collaboratore ha timbrato fuori posto
+                      const fuoriUtente = timbs.filter((t) => t.in_cantiere === false).length;
                       return (
                         <div key={email} className="space-y-2 pt-2">
                           <div className="flex items-center gap-2">
@@ -385,6 +396,12 @@ export default function StoricoTimbrature({ mode = "own" }) {
                                 <Badge variant="secondary" className="text-[10px] gap-1 font-medium text-orange-700">
                                   <Navigation className="w-2.5 h-2.5" />
                                   {fmtOre(spostUtente)}
+                                </Badge>
+                              )}
+                              {fuoriUtente > 0 && (
+                                <Badge className="text-[10px] gap-1 bg-amber-100 text-amber-800 border-amber-300 font-semibold">
+                                  <AlertTriangle className="w-2.5 h-2.5" />
+                                  Fuori posto
                                 </Badge>
                               )}
                               {/* L'admin aggiunge un timbro a questo collaboratore,
