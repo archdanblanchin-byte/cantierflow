@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog";
@@ -8,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
+import usePersoneTimbratura from "@/hooks/usePersoneTimbratura";
 
 const TIPI = [
   { value: "ingresso", label: "Ingresso" },
@@ -45,7 +45,6 @@ function dataOraPerGiorno(giorno) {
 export default function TimbraturaAddDialog({
   open, cantieri = [], onOpenChange, onSave, prefillEmail = "", prefillData = null,
 }) {
-  const [persone, setPersone] = useState([]);
   const [userEmail, setUserEmail] = useState("");
   const [tipo, setTipo] = useState("ingresso");
   const [dataOra, setDataOra] = useState("");
@@ -64,28 +63,9 @@ export default function TimbraturaAddDialog({
     setPosizione("cantiere");
     setLuogoLavoro("");
     setNota("");
-
-    let attivo = true;
-    Promise.all([base44.entities.User.list(), base44.entities.Collaboratore.list()])
-      .then(([users, collaboratori]) => {
-        if (!attivo) return;
-        const nomePerEmail = new Map(
-          (collaboratori || [])
-            .filter((c) => c.user_email)
-            .map((c) => [c.user_email.toLowerCase(), c.nome])
-        );
-        setPersone(
-          (users || [])
-            .map((u) => ({
-              email: u.email,
-              nome: nomePerEmail.get((u.email || "").toLowerCase()) || u.full_name || u.email,
-            }))
-            .sort((a, b) => a.nome.localeCompare(b.nome, "it"))
-        );
-      })
-      .catch(() => {});
-    return () => { attivo = false; };
   }, [open]);
+
+  const persone = usePersoneTimbratura(open);
 
   const handleSave = async () => {
     setSaving(true);

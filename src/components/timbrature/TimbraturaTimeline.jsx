@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { MapPin, Clock, AlertTriangle, Navigation, Pencil, Trash2 } from "lucide-react";
+import { MapPin, Clock, AlertTriangle, Navigation, Pencil, Trash2, StickyNote } from "lucide-react";
 import { STEP_CONFIG, fmtOre } from "@/lib/timbratureUtils";
 import { calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
 
@@ -77,7 +77,8 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, canEdi
             <span className="text-sm font-semibold text-orange-900">Spostamenti</span>
           </div>
           {spostamenti.map((t, i) => (
-            <div key={t.id} className="flex items-center justify-between text-sm">
+            <div key={t.id} className="space-y-0.5">
+            <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-orange-600 font-medium">#{i + 1}</span>
                 <span className="text-muted-foreground">
@@ -96,6 +97,13 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, canEdi
                   </div>
                 )}
               </div>
+            </div>
+            {t.nota && (
+              <div className="flex items-start gap-1.5 text-[11px] text-orange-900/80 pl-5">
+                <StickyNote className="w-3 h-3 mt-0.5 shrink-0" />
+                <span className="italic break-words">{t.nota}</span>
+              </div>
+            )}
             </div>
           ))}
         </Card>
@@ -121,7 +129,8 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, canEdi
               const cfg = STEP_CONFIG[t.tipo_evento] || {};
               const Icon = cfg.icon || Clock;
               return (
-                <div key={t.id} className="flex items-center justify-between text-sm">
+                <div key={t.id} className="space-y-0.5">
+                <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <Icon className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>{cfg.label || t.tipo_evento}</span>
@@ -143,6 +152,13 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, canEdi
                       </div>
                     )}
                   </div>
+                </div>
+                {t.nota && (
+                  <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground pl-5">
+                    <StickyNote className="w-3 h-3 mt-0.5 shrink-0" />
+                    <span className="italic break-words">{t.nota}</span>
+                  </div>
+                )}
                 </div>
               );
             })}

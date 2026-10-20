@@ -15,6 +15,8 @@ import { calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
 import TimbraturaTimeline from "@/components/timbrature/TimbraturaTimeline";
 import TimbraturaEditDialog from "@/components/timbrature/TimbraturaEditDialog";
 import TimbraturaAddDialog from "@/components/timbrature/TimbraturaAddDialog";
+import TimbraturaSequenzaDialog from "@/components/timbrature/TimbraturaSequenzaDialog";
+import GiornoPersoneList from "@/components/timbrature/GiornoPersoneList";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -39,6 +41,9 @@ export default function StoricoTimbrature({ mode = "own" }) {
   const [addOpen, setAddOpen] = useState(false);
   // Precompilazione della finestra "Aggiungi timbratura": collaboratore e giorno
   const [addPrefill, setAddPrefill] = useState(null);
+  // Sequenza di timbri (ingresso, pausa, ripresa, uscita) per un collaboratore
+  const [seqOpen, setSeqOpen] = useState(false);
+  const [seqPrefill, setSeqPrefill] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
@@ -86,6 +91,21 @@ export default function StoricoTimbrature({ mode = "own" }) {
     await base44.entities.Timbratura.create(payload);
     toast({ title: "Timbratura aggiunta", description: `${payload.user_nome || payload.user_email}` });
     await syncGiorno(payload.data_ora);
+    queryClient.invalidateQueries({ queryKey: ["storico-timbrature"] });
+    queryClient.invalidateQueries({ queryKey: ["timbrature-giornata"] });
+    queryClient.invalidateQueries({ queryKey: ["rapportini"] });
+  };
+
+  // Più timbri in sequenza per lo stesso collaboratore e lo stesso giorno:
+  // vengono creati tutti insieme e il rapportino della giornata si riallinea.
+  const handleAddSequenza = async (payloads) => {
+    if (!payloads?.length) return;
+    for (const p of payloads) await base44.entities.Timbratura.create(p);
+    toast({
+      title: `${payloads.length} timbrature aggiunte`,
+      description: payloads[0].user_nome || payloads[0].user_email,
+    });
+    await syncGiorno(payloads[0].data_ora);
     queryClient.invalidateQueries({ queryKey: ["storico-timbrature"] });
     queryClient.invalidateQueries({ queryKey: ["timbrature-giornata"] });
     queryClient.invalidateQueries({ queryKey: ["rapportini"] });
@@ -279,15 +299,6 @@ export default function StoricoTimbrature({ mode = "own" }) {
             locale: it,
           });
 
-          // Per admin/responsabile tecnico: raggruppa i timbri del giorno per utente
-          const perUtente = {};
-          if (canSeeAll) {
-            giorno.list.forEach((t) => {
-              const k = t.user_email || "—";
-              (perUtente[k] ||= []).push(t);
-            });
-          }
-
           const isSelected = selectedDays.has(giorno.key);
           return (
             <Card key={giorno.key} className={`overflow-hidden ${selectMode && isSelected ? "ring-2 ring-primary" : ""}`}>
@@ -368,68 +379,14 @@ export default function StoricoTimbrature({ mode = "own" }) {
                       onDelete={(t) => setDeleteTarget(t)}
                     />
                   ) : (
-                    Object.entries(perUtente).map(([email, timbs]) => {
-                      const u = timbs[0];
-                      const oreCollab = calcolaOrePerCantiere(timbs);
-                      const oreUtente = oreCollab.reduce((s, c) => s + (c.ore || 0), 0);
-                      const spostUtente = oreCollab.reduce((s, c) => s + (c.ore_spostamento || 0), 0);
-                      // Segnala subito se questo collaboratore ha timbrato fuori posto
-                      const fuoriUtente = timbs.filter((t) => t.in_cantiere === false).length;
-                      return (
-                        <div key={email} className="space-y-2 pt-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold shrink-0">
-                              {(u.user_nome || email || "?")[0].toUpperCase()}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold truncate">
-                                {u.user_nome || email}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground truncate">{email}</p>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <Badge variant="secondary" className="text-[10px] gap-1 font-medium">
-                                <Clock className="w-2.5 h-2.5" />
-                                {fmtOre(oreUtente)}
-                              </Badge>
-                              {spostUtente > 0 && (
-                                <Badge variant="secondary" className="text-[10px] gap-1 font-medium text-orange-700">
-                                  <Navigation className="w-2.5 h-2.5" />
-                                  {fmtOre(spostUtente)}
-                                </Badge>
-                              )}
-                              {fuoriUtente > 0 && (
-                                <Badge className="text-[10px] gap-1 bg-amber-100 text-amber-800 border-amber-300 font-semibold">
-                                  <AlertTriangle className="w-2.5 h-2.5" />
-                                  Fuori posto
-                                </Badge>
-                              )}
-                              {/* L'admin aggiunge un timbro a questo collaboratore,
-                                  già impostato su questo giorno */}
-                              {isAdmin && (
-                                <button
-                                  onClick={() => {
-                                    setAddPrefill({ email: email === "—" ? "" : email, data: giorno.key });
-                                    setAddOpen(true);
-                                  }}
-                                  className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
-                                  aria-label="Aggiungi timbratura"
-                                  title="Aggiungi timbratura a questo collaboratore"
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                          <TimbraturaTimeline
-                            timbrature={timbs}
-                            isAdmin={isAdmin}
-                            onEdit={isAdmin ? (t) => { setEditTarget(t); setEditOpen(true); } : undefined}
-                            onDelete={isAdmin ? (t) => setDeleteTarget(t) : undefined}
-                          />
-                        </div>
-                      );
-                    })
+                    <GiornoPersoneList
+                      timbrature={giorno.list}
+                      isAdmin={isAdmin}
+                      onEdit={(t) => { setEditTarget(t); setEditOpen(true); }}
+                      onDelete={(t) => setDeleteTarget(t)}
+                      onAdd={(email) => { setAddPrefill({ email, data: giorno.key }); setAddOpen(true); }}
+                      onAddSequenza={(email) => { setSeqPrefill({ email, data: giorno.key }); setSeqOpen(true); }}
+                    />
                   )}
                 </div>
               )}
@@ -456,6 +413,16 @@ export default function StoricoTimbrature({ mode = "own" }) {
         onSave={handleAdd}
         prefillEmail={addPrefill?.email || ""}
         prefillData={addPrefill?.data || null}
+      />
+
+      {/* Aggiunta di più timbri in sequenza per un collaboratore (solo admin) */}
+      <TimbraturaSequenzaDialog
+        open={seqOpen}
+        cantieri={cantieri}
+        onOpenChange={setSeqOpen}
+        onSave={handleAddSequenza}
+        prefillEmail={seqPrefill?.email || ""}
+        prefillData={seqPrefill?.data || null}
       />
 
       {/* Barra azione multipla (solo admin, modalità selezione) */}
