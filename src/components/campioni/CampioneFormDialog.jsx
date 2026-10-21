@@ -262,9 +262,6 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
 
         <div className="px-5 py-4 space-y-5">
           <div>
-            <p className="text-xs text-muted-foreground mb-2">
-              Parti dalle foto: l'etichetta riempie da sola i campi qui sotto.
-            </p>
             <FotoStrip
               foto={foto}
               lavoro={lavoro}
