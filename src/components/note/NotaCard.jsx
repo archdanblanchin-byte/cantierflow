@@ -10,6 +10,7 @@ import { it } from "date-fns/locale";
 import { MapPin, Car, Trash2, CheckCheck, Bell, Users, Pencil, Boxes, Wrench, ArrowDownLeft } from "lucide-react";
 import { toast } from "sonner";
 import NotaFormDialog from "./NotaFormDialog";
+import AllegatiList from "./AllegatiList";
 
 const TIPO_LABEL = { task: "Task", personale: "Personale", promemoria: "Promemoria", lista: "Lista", messaggio: "Messaggio" };
 const TIPO_COLOR = {
@@ -20,7 +21,7 @@ const TIPO_COLOR = {
   messaggio: "bg-violet-100 text-violet-700 border-violet-300",
 };
 
-export default function NotaCard({ nota, currentUser, variant }) {
+export default function NotaCard({ nota, currentUser, variant, onEdit }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const isTask = variant === "task";
@@ -112,11 +113,17 @@ export default function NotaCard({ nota, currentUser, variant }) {
           <span className={`text-sm ${nota.completato ? "line-through text-muted-foreground" : ""}`}>{nota.testo}</span>
         </label>
       ) : (
-        <p className={`text-sm ${nota.completato ? "line-through" : ""}`}>{nota.testo}</p>
+        <div className="space-y-1">
+          {nota.titolo && <p className="text-sm font-semibold leading-snug">{nota.titolo}</p>}
+          {nota.testo && nota.testo !== nota.titolo && (
+            <p className={`text-sm whitespace-pre-wrap ${nota.completato ? "line-through" : ""}`}>{nota.testo}</p>
+          )}
+          <AllegatiList disegno={nota.disegno} allegati={nota.allegati} />
+        </div>
       )}
 
       {nota.tipo === "lista" && (nota.items || []).length > 0 && (
-        <div className="space-y-1 pt-1">
+        <div className="space-y-1 pt-1" onClick={(e) => e.stopPropagation()}>
           {nota.items.map((it, i) => (
             <label key={i} className="flex items-center gap-2 text-sm cursor-pointer">
               <Checkbox checked={!!it.done} onCheckedChange={() => toggleItem(i)} />
@@ -147,7 +154,7 @@ export default function NotaCard({ nota, currentUser, variant }) {
         </div>
       )}
 
-      <div className="flex items-center gap-1 pt-1 border-t border-border">
+      <div className="flex items-center gap-1 pt-1 border-t border-border" onClick={(e) => e.stopPropagation()}>
         {!isTask && (isAuthor || isRecipient || currentUser?.role === "admin") && (
           <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={toggleComplete}>
             <CheckCheck className="w-3.5 h-3.5" /> {nota.completato ? "Riapri" : "Completa"}
@@ -155,7 +162,7 @@ export default function NotaCard({ nota, currentUser, variant }) {
         )}
         {(isAuthor || currentUser?.role === "admin") && (
           <>
-            <Button variant="ghost" size="sm" className="gap-1 text-xs ml-auto" onClick={() => setEditing(true)}>
+            <Button variant="ghost" size="sm" className="gap-1 text-xs ml-auto" onClick={() => (onEdit ? onEdit(nota) : setEditing(true))}>
               <Pencil className="w-3.5 h-3.5" /> Modifica
             </Button>
             <Button variant="ghost" size="sm" className="gap-1 text-xs text-destructive" onClick={handleDelete}>

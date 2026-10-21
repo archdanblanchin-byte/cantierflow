@@ -102,7 +102,7 @@ export default function Note() {
           <div className="grid gap-3 sm:grid-cols-2">
             {mie.map((n) => (
               <div key={n.id} onClick={() => modifica(n)}>
-                <NotaCard nota={n} currentUser={user} />
+                <NotaCard nota={n} currentUser={user} onEdit={modifica} />
               </div>
             ))}
           </div>

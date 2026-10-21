@@ -190,7 +190,7 @@ export default function NotificationsBell() {
                 return (
                   <button
                     key={n.id}
-                    onClick={() => { setOpen(false); navigate("/note"); }}
+                    onClick={() => { setOpen(false); navigate(n.tipo === "task" ? "/task" : "/note"); }}
                     className={`w-full text-left p-2 rounded-lg hover:bg-accent ${!read ? "bg-primary/5" : ""}`}
                   >
                     <p className="text-xs font-medium line-clamp-2 flex items-start gap-1.5">
@@ -204,7 +204,7 @@ export default function NotificationsBell() {
                 );
               })
             )}
-            <button onClick={() => { setOpen(false); navigate("/note"); }} className="w-full text-center text-xs text-primary py-1.5 hover:underline">
+            <button onClick={() => { setOpen(false); navigate("/task"); }} className="w-full text-center text-xs text-primary py-1.5 hover:underline">
               Vedi tutti
             </button>
           </div>
