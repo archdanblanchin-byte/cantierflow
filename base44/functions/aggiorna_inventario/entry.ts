@@ -1,6 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 
 const RUOLI_GESTORI = ['admin', 'responsabile_tecnico'];
+
+// Oltre ai ruoli, gestisce il magazzino anche chi ha il permesso extra "inventario"
+// (assegnato dall'amministratore dalla pagina Utenti).
+const puoGestireInventario = (user) =>
+  RUOLI_GESTORI.includes(user?.role) || user?.permessi_extra === 'inventario';
 const TIPI_MANUALI = ['carico', 'scarico', 'rettifica'];
 
 function numero(valore) {
@@ -86,7 +91,7 @@ export default async function (req) {
 
     // Movimento manuale del magazziniere (carico, scarico, rettifica)
     if (azione === 'movimento') {
-      if (!RUOLI_GESTORI.includes(user.role)) {
+      if (!puoGestireInventario(user)) {
         return Response.json({ error: 'Non autorizzato' }, { status: 403 });
       }
       if (!body.materiale_id || !TIPI_MANUALI.includes(body.tipo)) {

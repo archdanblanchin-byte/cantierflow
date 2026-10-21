@@ -10,6 +10,9 @@ export function usePermessi() {
   const ruolo = ruoloRaw === "user" ? "collaboratore" : ruoloRaw;
   const isAdmin = ruolo === "admin";
   const isGestore = isAdmin || ruolo === "responsabile_tecnico";
+  // Permesso extra assegnato dall'amministratore dalla pagina Utenti: chi lo ha
+  // gestisce l'inventario con gli stessi poteri dell'amministratore.
+  const gestoreInventario = isAdmin || user?.permessi_extra === "inventario";
 
   const { data: permessiRaw = [], isLoading } = useQuery({
     queryKey: ["permessi-sezione"],
@@ -31,5 +34,5 @@ export function usePermessi() {
     return sezioniPermesse.includes(key);
   };
 
-  return { ruolo, isAdmin, isGestore, sezioniPermesse, puoVedere, isLoading };
+  return { ruolo, isAdmin, isGestore, gestoreInventario, sezioniPermesse, puoVedere, isLoading };
 }

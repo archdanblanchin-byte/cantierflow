@@ -24,7 +24,10 @@ import SegnalazioniDialog from "@/components/inventario/SegnalazioniDialog";
 export default function Inventario() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isGestore, isAdmin } = usePermessi();
+  const { isGestore, isAdmin, gestoreInventario } = usePermessi();
+  // Chi ha il permesso extra (o è amministratore) gestisce l'inventario con gli stessi poteri
+  const puoGestire = isGestore || gestoreInventario;
+  const puoAdmin = isAdmin || gestoreInventario;
   const [query, setQuery] = useState("");
   const [filtri, setFiltri] = useState({ categoria: "", scaffale: "", ordinamento: "nome", soloSottoSoglia: false });
   const [classificando, setClassificando] = useState(false);
@@ -54,7 +57,7 @@ export default function Inventario() {
       );
       return page?.items || [];
     },
-    enabled: isGestore,
+    enabled: puoGestire,
     refetchInterval: 60000,
   });
 
@@ -137,7 +140,7 @@ export default function Inventario() {
                 {isLoading ? "..." : `${materiali.length} materiali · ${basse.length} sotto soglia`}
               </p>
             </div>
-            {isGestore && (
+            {puoGestire && (
               <>
                 <Button variant="outline" size="icon" className="relative" onClick={() => setShowSegnalazioni(true)} title="Materiale segnalato mancante">
                   <Flag className="w-4 h-4" />
@@ -150,7 +153,7 @@ export default function Inventario() {
                 <Button variant="outline" size="icon" onClick={() => setShowDestinatari(true)} title="Chi riceve gli avvisi">
                   <BellRing className="w-4 h-4" />
                 </Button>
-                {isAdmin && (
+                {puoAdmin && (
                   <Button variant="outline" size="icon" onClick={() => setShowImport(true)} title="Importa check list">
                     <FileUp className="w-4 h-4" />
                   </Button>
@@ -182,7 +185,7 @@ export default function Inventario() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-3">
-        {isGestore && senzaCategoria > 0 && !isLoading && (
+        {puoGestire && senzaCategoria > 0 && !isLoading && (
           <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 flex items-center gap-3">
             <Sparkles className="w-5 h-5 text-primary shrink-0" />
             <div className="flex-1 min-w-0">
@@ -210,9 +213,9 @@ export default function Inventario() {
                 ? "Importa la check list del magazzino oppure aggiungi i materiali a mano"
                 : "Prova a cambiare ricerca o filtro"}
             </p>
-            {materiali.length === 0 && isGestore && (
+            {materiali.length === 0 && puoGestire && (
               <div className="mt-4 flex flex-col items-center gap-2">
-                {isAdmin && (
+                {puoAdmin && (
                   <Button className="gap-2" onClick={() => setShowImport(true)}>
                     <FileUp className="w-4 h-4" /> Importa check list
                   </Button>
@@ -243,7 +246,7 @@ export default function Inventario() {
         materiale={aperto}
         open={!!aperto}
         onClose={() => setAperto(null)}
-        isGestore={isGestore}
+        isGestore={puoGestire}
         onChanged={aggiorna}
         onSegnala={(m) => {
           setAperto(null);

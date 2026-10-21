@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, UserPlus, Trash2, Loader2, Mail, ShieldAlert } from "lucide-react";
+import { ArrowLeft, UserPlus, Trash2, Loader2, Mail, Package, ShieldAlert } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { RUOLI, getRuoloLabel, getRuoloColor } from "@/lib/permissions";
 import { useToast } from "@/components/ui/use-toast";
@@ -136,6 +136,26 @@ export default function Utenti() {
     }
   };
 
+  // Permesso extra: gestione dell'inventario con gli stessi poteri dell'amministratore
+  const handleInventario = async (userObj) => {
+    const attivo = userObj.permessi_extra === "inventario";
+    setUpdatingId(userObj.id);
+    try {
+      await base44.entities.User.update(userObj.id, { permessi_extra: attivo ? "" : "inventario" });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast({
+        title: attivo ? "Permesso magazzino tolto" : "Permesso magazzino attivo",
+        description: attivo
+          ? `${userObj.full_name || userObj.email} non gestisce più l'inventario`
+          : `${userObj.full_name || userObj.email} gestisce l'inventario come l'amministratore`,
+      });
+    } catch (e) {
+      toast({ title: "Errore", description: e.message, variant: "destructive" });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const handleDelete = async (userId) => {
     if (!confirm("Eliminare questo utente dall'app?")) return;
     try {
@@ -221,6 +241,10 @@ export default function Utenti() {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             Utenti registrati {users.length > 0 && `(${users.length})`}
           </p>
+          <p className="text-[11px] text-muted-foreground mb-2">
+            L'icona <Package className="w-3 h-3 inline -mt-0.5" /> dà la gestione dell'inventario (movimenti,
+            soglie, scaffali, segnalazioni e avvisi di scorta) con gli stessi poteri dell'amministratore.
+          </p>
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}
@@ -255,6 +279,20 @@ export default function Utenti() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <Button
+                      variant={u.permessi_extra === "inventario" ? "default" : "outline"}
+                      size="icon"
+                      className="h-8 w-8"
+                      title={
+                        u.permessi_extra === "inventario"
+                          ? "Gestisce l'inventario come l'amministratore (tocca per togliere)"
+                          : "Dai la gestione dell'inventario come l'amministratore"
+                      }
+                      disabled={updatingId === u.id}
+                      onClick={() => handleInventario(u)}
+                    >
+                      <Package className="w-3.5 h-3.5" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"

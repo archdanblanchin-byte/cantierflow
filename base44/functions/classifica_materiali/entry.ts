@@ -2,6 +2,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 
 const RUOLI_GESTORI = ['admin', 'responsabile_tecnico'];
 
+// Oltre ai ruoli, gestisce il magazzino anche chi ha il permesso extra "inventario"
+// (assegnato dall'amministratore dalla pagina Utenti).
+const puoGestireInventario = (user) =>
+  RUOLI_GESTORI.includes(user?.role) || user?.permessi_extra === 'inventario';
+
 // Categorie suggerite all'AI: sono le stesse proposte nell'interfaccia.
 const CATEGORIE = [
   'Pitture, vernici e solventi',
@@ -76,7 +81,7 @@ export default async function (req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    if (!RUOLI_GESTORI.includes(user.role)) {
+    if (!puoGestireInventario(user)) {
       return Response.json({ error: 'Solo il magazziniere e gli amministratori possono classificare i materiali' }, { status: 403 });
     }
 
