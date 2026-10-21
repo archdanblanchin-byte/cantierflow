@@ -2,18 +2,49 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Bell, MapPin, ListTodo, AlertTriangle, Package, Flag, X, Trash2 } from "lucide-react";
+import { Bell, MapPin, ListTodo, AlertTriangle, Package, Flag, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { caricaTuttiMateriali } from "@/lib/inventario";
 
+function BottoneCancella({ onClick, label = "Cancella notifica" }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className="shrink-0 m-1.5 w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center text-rose-600 hover:bg-rose-500/10 active:scale-90 transition-colors"
+    >
+      <Trash2 className="w-3.5 h-3.5" />
+    </button>
+  );
+}
+
 export default function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [nascoste, setNascoste] = useState([]);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
+
+  // Avvisi di scorta già cancellati dall'utente (per materiale + giacenza attuale):
+  // tornano a comparire solo se la giacenza cambia di nuovo.
+  useEffect(() => {
+    if (!user?.email) return;
+    try {
+      setNascoste(JSON.parse(localStorage.getItem(`scorte-nascoste-${user.email}`) || "[]"));
+    } catch {
+      setNascoste([]);
+    }
+  }, [user?.email]);
+
+  const chiaveScorta = (m) => `${m.id}:${Number(m.giacenza || 0)}`;
+  const nascondiScorte = (materiali) => {
+    const next = [...new Set([...nascoste, ...materiali.map(chiaveScorta)])];
+    setNascoste(next);
+    localStorage.setItem(`scorte-nascoste-${user.email}`, JSON.stringify(next));
+  };
 
   const { data: note = [] } = useQuery({
     queryKey: ["note-ricevute"],
@@ -74,9 +105,9 @@ export default function NotificationsBell() {
 
   // Scorte di magazzino sotto la soglia: avviso per chi è stato scelto come destinatario
   const sonoDestinatario = (destinatariScorta || []).some((d) => d.email === user?.email);
-  const scorteBasse = (sonoDestinatario || user?.role === "admin" ? materialiScorta : []).filter(
-    (m) => Number(m.soglia_minima || 0) > 0 && Number(m.giacenza || 0) <= Number(m.soglia_minima || 0)
-  );
+  const scorteBasse = (sonoDestinatario || user?.role === "admin" ? materialiScorta : [])
+    .filter((m) => Number(m.soglia_minima || 0) > 0 && Number(m.giacenza || 0) <= Number(m.soglia_minima || 0))
+    .filter((m) => !nascoste.includes(chiaveScorta(m)));
 
   // Comunicazioni sui cantieri dove sono programmato (oggi e domani)
   const oggi = new Date().toISOString().slice(0, 10);
@@ -96,13 +127,13 @@ export default function NotificationsBell() {
     mieiCantieri.some((p) => p.cantiere_id === n.cantiere_id));
 
   const count = ricevute.length + allarmiCantiere.length + scorteBasse.length + segnalazioniMateriale.length;
+  const daCancellare = count;
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["note-ricevute"] });
     queryClient.invalidateQueries({ queryKey: ["segnalazioni-materiale-aperte"] });
   };
 
-  // "Cancella" una notifica: le note e le segnalazioni spariscono dalla campanella.
   const cancellaNota = async (n) => {
     try {
       await base44.entities.Nota.update(n.id, { letto_da: [...(n.letto_da || []), user.email] });
@@ -122,6 +153,7 @@ export default function NotificationsBell() {
   };
 
   const cancellaTutte = async () => {
+    if (scorteBasse.length) nascondiScorte(scorteBasse);
     await Promise.all([
       ...ricevute.map(cancellaNota),
       ...allarmiCantiere.map(cancellaNota),
@@ -129,8 +161,6 @@ export default function NotificationsBell() {
     ]);
     refresh();
   };
-
-  const daCancellare = ricevute.length + allarmiCantiere.length + segnalazioniMateriale.length;
 
   return (
     <div className="relative">
@@ -150,29 +180,40 @@ export default function NotificationsBell() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-border bg-popover shadow-xl z-50 p-2 space-y-1">
+            <div className="sticky -top-2 -mx-2 px-3 py-2 bg-popover border-b border-border flex items-center justify-between gap-2 z-10">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notifiche</span>
+              {daCancellare > 0 && (
+                <button
+                  onClick={cancellaTutte}
+                  className="text-[11px] font-semibold text-rose-600 hover:underline flex items-center gap-1"
+                >
+                  <Trash2 className="w-3 h-3" /> Cancella tutte
+                </button>
+              )}
+            </div>
+
             {scorteBasse.length > 0 && (
               <>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700 px-2 py-1 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" /> Scorte sotto soglia · {scorteBasse.length}
                 </p>
                 {scorteBasse.slice(0, 6).map((m) => (
-                  <button
-                    key={`s-${m.id}`}
-                    onClick={() => { setOpen(false); navigate("/inventario"); }}
-                    className="w-full text-left p-2 rounded-lg hover:bg-accent bg-amber-500/10"
-                  >
-                    <p className="text-xs font-medium flex items-center gap-1.5">
-                      <Package className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                      <span>{m.nome}: rimasti {Number(m.giacenza || 0)} {m.unita_misura || ""}</span>
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      Soglia {Number(m.soglia_minima || 0)} {m.unita_misura || ""} · serve un carico
-                    </p>
-                  </button>
+                  <div key={`s-${m.id}`} className="flex items-center gap-1 rounded-lg hover:bg-accent bg-amber-500/10">
+                    <button
+                      onClick={() => { setOpen(false); navigate("/inventario"); }}
+                      className="flex-1 text-left p-2"
+                    >
+                      <p className="text-xs font-medium flex items-center gap-1.5">
+                        <Package className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>{m.nome}: rimasti {Number(m.giacenza || 0)} {m.unita_misura || ""}</span>
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Soglia {Number(m.soglia_minima || 0)} {m.unita_misura || ""} · serve un carico
+                      </p>
+                    </button>
+                    <BottoneCancella onClick={() => nascondiScorte([m])} />
+                  </div>
                 ))}
-                <p className="text-[10px] text-muted-foreground px-2 pb-1">
-                  Gli avvisi di scorta spariscono quando il materiale viene ricaricato.
-                </p>
               </>
             )}
 
@@ -182,7 +223,7 @@ export default function NotificationsBell() {
                   <Flag className="w-3 h-3" /> Materiale segnalato mancante · {segnalazioniMateriale.length}
                 </p>
                 {segnalazioniMateriale.slice(0, 6).map((s) => (
-                  <div key={`m-${s.id}`} className="flex items-start gap-1 rounded-lg hover:bg-accent bg-rose-500/10">
+                  <div key={`m-${s.id}`} className="flex items-center gap-1 rounded-lg hover:bg-accent bg-rose-500/10">
                     <button
                       onClick={() => { setOpen(false); navigate("/inventario"); }}
                       className="flex-1 text-left p-2"
@@ -195,9 +236,7 @@ export default function NotificationsBell() {
                         {s.testo} · da {s.user_nome || s.user_email}
                       </p>
                     </button>
-                    <button onClick={() => cancellaSegnalazione(s)} className="p-2 text-muted-foreground hover:text-destructive" aria-label="Cancella notifica">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                    <BottoneCancella onClick={() => cancellaSegnalazione(s)} />
                   </div>
                 ))}
               </>
@@ -209,7 +248,7 @@ export default function NotificationsBell() {
                   Attenzione · comunicazioni sui tuoi cantieri
                 </p>
                 {allarmiCantiere.slice(0, 5).map((n) => (
-                  <div key={`c-${n.id}`} className="flex items-start gap-1 rounded-lg hover:bg-accent bg-pink-500/5">
+                  <div key={`c-${n.id}`} className="flex items-center gap-1 rounded-lg hover:bg-accent bg-pink-500/5">
                     <button
                       onClick={() => { setOpen(false); navigate("/programma"); }}
                       className="flex-1 text-left p-2"
@@ -219,9 +258,7 @@ export default function NotificationsBell() {
                         <MapPin className="w-3 h-3" /> {n.cantiere_nome || "Cantiere"} · da {n.created_by}
                       </p>
                     </button>
-                    <button onClick={() => cancellaNota(n)} className="p-2 text-muted-foreground hover:text-destructive" aria-label="Cancella notifica">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                    <BottoneCancella onClick={() => cancellaNota(n)} />
                   </div>
                 ))}
               </>
@@ -234,7 +271,7 @@ export default function NotificationsBell() {
               <p className="text-xs text-muted-foreground px-2 py-3 text-center">Nessuna notifica</p>
             ) : (
               ricevute.slice(0, 12).map((n) => (
-                <div key={n.id} className="flex items-start gap-1 rounded-lg hover:bg-accent bg-primary/5">
+                <div key={n.id} className="flex items-center gap-1 rounded-lg hover:bg-accent bg-primary/5">
                   <button
                     onClick={() => { setOpen(false); navigate(n.tipo === "task" ? "/task" : "/note"); }}
                     className="flex-1 text-left p-2"
@@ -247,23 +284,14 @@ export default function NotificationsBell() {
                       {n.tipo === "task" ? "Nuovo task ricevuto · " : ""}da {n.created_by} · {format(new Date(n.created_date), "d MMM HH:mm", { locale: it })}
                     </p>
                   </button>
-                  <button onClick={() => cancellaNota(n)} className="p-2 text-muted-foreground hover:text-destructive" aria-label="Cancella notifica">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                  <BottoneCancella onClick={() => cancellaNota(n)} />
                 </div>
               ))
             )}
 
-            <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
-              <button onClick={() => { setOpen(false); navigate("/task"); }} className="text-xs text-primary py-1.5 hover:underline px-2">
-                Vedi tutti
-              </button>
-              {daCancellare > 0 && (
-                <button onClick={cancellaTutte} className="text-xs text-destructive py-1.5 hover:underline px-2 flex items-center gap-1">
-                  <Trash2 className="w-3 h-3" /> Cancella tutte
-                </button>
-              )}
-            </div>
+            <button onClick={() => { setOpen(false); navigate("/task"); }} className="w-full text-center text-xs text-primary py-1.5 hover:underline border-t border-border">
+              Vedi tutti i task
+            </button>
           </div>
         </>
       )}
