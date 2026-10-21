@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ export default function ImportaChecklistDialog({ open, onClose, onImported }) {
   const [leggendo, setLeggendo] = useState(false);
   const [righe, setRighe] = useState(null);
   const [importando, setImportando] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: esistenti = [] } = useQuery({
     queryKey: ["materiali-inventario"],
@@ -57,6 +58,7 @@ export default function ImportaChecklistDialog({ open, onClose, onImported }) {
       if (res.data?.error) throw new Error(res.data.error);
       toast.success(`${res.data.creati} prodotti aggiunti, ${res.data.aggiornati} completati`);
       onImported?.();
+      classificaInBackground();
       reset();
       onClose();
     } catch (err) {
@@ -64,6 +66,17 @@ export default function ImportaChecklistDialog({ open, onClose, onImported }) {
     } finally {
       setImportando(false);
     }
+  };
+
+  // I prodotti appena importati vengono classificati dall'AI in automatico.
+  const classificaInBackground = () => {
+    (async () => {
+      for (let i = 0; i < 12; i++) {
+        const res = await base44.functions.invoke("classifica_materiali", { azione: "classifica", limite: 120 });
+        if (!res.data?.rimanenti) break;
+      }
+      queryClient.invalidateQueries({ queryKey: ["materiali-inventario"] });
+    })().catch(() => {});
   };
 
   const nuovi = anteprima.filter((r) => !r.esistente).length;

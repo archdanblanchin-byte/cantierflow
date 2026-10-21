@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import CategoriaPicker from "@/components/inventario/CategoriaPicker";
 import MovimentoForm from "@/components/inventario/MovimentoForm";
 import MovimentiStorico from "@/components/inventario/MovimentiStorico";
 import { sottoSoglia } from "@/lib/inventario";
@@ -14,13 +15,16 @@ export default function MaterialeDialog({ materiale, open, onClose, isGestore, o
   const [soglia, setSoglia] = useState("");
   const [posizione, setPosizione] = useState("");
   const [fornitore, setFornitore] = useState("");
+  const [categoria, setCategoria] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [suggerendo, setSuggerendo] = useState(false);
 
   useEffect(() => {
     if (materiale) {
       setSoglia(String(materiale.soglia_minima ?? 0));
       setPosizione(materiale.posizione_scaffale || "");
       setFornitore(materiale.fornitore || "");
+      setCategoria(materiale.categoria || "");
     }
   }, [materiale]);
 
@@ -34,6 +38,7 @@ export default function MaterialeDialog({ materiale, open, onClose, isGestore, o
         soglia_minima: Number(soglia.replace(",", ".")) || 0,
         posizione_scaffale: posizione.trim(),
         fornitore: fornitore.trim(),
+        categoria: categoria.trim(),
       });
       toast.success("Scheda materiale aggiornata");
       onChanged?.();
@@ -42,6 +47,22 @@ export default function MaterialeDialog({ materiale, open, onClose, isGestore, o
       toast.error("Modifiche non salvate: " + (err?.message || "riprova"));
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const suggerisciCategoria = async () => {
+    setSuggerendo(true);
+    try {
+      const res = await base44.functions.invoke("classifica_materiali", { azione: "suggerisci", nome: materiale.nome });
+      if (res.data?.error) throw new Error(res.data.error);
+      const proposta = String(res.data?.categoria || "").trim();
+      if (!proposta) throw new Error("nessun suggerimento");
+      setCategoria(proposta);
+      toast.success("Categoria suggerita: " + proposta);
+    } catch (err) {
+      toast.error("Suggerimento non riuscito: " + (err?.message || "riprova"));
+    } finally {
+      setSuggerendo(false);
     }
   };
 
@@ -75,8 +96,10 @@ export default function MaterialeDialog({ materiale, open, onClose, isGestore, o
             <p className="text-xs text-muted-foreground mt-1">
               Soglia minima: {Number(materiale.soglia_minima || 0)} {materiale.unita_misura || ""}
             </p>
-            {(materiale.posizione_scaffale || materiale.fornitore) && (
+            {(materiale.categoria || materiale.posizione_scaffale || materiale.fornitore) && (
               <p className="text-xs text-muted-foreground mt-1">
+                {materiale.categoria ? <span className="font-semibold text-primary">{materiale.categoria}</span> : ""}
+                {materiale.categoria && (materiale.posizione_scaffale || materiale.fornitore) ? " · " : ""}
                 {materiale.posizione_scaffale ? `Scaffale ${materiale.posizione_scaffale}` : ""}
                 {materiale.posizione_scaffale && materiale.fornitore ? " · " : ""}
                 {materiale.fornitore || ""}
@@ -129,6 +152,17 @@ export default function MaterialeDialog({ materiale, open, onClose, isGestore, o
               <div>
                 <Label className="text-xs text-muted-foreground">Fornitore</Label>
                 <Input value={fornitore} onChange={(e) => setFornitore(e.target.value)} className="mt-1" placeholder="A chi si ordina" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Categoria</Label>
+                <div className="mt-1">
+                  <CategoriaPicker
+                    valore={categoria}
+                    onChange={setCategoria}
+                    onSuggerisci={suggerisciCategoria}
+                    suggerendo={suggerendo}
+                  />
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={salvaScheda} disabled={salvando}>

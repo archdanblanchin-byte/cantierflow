@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Nome del materiale"
     },
+    "categoria": {
+      "type": "string",
+      "description": "Categoria merceologica del prodotto (pitture, malte, protezioni, pulizia, rulli e pennelli, attrezzi...). Assegnata dall'AI e modificabile dal magazziniere."
+    },
     "unita_misura": {
       "type": "string",
       "description": "Unit\u00e0 di misura predefinita"

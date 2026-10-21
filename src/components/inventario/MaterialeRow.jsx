@@ -39,8 +39,10 @@ export default function MaterialeRow({ materiale, onOpen, onSegnala }) {
             </span>
             {soglia > 0 && ` · soglia ${soglia} ${materiale.unita_misura || ""}`}
           </p>
-          {(materiale.posizione_scaffale || materiale.fornitore) && (
+          {(materiale.categoria || materiale.posizione_scaffale || materiale.fornitore) && (
             <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+              {materiale.categoria ? <span className="font-semibold text-primary">{materiale.categoria}</span> : ""}
+              {materiale.categoria && (materiale.posizione_scaffale || materiale.fornitore) ? " · " : ""}
               {materiale.posizione_scaffale ? `Scaffale ${materiale.posizione_scaffale}` : ""}
               {materiale.posizione_scaffale && materiale.fornitore ? " · " : ""}
               {materiale.fornitore || ""}

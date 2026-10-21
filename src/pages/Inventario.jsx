@@ -2,15 +2,17 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { AlertTriangle, ArrowLeft, BellRing, FileUp, Flag, Package, PackagePlus, Search } from "lucide-react";
+import { toast } from "sonner";
+import { ArrowLeft, BellRing, FileUp, Flag, Loader2, Package, PackagePlus, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 import { usePermessi } from "@/hooks/usePermessi";
 import { caricaTuttiMateriali, sottoSoglia } from "@/lib/inventario";
+import { confrontaScaffale, etichettaCategoria } from "@/lib/categorieMateriale";
 import MaterialeRow from "@/components/inventario/MaterialeRow";
+import FiltriInventario from "@/components/inventario/FiltriInventario";
 import MaterialeDialog from "@/components/inventario/MaterialeDialog";
 import AggiungiMaterialeDialog from "@/components/inventario/AggiungiMaterialeDialog";
 import DestinatariCard from "@/components/inventario/DestinatariCard";
@@ -23,7 +25,8 @@ export default function Inventario() {
   const queryClient = useQueryClient();
   const { isGestore, isAdmin } = usePermessi();
   const [query, setQuery] = useState("");
-  const [soloSottoSoglia, setSoloSottoSoglia] = useState(false);
+  const [filtri, setFiltri] = useState({ categoria: "", scaffale: "", ordinamento: "nome", soloSottoSoglia: false });
+  const [classificando, setClassificando] = useState(false);
   const [aperto, setAperto] = useState(null);
   const [segnalazione, setSegnalazione] = useState(null);
   const [showAggiungi, setShowAggiungi] = useState(false);
@@ -61,16 +64,50 @@ export default function Inventario() {
     queryClient.invalidateQueries({ queryKey: ["movimenti-materiale"] });
   };
 
+  const aggiornaFiltri = (patch) => setFiltri((f) => ({ ...f, ...patch }));
+
   const basse = useMemo(() => materiali.filter(sottoSoglia), [materiali]);
+  const senzaCategoria = useMemo(
+    () => materiali.filter((m) => !String(m.categoria || "").trim()).length,
+    [materiali]
+  );
+
   const filtrati = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return soloSottoSoglia ? basse : materiali;
-    return materiali
-      .filter((m) => (soloSottoSoglia ? sottoSoglia(m) : true))
-      .filter((m) =>
-        [m.nome, m.posizione_scaffale, m.fornitore].some((v) => String(v || "").toLowerCase().includes(q))
+    const lista = materiali
+      .filter((m) => (filtri.soloSottoSoglia ? sottoSoglia(m) : true))
+      .filter((m) => (filtri.categoria ? etichettaCategoria(m.categoria) === filtri.categoria : true))
+      .filter((m) => (filtri.scaffale ? String(m.posizione_scaffale || "").trim() === filtri.scaffale : true))
+      .filter(
+        (m) =>
+          !q ||
+          [m.nome, m.categoria, m.posizione_scaffale, m.fornitore].some((v) =>
+            String(v || "").toLowerCase().includes(q)
+          )
       );
-  }, [materiali, basse, soloSottoSoglia, query]);
+    return filtri.ordinamento === "scaffale"
+      ? [...lista].sort(confrontaScaffale)
+      : [...lista].sort((a, b) => String(a.nome).localeCompare(String(b.nome), "it"));
+  }, [materiali, filtri, query]);
+
+  const classificaTutto = async () => {
+    setClassificando(true);
+    let totale = 0;
+    try {
+      for (let i = 0; i < 12; i++) {
+        const res = await base44.functions.invoke("classifica_materiali", { azione: "classifica", limite: 120 });
+        if (res.data?.error) throw new Error(res.data.error);
+        totale += res.data?.classificati || 0;
+        if (!res.data?.rimanenti) break;
+      }
+      toast.success(totale > 0 ? `${totale} prodotti classificati` : "Nessun prodotto da classificare");
+      aggiorna();
+    } catch (err) {
+      toast.error("Classificazione non riuscita: " + (err?.message || "riprova"));
+    } finally {
+      setClassificando(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -121,31 +158,31 @@ export default function Inventario() {
             />
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSoloSottoSoglia(false)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
-                !soloSottoSoglia ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"
-              )}
-            >
-              Tutti
-            </button>
-            <button
-              onClick={() => setSoloSottoSoglia(true)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors flex items-center gap-1.5",
-                soloSottoSoglia ? "bg-amber-500 text-white border-amber-500" : "bg-card border-border text-muted-foreground"
-              )}
-            >
-              <AlertTriangle className="w-3 h-3" />
-              Sotto soglia {basse.length > 0 && `(${basse.length})`}
-            </button>
-          </div>
+          <FiltriInventario
+            materiali={materiali}
+            numeroSottoSoglia={basse.length}
+            filtri={filtri}
+            onChange={aggiornaFiltri}
+          />
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-3">
+        {isGestore && senzaCategoria > 0 && !isLoading && (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold">{senzaCategoria} prodotti senza categoria</p>
+              <p className="text-[11px] text-muted-foreground">
+                L'AI assegna pitture, malte, protezioni, pulizia, rulli e pennelli...
+              </p>
+            </div>
+            <Button size="sm" className="shrink-0 gap-1.5" onClick={classificaTutto} disabled={classificando}>
+              {classificando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {classificando ? "In corso" : "Classifica"}
+            </Button>
+          </div>
+        )}
         {isLoading ? (
           [1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)
         ) : filtrati.length === 0 ? (
