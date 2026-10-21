@@ -18,7 +18,12 @@ export default async function (req) {
       return Response.json({ error: "Parametri non validi" }, { status: 400 });
     }
 
-    const nota = await base44.entities.Nota.get(notaId);
+    let nota = null;
+    try {
+      nota = await base44.entities.Nota.get(notaId);
+    } catch {
+      nota = null;
+    }
     if (!nota || nota.tipo !== "task") return Response.json({ error: "Task non trovato" }, { status: 404 });
 
     const assegnatari = (nota.destinatari_email || []).filter(Boolean);
