@@ -1,5 +1,4 @@
-import { Building2, Camera, Image as ImageIcon, Loader2, PaintBucket, Palette, Tag, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Building2, Image as ImageIcon, Loader2, PaintBucket, Palette, Tag, X } from "lucide-react";
 import FotoCampione from "@/components/campioni/FotoCampione";
 
 // Le quattro foto del campione, in griglia: si scattano prima di compilare,
@@ -10,9 +9,6 @@ const SLOT = [
   { chiave: "secchio", label: "Contenitore", Icona: PaintBucket },
   { chiave: "colore", label: "Colore", Icona: Palette },
 ];
-
-const BTN =
-  "flex h-10 items-center justify-center gap-1 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-40";
 
 function Slot({ voce, foto, inCorso, onScegli, onRimuovi, onCampiona }) {
   const { Icona } = voce;
@@ -45,13 +41,39 @@ function Slot({ voce, foto, inCorso, onScegli, onRimuovi, onCampiona }) {
           </div>
         )}
 
-        {campionabile && (
+        {campionabile ? (
           <button
             type="button"
             onClick={campiona}
             aria-label="Campiona il colore dalla foto"
             className="absolute inset-0 w-full h-full"
           />
+        ) : (
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            aria-label={`Scatta la foto: ${voce.label}`}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            disabled={inCorso}
+            onChange={scelto}
+          />
+        )}
+
+        {/* Seconda opzione: caricare dalla galleria. */}
+        {!inCorso && (
+          <>
+            <span className="absolute bottom-1.5 left-1.5 z-20 w-7 h-7 rounded-lg bg-background/90 border border-border flex items-center justify-center pointer-events-none">
+              <ImageIcon className="w-4 h-4 text-foreground" />
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              aria-label={`Carica dalla galleria: ${voce.label}`}
+              className="absolute bottom-1.5 left-1.5 z-20 w-7 h-7 opacity-0 cursor-pointer"
+              onChange={scelto}
+            />
+          </>
         )}
 
         {inCorso && (
@@ -73,32 +95,6 @@ function Slot({ voce, foto, inCorso, onScegli, onRimuovi, onCampiona }) {
       </div>
 
       <p className="px-1.5 py-1.5 text-[11px] text-center text-muted-foreground leading-tight truncate">{voce.label}</p>
-
-      <div className="grid grid-cols-2 gap-1 p-1.5 pt-0">
-        <label className={cn(BTN, "bg-primary text-primary-foreground", inCorso && "pointer-events-none opacity-40")}>
-          <Camera className="w-4 h-4 shrink-0" />
-          <span className="truncate">Scatta</span>
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            disabled={inCorso}
-            onChange={scelto}
-          />
-        </label>
-        <label
-          className={cn(
-            BTN,
-            "border border-border bg-muted text-muted-foreground",
-            inCorso && "pointer-events-none opacity-40"
-          )}
-        >
-          <ImageIcon className="w-4 h-4 shrink-0" />
-          <span className="truncate">Galleria</span>
-          <input type="file" accept="image/*" className="hidden" disabled={inCorso} onChange={scelto} />
-        </label>
-      </div>
     </div>
   );
 }
@@ -120,8 +116,7 @@ export default function FotoStrip({ foto, lavoro = {}, onScegli, onRimuovi, onCa
         ))}
       </div>
       <p className="text-[11px] text-muted-foreground mt-2">
-        Usa <span className="font-semibold text-foreground">Scatta</span> per la fotocamera e{" "}
-        <span className="font-semibold text-foreground">Galleria</span> per scegliere una foto già sul telefono. Sul
+        Tocca il riquadro per scattare la foto, oppure l'icona in basso a sinistra per caricarla dalla galleria. Sul
         riquadro colore, tocca la foto nel punto della tinta per correggerla.
       </p>
     </div>
