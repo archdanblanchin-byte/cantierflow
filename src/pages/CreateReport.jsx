@@ -12,6 +12,7 @@ import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
 import { usePermessoRapportinoManuale } from "@/hooks/usePermessoRapportinoManuale";
 import { fmtOre } from "@/lib/timbratureUtils";
 import { buildSquadraDaTimbrature, getRapportinoCantiereGiorno } from "@/lib/rapportiniFromTimbrature";
+import { sincronizzaScaricoRapportino } from "@/lib/inventario";
 
 const AUTOSAVE_INTERVAL = 60000; // 1 minuto
 
@@ -80,6 +81,7 @@ export default function CreateReport() {
     }
     setSavingDraft(true);
     try {
+      let idSalvato = draftId;
       if (draftId) {
         await base44.entities.Rapportino.update(draftId, { ...data, stato: "bozza" });
       } else {
@@ -91,8 +93,10 @@ export default function CreateReport() {
         }
         const salvato = await base44.entities.Rapportino.create({ ...data, stato: "bozza" });
         setDraftId(salvato.id);
+        idSalvato = salvato.id;
       }
       setLastSaved(new Date());
+      sincronizzaScaricoRapportino({ ...data, id: idSalvato });
       if (!silenzioso) toast.success("Rapportino salvato: puoi riprenderlo più tardi");
       return true;
     } catch (err) {
@@ -201,6 +205,7 @@ export default function CreateReport() {
     }
     setSubmitting(true);
     try {
+      let idSalvato = draftId;
       if (draftId) {
         await base44.entities.Rapportino.update(draftId, { ...formData, stato: "inviato" });
       } else {
@@ -211,8 +216,10 @@ export default function CreateReport() {
           setSubmitting(false);
           return;
         }
-        await base44.entities.Rapportino.create({ ...formData, stato: "inviato" });
+        const creato = await base44.entities.Rapportino.create({ ...formData, stato: "inviato" });
+        idSalvato = creato.id;
       }
+      sincronizzaScaricoRapportino({ ...formData, id: idSalvato });
       queryClient.invalidateQueries({ queryKey: ["rapportini"] });
       queryClient.invalidateQueries({ queryKey: ["cantieri"] });
       toast.success("Rapportino inviato con successo!");

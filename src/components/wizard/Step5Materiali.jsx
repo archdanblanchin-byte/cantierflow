@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Package } from "lucide-react";
 import AudioMaterialiRecorder from "@/components/wizard/AudioMaterialiRecorder";
 import NumeroInput from "@/components/wizard/NumeroInput";
+import { Switch } from "@/components/ui/switch";
 
 export default function Step5Materiali({ data, onChange, materialiBase }) {
   const materiali = data.materiali || [];
@@ -138,6 +139,24 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
               />
             </div>
           </div>
+          {(() => {
+            const base = materialiBase.find((b) => b.id === mat.materiale_id);
+            if (!base?.gestito_magazzino) return null;
+            return (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
+                <div>
+                  <p className="text-xs font-semibold text-amber-900">Preso dal capannone</p>
+                  <p className="text-[11px] text-amber-800">
+                    Giacenza magazzino: {Number(base.giacenza || 0)} {base.unita_misura || ""}
+                  </p>
+                </div>
+                <Switch
+                  checked={!!mat.da_capannone}
+                  onCheckedChange={(v) => updateMateriale(i, { da_capannone: v })}
+                />
+              </div>
+            );
+          })()}
           <div>
             <Label className="text-xs text-muted-foreground">Note / specifica (dove preso, dettagli)</Label>
             <Textarea

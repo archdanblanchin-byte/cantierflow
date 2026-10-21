@@ -8,6 +8,7 @@ import { isToday } from "date-fns";
 import RapportinoUnico from "@/components/rapportino/RapportinoUnico";
 import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
 import { fmtOre } from "@/lib/timbratureUtils";
+import { sincronizzaScaricoRapportino } from "@/lib/inventario";
 
 export default function EditReport() {
   const { id } = useParams();
@@ -85,6 +86,7 @@ export default function EditReport() {
     try {
       const stato = formData.stato === "inviato" ? "inviato" : "bozza";
       await base44.entities.Rapportino.update(id, { ...formData, stato });
+      sincronizzaScaricoRapportino({ ...formData, id });
       queryClient.invalidateQueries({ queryKey: ["rapportini"] });
       setLastSaved(new Date());
       toast.success("Rapportino salvato: puoi riprenderlo più tardi");
@@ -99,6 +101,7 @@ export default function EditReport() {
     setSubmitting(true);
     try {
       await base44.entities.Rapportino.update(id, { ...formData, stato: "inviato" });
+      sincronizzaScaricoRapportino({ ...formData, id });
       queryClient.invalidateQueries({ queryKey: ["rapportini"] });
       toast.success("Rapportino aggiornato!");
       setSubmitting(false);

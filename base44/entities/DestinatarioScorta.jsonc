@@ -1,0 +1,92 @@
+{
+  "name": "DestinatarioScorta",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome del destinatario degli avvisi di scorta"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email a cui arrivano gli avvisi di scorta bassa"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "utente",
+        "collaboratore"
+      ],
+      "default": "collaboratore",
+      "description": "Se il destinatario \u00e8 un utente dell'app o un collaboratore in anagrafe"
+    },
+    "attivo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se il destinatario riceve attualmente gli avvisi"
+    }
+  },
+  "required": [
+    "email"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    }
+  }
+}

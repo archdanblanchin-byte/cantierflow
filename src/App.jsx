@@ -37,6 +37,7 @@ import TutteTimbrature from './pages/TutteTimbrature';
 import WorkflowApp from './pages/WorkflowApp';
 import Documenti from './pages/Documenti';
 import ImportaFotoDrive from './pages/ImportaFotoDrive';
+import Inventario from './pages/Inventario';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -94,6 +95,7 @@ const AuthenticatedApp = () => {
       <Route path="/cronoprogramma" element={<Cronoprogramma />} />
       <Route path="/furgoni" element={<Placeholder title="Furgoni" />} />
       <Route path="/documenti" element={<Documenti />} />
+      <Route path="/inventario" element={<Inventario />} />
       <Route path="/idropulitrice" element={<Placeholder title="Idropulitrice" />} />
       <Route path="/ristorante" element={<Placeholder title="Ristorante" />} />
       <Route path="/permessi" element={<Permessi />} />

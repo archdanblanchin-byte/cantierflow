@@ -9,9 +9,60 @@
     "unita_misura": {
       "type": "string",
       "description": "Unit\u00e0 di misura predefinita"
+    },
+    "gestito_magazzino": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se il materiale \u00e8 tenuto in inventario di magazzino (con giacenza e soglia)"
+    },
+    "giacenza": {
+      "type": "number",
+      "default": 0,
+      "description": "Quantit\u00e0 attualmente presente in magazzino"
+    },
+    "soglia_minima": {
+      "type": "number",
+      "default": 0,
+      "description": "Sotto questa quantit\u00e0 scatta l'avviso di scorta bassa"
     }
   },
   "required": [
     "nome"
-  ]
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }

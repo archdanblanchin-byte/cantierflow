@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Bell, MapPin, ListTodo } from "lucide-react";
+import { Bell, MapPin, ListTodo, AlertTriangle, Package } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -33,9 +33,35 @@ export default function NotificationsBell() {
     enabled: !!user,
   });
 
+  const { data: materialiScorta = [] } = useQuery({
+    queryKey: ["materiali-inventario"],
+    queryFn: async () => {
+      const page = await base44.entities.MaterialeBase.filter({ gestito_magazzino: true }, { limit: 200 });
+      return page?.items || [];
+    },
+    enabled: !!user,
+    refetchInterval: 60000,
+  });
+
+  const { data: destinatariScorta = [] } = useQuery({
+    queryKey: ["destinatari-scorta"],
+    queryFn: async () => {
+      const page = await base44.entities.DestinatarioScorta.filter({ attivo: true }, { limit: 100 });
+      return page?.items || [];
+    },
+    enabled: !!user,
+    refetchInterval: 120000,
+  });
+
   // Task / comunicazioni assegnati direttamente a me
   const ricevute = (note || []).filter((n) => (n.destinatari_email || []).includes(user?.email));
   const daLeggere = ricevute.filter((n) => !(n.letto_da || []).includes(user?.email));
+
+  // Scorte di magazzino sotto la soglia: avviso per chi è stato scelto come destinatario
+  const sonoDestinatario = (destinatariScorta || []).some((d) => d.email === user?.email);
+  const scorteBasse = (sonoDestinatario || user?.role === "admin" ? materialiScorta : []).filter(
+    (m) => Number(m.soglia_minima || 0) > 0 && Number(m.giacenza || 0) <= Number(m.soglia_minima || 0)
+  );
 
   // Comunicazioni sui cantieri dove sono programmato (oggi e domani)
   const oggi = new Date().toISOString().slice(0, 10);
@@ -54,7 +80,7 @@ export default function NotificationsBell() {
     !(n.letto_da || []).includes(user?.email) &&
     mieiCantieri.some((p) => p.cantiere_id === n.cantiere_id));
 
-  const count = daLeggere.length + allarmiCantiere.length;
+  const count = daLeggere.length + allarmiCantiere.length + scorteBasse.length;
 
   return (
     <div className="relative">
@@ -74,6 +100,29 @@ export default function NotificationsBell() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-border bg-popover shadow-xl z-50 p-2 space-y-1">
+            {scorteBasse.length > 0 && (
+              <>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700 px-2 py-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" /> Scorte sotto soglia · {scorteBasse.length}
+                </p>
+                {scorteBasse.slice(0, 6).map((m) => (
+                  <button
+                    key={`s-${m.id}`}
+                    onClick={() => { setOpen(false); navigate("/inventario"); }}
+                    className="w-full text-left p-2 rounded-lg hover:bg-accent bg-amber-500/10"
+                  >
+                    <p className="text-xs font-medium flex items-center gap-1.5">
+                      <Package className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <span>{m.nome}: rimasti {Number(m.giacenza || 0)} {m.unita_misura || ""}</span>
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Soglia {Number(m.soglia_minima || 0)} {m.unita_misura || ""} · serve un carico
+                    </p>
+                  </button>
+                ))}
+              </>
+            )}
+
             {allarmiCantiere.length > 0 && (
               <>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-2 py-1">

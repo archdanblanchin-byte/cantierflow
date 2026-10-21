@@ -1,0 +1,102 @@
+{
+  "name": "MovimentoMateriale",
+  "type": "object",
+  "properties": {
+    "materiale_id": {
+      "type": "string",
+      "description": "ID del materiale movimentato"
+    },
+    "materiale_nome": {
+      "type": "string",
+      "description": "Nome del materiale (denormalizzato)"
+    },
+    "unita_misura": {
+      "type": "string",
+      "description": "Unit\u00e0 di misura (denormalizzata)"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "carico",
+        "scarico",
+        "rettifica",
+        "scarico_rapportino"
+      ],
+      "description": "carico = materiale arrivato in magazzino, scarico = uscita manuale, rettifica = giacenza impostata manualmente, scarico_rapportino = prelievo dichiarato su un rapportino"
+    },
+    "quantita": {
+      "type": "number",
+      "description": "Quantit\u00e0 del movimento (per la rettifica \u00e8 la nuova giacenza)"
+    },
+    "giacenza_dopo": {
+      "type": "number",
+      "description": "Giacenza risultante dopo il movimento"
+    },
+    "data": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data e ora del movimento"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email di chi ha registrato il movimento"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome di chi ha registrato il movimento (denormalizzato)"
+    },
+    "rapportino_id": {
+      "type": "string",
+      "description": "ID del rapportino che ha generato lo scarico automatico"
+    },
+    "cantiere_nome": {
+      "type": "string",
+      "description": "Cantiere del rapportino (denormalizzato)"
+    },
+    "nota": {
+      "type": "string",
+      "description": "Nota del movimento"
+    }
+  },
+  "required": [
+    "materiale_id",
+    "tipo",
+    "quantita"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
