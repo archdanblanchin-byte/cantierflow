@@ -12,6 +12,7 @@ import { usePermessi } from "@/hooks/usePermessi";
 import { caricaTuttiMateriali, sottoSoglia } from "@/lib/inventario";
 import { confrontaScaffale, etichettaCategoria } from "@/lib/categorieMateriale";
 import MaterialeRow from "@/components/inventario/MaterialeRow";
+import IntestazioneScaffale from "@/components/inventario/IntestazioneScaffale";
 import FiltriInventario from "@/components/inventario/FiltriInventario";
 import MaterialeDialog from "@/components/inventario/MaterialeDialog";
 import AggiungiMaterialeDialog from "@/components/inventario/AggiungiMaterialeDialog";
@@ -89,6 +90,19 @@ export default function Inventario() {
       ? [...lista].sort(confrontaScaffale)
       : [...lista].sort((a, b) => String(a.nome).localeCompare(String(b.nome), "it"));
   }, [materiali, filtri, query]);
+
+  // Ordinando per scaffale raggruppiamo i prodotti, così si vede dove finisce
+  // una scaffalatura e comincia la successiva.
+  const gruppi = useMemo(() => {
+    if (filtri.ordinamento !== "scaffale") return null;
+    const mappa = new Map();
+    filtrati.forEach((m) => {
+      const s = String(m.posizione_scaffale || "").trim() || "senza";
+      if (!mappa.has(s)) mappa.set(s, []);
+      mappa.get(s).push(m);
+    });
+    return [...mappa.entries()].map(([scaffale, items]) => ({ scaffale, items }));
+  }, [filtrati, filtri.ordinamento]);
 
   const classificaTutto = async () => {
     setClassificando(true);
@@ -209,6 +223,15 @@ export default function Inventario() {
               </div>
             )}
           </div>
+        ) : gruppi ? (
+          gruppi.map((g) => (
+            <div key={g.scaffale} className="space-y-2">
+              <IntestazioneScaffale scaffale={g.scaffale} quantita={g.items.length} />
+              {g.items.map((m) => (
+                <MaterialeRow key={m.id} materiale={m} onOpen={setAperto} onSegnala={setSegnalazione} />
+              ))}
+            </div>
+          ))
         ) : (
           filtrati.map((m) => (
             <MaterialeRow key={m.id} materiale={m} onOpen={setAperto} onSegnala={setSegnalazione} />
