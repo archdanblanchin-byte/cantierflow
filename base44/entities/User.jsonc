@@ -9,6 +9,17 @@
         "capocantiere",
         "collaboratore"
       ]
+    },
+    "permessi_extra": {
+      "type": "string",
+      "description": "Sezione in cui l'utente ha gli stessi permessi di gestione dell'amministratore. Valore previsto: 'inventario'. Pu\u00f2 essere assegnato solo da un amministratore.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     }
   },
   "required": [
