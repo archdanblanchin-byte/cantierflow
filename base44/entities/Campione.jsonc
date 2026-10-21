@@ -1,0 +1,149 @@
+{
+  "name": "Campione",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome del prodotto letto sull'etichetta"
+    },
+    "tipo": {
+      "type": "string",
+      "description": "Pittura, vernice, graffiato, rivestimento, smalto, impregnante, antiruggine, colla e adesivo, altro"
+    },
+    "marca": {
+      "type": "string",
+      "description": "Marca del prodotto"
+    },
+    "codice": {
+      "type": "string",
+      "description": "Codice prodotto"
+    },
+    "fornitore": {
+      "type": "string",
+      "description": "Fornitore a cui \u00e8 stato acquistato"
+    },
+    "colore_nome": {
+      "type": "string",
+      "description": "Nome commerciale del colore"
+    },
+    "colore_hex": {
+      "type": "string",
+      "description": "Colore stimato dalla foto (#rrggbb), verificabile e correggibile"
+    },
+    "quantita": {
+      "type": "number",
+      "default": 0,
+      "description": "Quantit\u00e0 rimasta"
+    },
+    "unita_misura": {
+      "type": "string",
+      "default": "L",
+      "description": "Unit\u00e0 di misura della quantit\u00e0"
+    },
+    "data_etichetta": {
+      "type": "string",
+      "format": "date",
+      "description": "Data letta sull'etichetta"
+    },
+    "cantiere_etichetta": {
+      "type": "string",
+      "description": "Nome del cantiere scritto sull'etichetta aziendale"
+    },
+    "cantiere_id": {
+      "type": "string",
+      "description": "Cantiere da cui proviene l'avanzo"
+    },
+    "cantiere_nome": {
+      "type": "string",
+      "description": "Nome del cantiere di provenienza (denormalizzato)"
+    },
+    "note": {
+      "type": "string",
+      "description": "Annotazioni libere"
+    },
+    "foto_fornitore": {
+      "type": "string",
+      "description": "File dell'etichetta del fornitore"
+    },
+    "foto_azienda": {
+      "type": "string",
+      "description": "File dell'etichetta della nostra ditta"
+    },
+    "foto_secchio": {
+      "type": "string",
+      "description": "File del contenitore (secchio, bidone, barattolo)"
+    },
+    "foto_colore": {
+      "type": "string",
+      "description": "File della foto usata per stimare il colore"
+    },
+    "testo_fornitore": {
+      "type": "string",
+      "description": "Trascrizione fedele dell'etichetta del fornitore"
+    },
+    "testo_azienda": {
+      "type": "string",
+      "description": "Trascrizione fedele dell'etichetta della ditta"
+    },
+    "stato": {
+      "type": "string",
+      "enum": [
+        "disponibile",
+        "utilizzato"
+      ],
+      "default": "disponibile",
+      "description": "disponibile = ancora in capannone, utilizzato = gi\u00e0 impiegato (resta in archivio)"
+    },
+    "usato_cantiere_id": {
+      "type": "string",
+      "description": "Cantiere in cui \u00e8 stato utilizzato"
+    },
+    "usato_cantiere_nome": {
+      "type": "string",
+      "description": "Nome del cantiere d'uso (denormalizzato)"
+    },
+    "usato_nota": {
+      "type": "string",
+      "description": "Dove \u00e8 stato utilizzato, se non legato a un cantiere"
+    },
+    "usato_da_nome": {
+      "type": "string",
+      "description": "Chi ha registrato l'utilizzo (denormalizzato)"
+    },
+    "data_utilizzo": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quando \u00e8 stato utilizzato"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email di chi ha caricato il campione"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome di chi ha caricato il campione (denormalizzato)"
+    }
+  },
+  "required": [
+    "nome"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {},
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

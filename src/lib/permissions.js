@@ -1,7 +1,7 @@
 import {
   ClipboardList, Building2, Camera, BookUser,
   CalendarDays, BarChart2, GraduationCap, Settings, Car,
-  HardHat, Clock, CalendarClock, StickyNote, Hammer, FileText, Archive, Package,
+  HardHat, Clock, CalendarClock, StickyNote, Hammer, FileText, Archive, Package, PaintBucket,
 } from "lucide-react";
 
 export const RUOLI = [
@@ -19,6 +19,7 @@ export const SEZIONI_APP = [
   { key: "foto", label: "Foto", path: "/foto", icon: Camera, color: "bg-purple-500" },
   { key: "anagrafe", label: "Anagrafe", path: "/anagrafe", icon: BookUser, color: "bg-slate-600" },
   { key: "inventario", label: "Inventario", path: "/inventario", icon: Package, color: "bg-lime-600" },
+  { key: "campioni", label: "Campioni e avanzi", path: "/campioni", icon: PaintBucket, color: "bg-fuchsia-600" },
   { key: "ore_lavoratori", label: "Ore Lavoratori", path: "/ore-lavoratori", icon: Clock, color: "bg-amber-500" },
   { key: "programmazione", label: "Programmazione", path: "/programmazione", icon: CalendarClock, color: "bg-sky-500" },
   { key: "programma", label: "Programma", path: "/programma", icon: CalendarDays, color: "bg-orange-500" },
@@ -34,9 +35,9 @@ export const SEZIONI_APP = [
 
 export const PERMESSI_DEFAULT = {
   admin: SEZIONI_APP.map(s => s.key),
-  responsabile_tecnico: ["rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "anagrafe", "inventario", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "corsi", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
-  capocantiere: ["rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "anagrafe", "inventario", "ore_lavoratori", "programmazione", "programma", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
-  collaboratore: ["rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "inventario", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
+  responsabile_tecnico: ["rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "anagrafe", "inventario", "campioni", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "corsi", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
+  capocantiere: ["rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "anagrafe", "inventario", "campioni", "ore_lavoratori", "programmazione", "programma", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
+  collaboratore: ["rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "inventario", "campioni", "permessi_ferie", "uso_furgoni", "note", "workflow", "documenti"],
 };
 
 export function getRuoloLabel(key) {

@@ -38,6 +38,7 @@ import WorkflowApp from './pages/WorkflowApp';
 import Documenti from './pages/Documenti';
 import ImportaFotoDrive from './pages/ImportaFotoDrive';
 import Inventario from './pages/Inventario';
+import Campioni from './pages/Campioni';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -96,6 +97,7 @@ const AuthenticatedApp = () => {
       <Route path="/furgoni" element={<Placeholder title="Furgoni" />} />
       <Route path="/documenti" element={<Documenti />} />
       <Route path="/inventario" element={<Inventario />} />
+      <Route path="/campioni" element={<Campioni />} />
       <Route path="/idropulitrice" element={<Placeholder title="Idropulitrice" />} />
       <Route path="/ristorante" element={<Placeholder title="Ristorante" />} />
       <Route path="/permessi" element={<Permessi />} />
