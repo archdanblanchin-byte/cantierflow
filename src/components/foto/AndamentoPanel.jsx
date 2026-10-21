@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/AuthContext";
 import FotoPrivata from "@/components/foto/FotoPrivata";
 import AndamentoFormDialog from "@/components/foto/AndamentoFormDialog";
 import AndamentoDetailDialog from "@/components/foto/AndamentoDetailDialog";
+import FotoPrecedentiSection from "@/components/foto/FotoPrecedentiSection";
 
 export default function AndamentoPanel() {
   const { user } = useAuth();
@@ -124,6 +125,8 @@ export default function AndamentoPanel() {
           ))}
         </div>
       )}
+
+      <FotoPrecedentiSection />
 
       <AndamentoFormDialog
         open={formOpen}
