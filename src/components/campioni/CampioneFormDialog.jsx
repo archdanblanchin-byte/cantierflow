@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -9,10 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/AuthContext";
-import { TIPI_CAMPIONE, UNITA_CAMPIONE, caricaFotoPrivata, caricaCantieri, estraiEtichetta } from "@/lib/campioni";
+import {
+  TIPI_CAMPIONE,
+  UNITA_CAMPIONE,
+  caricaFotoPrivata,
+  caricaCantieri,
+  coloreValido,
+  estraiEtichetta,
+} from "@/lib/campioni";
 import { coloreDaFoto } from "@/lib/coloreFoto";
-import EtichettaField from "@/components/campioni/EtichettaField";
-import FotoColoreField from "@/components/campioni/FotoColoreField";
+import FotoStrip from "@/components/campioni/FotoStrip";
 import CantiereSelect from "@/components/campioni/CantiereSelect";
 
 const CHIAVI_FOTO = ["fornitore", "azienda", "secchio", "colore"];
@@ -47,8 +53,13 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
   const { user } = useAuth();
   const [form, setForm] = useState(formVuoto);
   const [foto, setFoto] = useState(fotoVuote);
-  const [trascrivendo, setTrascrivendo] = useState(null);
+  const [lavoro, setLavoro] = useState({});
   const [salvando, setSalvando] = useState(false);
+
+  // I campi vengono riempiti man mano che le foto arrivano: leggiamo sempre
+  // l'ultima versione del form per non cancellare quello che l'utente ha scritto.
+  const formRef = useRef(form);
+  formRef.current = form;
 
   const { data: cantieri = [] } = useQuery({
     queryKey: ["cantieri-campioni"],
@@ -87,36 +98,21 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
       setForm(formVuoto());
       setFoto(fotoVuote());
     }
+    setLavoro({});
   }, [open, campione]);
 
   const setCampo = (chiave, valore) => setForm((f) => ({ ...f, [chiave]: valore }));
 
-  const scegliFoto = async (chiave, file) => {
-    if (!file) return;
-    const preview = URL.createObjectURL(file);
-    setFoto((f) => ({ ...f, [chiave]: { file, preview, file_uri: f[chiave].file_uri } }));
-    if (chiave === "colore") {
-      const hex = await coloreDaFoto(preview);
-      setForm((f) => ({ ...f, colore_hex: hex }));
-    }
-  };
-
-  const rimuoviFoto = (chiave) =>
-    setFoto((f) => ({ ...f, [chiave]: { file: null, preview: "", file_uri: "" } }));
-
-  const campiona = async (xPct, yPct) => {
-    const hex = await coloreDaFoto(foto.colore.preview, xPct, yPct);
-    setForm((f) => ({ ...f, colore_hex: hex }));
-  };
-
   // I dati letti dall'AI riempiono solo i campi ancora vuoti: quello che
   // l'utente ha già scritto o corretto non viene mai sovrascritto.
   const applicaEstratto = (dati, tipoEtichetta) => {
-    const next = { ...form };
+    const corrente = formRef.current;
+    const next = { ...corrente };
     let riempiti = 0;
+
     const metti = (chiave, valore) => {
       const v = valore === undefined || valore === null ? "" : String(valore).trim();
-      if (!v || String(form[chiave] || "").trim()) return;
+      if (!v || String(corrente[chiave] || "").trim()) return;
       next[chiave] = v;
       riempiti += 1;
     };
@@ -129,15 +125,15 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
       metti("colore_nome", dati.colore_nome);
       metti("data_etichetta", dati.data);
       metti("unita_misura", dati.unita_misura);
-      if (dati.quantita && !String(form.quantita || "").trim()) {
+      if (dati.quantita && !String(corrente.quantita || "").trim()) {
         next.quantita = String(dati.quantita);
         riempiti += 1;
       }
-      if (dati.tipo && TIPI_CAMPIONE.includes(dati.tipo) && !String(form.tipo || "").trim()) {
+      if (dati.tipo && TIPI_CAMPIONE.includes(dati.tipo) && !String(corrente.tipo || "").trim()) {
         next.tipo = dati.tipo;
         riempiti += 1;
       }
-      next.testo_fornitore = form.testo_fornitore || String(dati.testo_letto || "").trim();
+      next.testo_fornitore = corrente.testo_fornitore || String(dati.testo_letto || "").trim();
     } else {
       metti("cantiere_etichetta", dati.cantiere_nome);
       metti("marca", dati.marca);
@@ -145,13 +141,13 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
       metti("codice", dati.codice);
       metti("data_etichetta", dati.data);
       metti("note", dati.note);
-      next.testo_azienda = form.testo_azienda || String(dati.testo_letto || "").trim();
+      next.testo_azienda = corrente.testo_azienda || String(dati.testo_letto || "").trim();
 
       const cercato = String(dati.cantiere_nome || "").trim().toLowerCase();
       const trovato = cercato
         ? cantieri.find((c) => String(c.nome || "").trim().toLowerCase() === cercato)
         : null;
-      if (trovato && !form.cantiere_id) {
+      if (trovato && !corrente.cantiere_id) {
         next.cantiere_id = trovato.id;
         next.cantiere_nome = trovato.nome;
         riempiti += 1;
@@ -162,23 +158,45 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
     return riempiti;
   };
 
-  const trascrivi = async (chiave) => {
-    const f = foto[chiave];
-    if (!f.file && !f.file_uri) return;
-    setTrascrivendo(chiave);
+  const scegliFoto = async (chiave, file) => {
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    setFoto((f) => ({ ...f, [chiave]: { file, preview, file_uri: "" } }));
+
+    // Foto del colore: la tinta si legge subito, senza passare dall'AI.
+    if (chiave === "colore") {
+      const hex = await coloreDaFoto(preview);
+      if (hex) setForm((f) => ({ ...f, colore_hex: hex }));
+      return;
+    }
+
+    // Il contenitore si carica al salvataggio: nessun dato da leggere.
+    if (chiave === "secchio") return;
+
+    setLavoro((l) => ({ ...l, [chiave]: true }));
     try {
-      const file_uri = f.file ? await caricaFotoPrivata(f.file) : f.file_uri;
-      if (f.file) setFoto((p) => ({ ...p, [chiave]: { ...p[chiave], file: null, file_uri } }));
+      const file_uri = await caricaFotoPrivata(file);
+      setFoto((f) => ({ ...f, [chiave]: { file: null, preview, file_uri } }));
       const dati = await estraiEtichetta({ file_uri, tipo_etichetta: chiave });
       const riempiti = applicaEstratto(dati, chiave);
       toast.success(
-        riempiti > 0 ? `${riempiti} campi compilati dall'etichetta` : "Nessun campo nuovo da compilare"
+        riempiti > 0
+          ? `${riempiti} campi compilati dall'etichetta`
+          : "Nessun campo nuovo da compilare: controlla la foto"
       );
     } catch (err) {
-      toast.error("Trascrizione non riuscita: " + (err?.message || "riprova"));
+      toast.error("Non riesco a leggere l'etichetta: " + (err?.message || "riprova"));
     } finally {
-      setTrascrivendo(null);
+      setLavoro((l) => ({ ...l, [chiave]: false }));
     }
+  };
+
+  const rimuoviFoto = (chiave) =>
+    setFoto((f) => ({ ...f, [chiave]: { file: null, preview: "", file_uri: "" } }));
+
+  const campiona = async (xPct, yPct) => {
+    const hex = await coloreDaFoto(foto.colore.preview, xPct, yPct);
+    if (hex) setForm((f) => ({ ...f, colore_hex: hex }));
   };
 
   const salva = async () => {
@@ -233,6 +251,8 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
     }
   };
 
+  const hex = coloreValido(form.colore_hex) ? form.colore_hex : "";
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg max-h-[94vh] overflow-y-auto top-4 translate-y-0 p-0 gap-0">
@@ -241,6 +261,19 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
         </DialogHeader>
 
         <div className="px-5 py-4 space-y-5">
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">
+              Parti dalle foto: l'etichetta riempie da sola i campi qui sotto.
+            </p>
+            <FotoStrip
+              foto={foto}
+              lavoro={lavoro}
+              onScegli={scegliFoto}
+              onRimuovi={rimuoviFoto}
+              onCampiona={campiona}
+            />
+          </div>
+
           <div>
             <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Tipo di materiale</Label>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -283,6 +316,17 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
                 <Label>Fornitore</Label>
                 <Input value={form.fornitore} onChange={(e) => setCampo("fornitore", e.target.value)} />
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={hex || "#cccccc"}
+                onChange={(e) => setCampo("colore_hex", e.target.value)}
+                className="w-9 h-9 rounded-lg border border-border bg-transparent cursor-pointer p-0.5 shrink-0"
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {hex ? `Tinta rilevata ${hex} · correggila qui o tocca il riquadro colore` : "Nessuna tinta rilevata: scatta la foto colore o scegli a mano"}
+              </span>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2">
@@ -336,46 +380,6 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
               <Label>Note</Label>
               <Textarea value={form.note} onChange={(e) => setCampo("note", e.target.value)} rows={2} />
             </div>
-          </div>
-
-          <div className="space-y-4 border-t border-border pt-4">
-            <EtichettaField
-              label="Etichetta fornitore"
-              preview={foto.fornitore.preview}
-              fileUri={foto.fornitore.file_uri}
-              onScegli={(f) => scegliFoto("fornitore", f)}
-              onRimuovi={() => rimuoviFoto("fornitore")}
-              onTrascrivi={() => trascrivi("fornitore")}
-              trascrivendo={trascrivendo === "fornitore"}
-              hint="Foto dell'etichetta del produttore: l'AI trascrive prodotto, codice, data e litri."
-            />
-            <EtichettaField
-              label="Etichetta ditta"
-              preview={foto.azienda.preview}
-              fileUri={foto.azienda.file_uri}
-              onScegli={(f) => scegliFoto("azienda", f)}
-              onRimuovi={() => rimuoviFoto("azienda")}
-              onTrascrivi={() => trascrivi("azienda")}
-              trascrivendo={trascrivendo === "azienda"}
-              hint="Foto dell'etichetta della nostra ditta: l'AI legge cantiere, marca, prodotto e codice."
-            />
-            <EtichettaField
-              label="Contenitore"
-              preview={foto.secchio.preview}
-              fileUri={foto.secchio.file_uri}
-              onScegli={(f) => scegliFoto("secchio", f)}
-              onRimuovi={() => rimuoviFoto("secchio")}
-              hint="Foto del secchio o bidone, per riconoscerlo in capannone."
-            />
-            <FotoColoreField
-              colore={form.colore_hex}
-              preview={foto.colore.preview}
-              fileUri={foto.colore.file_uri}
-              onScegli={(f) => scegliFoto("colore", f)}
-              onColore={(hex) => setCampo("colore_hex", hex)}
-              onCampiona={campiona}
-              onRimuovi={() => rimuoviFoto("colore")}
-            />
           </div>
         </div>
 

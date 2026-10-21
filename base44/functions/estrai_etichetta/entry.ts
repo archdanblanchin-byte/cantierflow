@@ -3,17 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 // Trascrive le etichette fotografate sui barattoli di pitture, vernici e rivestimenti.
 // L'AI legge solo quello che c'è scritto: nessun dato viene inventato.
 
-const TIPI = [
-  'Pittura',
-  'Vernice',
-  'Graffiato',
-  'Rivestimento',
-  'Smalto',
-  'Impregnante',
-  'Antiruggine',
-  'Colla e adesivo',
-  'Altro',
-];
+const TIPI = ['Pittura', 'Graffiato', 'Smalto', 'Altro'];
 
 const SCHEMA = {
   type: 'object',

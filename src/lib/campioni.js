@@ -1,17 +1,7 @@
 import { base44 } from "@/api/base44Client";
 
 // Tipi di materiale riutilizzabile che finiscono in "Campioni e avanzi".
-export const TIPI_CAMPIONE = [
-  "Pittura",
-  "Vernice",
-  "Graffiato",
-  "Rivestimento",
-  "Smalto",
-  "Impregnante",
-  "Antiruggine",
-  "Colla e adesivo",
-  "Altro",
-];
+export const TIPI_CAMPIONE = ["Pittura", "Graffiato", "Smalto", "Altro"];
 
 export const UNITA_CAMPIONE = ["L", "kg", "pz", "ml"];
 
