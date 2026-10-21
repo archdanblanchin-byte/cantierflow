@@ -75,7 +75,7 @@ export default function TaskCard({ nota, currentUser, onChanged }) {
   };
 
   return (
-    <Card className={`p-4 space-y-2 ${nota.completato ? "opacity-60" : ""} ${isAssegnato && !isLetto ? "border-primary/40 bg-primary/5" : ""}`}>
+    <Card className={`p-3 space-y-1.5 ${nota.completato ? "opacity-60" : ""} ${isAssegnato && !isLetto ? "border-primary/40 bg-primary/5" : ""}`}>
       <div className="flex items-center gap-2 flex-wrap">
         {nota.priorita === "alta" && <Badge className="bg-rose-100 text-rose-700">Alta</Badge>}
         {nota.priorita === "bassa" && <Badge variant="secondary">Bassa</Badge>}

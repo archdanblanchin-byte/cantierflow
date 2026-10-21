@@ -50,23 +50,19 @@ export default function NotaVocaleRecorder({ mode = "personale", cantieri = [], 
     const attrStr = attrezzi.map((a) => a.nome).filter(Boolean).join(", ") || "(nessuno)";
 
     if (mode === "task") {
-      return `Sei un assistente vocale per un'azienda edile. Dal resoconto vocale di un lavoratore, estrai UNA O PIÙ COSE DA FARE (task) personali, visibili SOLO a chi le crea. Non ci sono destinatari: non impostare mai destinatari_nomi.
-
-Tipi possibili:
-- "task": una cosa da fare (es. "chiamare il cliente", "preparare il preventivo", "portare la scala"). Il testo inizia con un verbo all'infinito.
-- "promemoria": una cosa da fare con una data/ora specifica (compila data_promemoria in formato ISO 8601).
+      return `Sei un assistente vocale per un'azienda edile. Dal resoconto vocale di un lavoratore, estrai UNA O PIÙ COSE DA FARE (task).
 
 REGOLE:
-- DIVIDI in PIÙ task quando l'utente elenca attività distinte e separate: un task per attività.
-- Se l'utente cita materiale o attrezzi da portare o acquistare, collega materiali_nomi/attrezzi_nomi SOLO se nominati esplicitamente.
-- data_promemoria: se dice "domani", "oggi", "lunedì", "alle 14", "tra 3 giorni", calcola ISO 8601. Oggi è ${oggiStr} (timezone Europe/Rome). Se non dice un'ora, usa le 09:00.
-- testo: usa SOLO le parole e le informazioni dette dall'utente. NON aggiungere dettagli non citati. Non indovinare, non completare, non inferire.
+- Un task è PERSONALE (per chi parla) oppure ASSEGNATO a qualcuno, solo se il resoconto dice esplicitamente a chi è destinato (es. "di' a Marco di...", "fai fare a Jacopo..."). Se non è nominata nessuna persona, NON compilare destinatari_nomi: il task resta personale.
+- destinatari_nomi: usa SOLO i nomi presenti nella lista "Persone conosciute", scritti come nella lista. Massimo una persona per task. Se non è citato nessuno, lascia l'array vuoto.
+- DIVIDI in PIÙ task quando l'utente elenca attività distinte e separate: un task per attività (e per persona).
+- testo: la cosa da fare, con le sole parole e informazioni dette dall'utente, con il verbo all'infinito. Non aggiungere dettagli non citati, non indovinare, non completare.
+- data_promemoria: se dice "domani", "oggi", "lunedì", "alle 14", "tra 3 giorni", calcola ISO 8601. Oggi è ${oggiStr} (timezone Europe/Rome). Se non dice un'ora, usa le 09:00. Se non dice nessuna data, lascia vuoto.
 - priorita: "alta" se "urgente/subito/importante", "bassa" se "quando puoi", altrimenti "media".
 - Se il resoconto è vuoto o incomprensibile, restituisci un array vuoto.
 
+Persone conosciute (solo per assegnare i task, se nominate): ${collStr}
 Cantieri conosciuti (usa cantiere_nome solo se esplicitamente citato): ${cantieriStr}
-Materiali conosciuti: ${matStr}
-Attrezzi conosciuti: ${attrStr}
 
 Resoconto vocale:
 """${transcript}"""`;
