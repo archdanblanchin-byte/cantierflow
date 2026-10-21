@@ -41,7 +41,7 @@ const fotoVuote = () => ({
 
 // Scheda del codice colore: le stesse quattro foto del campione (etichetta
 // fornitore, etichetta ditta, contenitore, colore) che compilano il formulario.
-export default function CodiceColoreFormDialog({ open, scheda, onClose, onSaved }) {
+export default function CodiceColoreFormDialog({ open, scheda, cantierePredefinito, onClose, onSaved }) {
   const { user } = useAuth();
   const [form, setForm] = useState(formVuoto);
   const [foto, setFoto] = useState(fotoVuote);
@@ -82,11 +82,15 @@ export default function CodiceColoreFormDialog({ open, scheda, onClose, onSaved 
         colore: { file: null, preview: "", file_uri: scheda.foto_colore || "" },
       });
     } else {
-      setForm(formVuoto());
+      setForm({
+        ...formVuoto(),
+        cantiere_id: cantierePredefinito?.id || "",
+        cantiere_nome: cantierePredefinito?.nome || "",
+      });
       setFoto(fotoVuote());
     }
     setLavoro({});
-  }, [open, scheda]);
+  }, [open, scheda, cantierePredefinito]);
 
   const setCampo = (chiave, valore) => setForm((f) => ({ ...f, [chiave]: valore }));
 

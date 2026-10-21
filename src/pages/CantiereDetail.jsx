@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowLeft, MapPin, Pencil, FileText, Shield, Truck, Calculator, Camera,
+  ArrowLeft, MapPin, Pencil, FileText, Shield, Truck, Calculator,
   Pause, Play, CheckCircle2, Trash2, Loader2,
 } from "lucide-react";
 import {
@@ -17,8 +17,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import FotoCard from "@/components/foto/FotoCard";
 import CantiereComunicazioni from "@/components/cantiere/CantiereComunicazioni";
+import CantiereFotoSection from "@/components/cantiere/CantiereFotoSection";
 import ReportPDFButton, { ReportPDFContent, captureToPdfFile } from "@/components/ReportPDF";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -335,19 +335,8 @@ export default function CantiereDetail() {
           )}
         </div>
 
-        {/* Foto cantiere (dall'entità Foto) */}
-        {fotoCantiere.length > 0 && (
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-              <Camera className="w-3.5 h-3.5" /> Foto e Colori ({fotoCantiere.length})
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              {fotoCantiere.map((f) => (
-                <FotoCard key={f.id} foto={f} />
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Tutte le foto del cantiere: andamento, colori, marketing, precedenti */}
+        <CantiereFotoSection cantiereId={id} fotoLegacy={fotoCantiere} />
 
         {/* Foto strutturali cantiere */}
         {(cantiere.foto_cantiere || []).length > 0 && (

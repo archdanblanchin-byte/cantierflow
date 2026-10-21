@@ -16,7 +16,7 @@ import FotoEditor from "@/components/foto/FotoEditor";
 
 let contatore = 0;
 
-export default function AndamentoFormDialog({ open, sessione, onClose, onSaved }) {
+export default function AndamentoFormDialog({ open, sessione, cantierePredefinito, onClose, onSaved }) {
   const { user } = useAuth();
   const [cantiere, setCantiere] = useState(null);
   const [titolo, setTitolo] = useState("");
@@ -51,12 +51,12 @@ export default function AndamentoFormDialog({ open, sessione, onClose, onSaved }
         }))
       );
     } else {
-      setCantiere(null);
+      setCantiere(cantierePredefinito || null);
       setTitolo("");
       setNotaGenerale("");
       setItems([]);
     }
-  }, [open, sessione]);
+  }, [open, sessione, cantierePredefinito]);
 
   const aggiungiFile = (files) => {
     const nuovi = Array.from(files || []).map((file) => ({

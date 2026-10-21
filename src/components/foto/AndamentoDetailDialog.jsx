@@ -55,16 +55,20 @@ export default function AndamentoDetailDialog({ sessione, open, onClose, onDelet
           {foto.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Nessuna foto in questa sessione.</p>}
         </div>
 
-        <div className="sticky bottom-0 bg-card border-t border-border px-5 py-3 flex gap-2">
-          <Button variant="outline" className="flex-1 gap-2" onClick={() => onEdit(sessione)}>
-            <Pencil className="w-4 h-4" /> Aggiungi foto o note
-          </Button>
-          {isAdmin && (
-            <Button variant="outline" className="gap-2 text-destructive" onClick={() => onDelete(sessione)}>
-              <Trash2 className="w-4 h-4" /> Elimina
-            </Button>
-          )}
-        </div>
+        {(onEdit || isAdmin) && (
+          <div className="sticky bottom-0 bg-card border-t border-border px-5 py-3 flex gap-2">
+            {onEdit && (
+              <Button variant="outline" className="flex-1 gap-2" onClick={() => onEdit(sessione)}>
+                <Pencil className="w-4 h-4" /> Aggiungi foto o note
+              </Button>
+            )}
+            {isAdmin && (
+              <Button variant="outline" className="gap-2 text-destructive" onClick={() => onDelete(sessione)}>
+                <Trash2 className="w-4 h-4" /> Elimina
+              </Button>
+            )}
+          </div>
+        )}
       </DialogContent>
 
       <Dialog open={Boolean(ingrandita)} onOpenChange={(v) => !v && setIngrandita(null)}>

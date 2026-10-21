@@ -78,7 +78,7 @@ function RiquadroFoto({ label, stato, onScegli, onRimuovi, children }) {
   );
 }
 
-export default function MarketingFormDialog({ open, confronto, onClose, onSaved }) {
+export default function MarketingFormDialog({ open, confronto, cantierePredefinito, onClose, onSaved }) {
   const { user } = useAuth();
   const [cantiere, setCantiere] = useState(null);
   const [titolo, setTitolo] = useState("");
@@ -108,14 +108,14 @@ export default function MarketingFormDialog({ open, confronto, onClose, onSaved 
       setPrima({ file: null, preview: "", file_uri: confronto.foto_prima || "", data: confronto.data_prima || "" });
       setDopo({ file: null, preview: "", file_uri: confronto.foto_dopo || "", data: confronto.data_dopo || "" });
     } else {
-      setCantiere(null);
+      setCantiere(cantierePredefinito || null);
       setTitolo("");
       setNotaPrima("");
       setNotaDopo("");
       setPrima(vuota());
       setDopo(vuota());
     }
-  }, [open, confronto]);
+  }, [open, confronto, cantierePredefinito]);
 
   // Il "prima" serve come sottofondo della fotocamera: risolvo il link firmato.
   useEffect(() => {

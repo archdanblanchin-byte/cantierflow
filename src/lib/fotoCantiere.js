@@ -4,6 +4,24 @@ import { caricaFotoPrivata } from "@/lib/campioni";
 // UploadPrivateFile e si mostrano con un link firmato a scadenza.
 export { caricaFotoPrivata, urlFoto } from "@/lib/campioni";
 
+// Ogni foto è legata a un cantiere: le categorie si aprono per cartelle.
+export const SENZA_CANTIERE = "__senza__";
+
+export function gruppiCantiere(record) {
+  const mappa = new Map();
+  (record || []).forEach((r) => {
+    const id = r.cantiere_id || SENZA_CANTIERE;
+    const voce = mappa.get(id) || { id, nome: r.cantiere_nome || "Senza cantiere", count: 0 };
+    voce.count += 1;
+    mappa.set(id, voce);
+  });
+  return [...mappa.values()].sort((a, b) => String(a.nome).localeCompare(String(b.nome), "it"));
+}
+
+export function inCantiere(record, cantiereId) {
+  return (record?.cantiere_id || SENZA_CANTIERE) === cantiereId;
+}
+
 function caricaImmagine(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();

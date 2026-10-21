@@ -72,16 +72,20 @@ export default function MarketingDetailDialog({ confronto, open, onClose, onEdit
           )}
         </div>
 
-        <div className="sticky bottom-0 bg-card border-t border-border px-5 py-3 flex gap-2">
-          <Button variant="outline" className="flex-1 gap-2" onClick={() => onEdit(confronto)}>
-            <Pencil className="w-4 h-4" /> {confronto.foto_dopo ? "Modifica" : "Scatta il dopo"}
-          </Button>
-          {isAdmin && (
-            <Button variant="outline" className="gap-2 text-destructive" onClick={() => onDelete(confronto)}>
-              <Trash2 className="w-4 h-4" /> Elimina
-            </Button>
-          )}
-        </div>
+        {(onEdit || isAdmin) && (
+          <div className="sticky bottom-0 bg-card border-t border-border px-5 py-3 flex gap-2">
+            {onEdit && (
+              <Button variant="outline" className="flex-1 gap-2" onClick={() => onEdit(confronto)}>
+                <Pencil className="w-4 h-4" /> {confronto.foto_dopo ? "Modifica" : "Scatta il dopo"}
+              </Button>
+            )}
+            {isAdmin && (
+              <Button variant="outline" className="gap-2 text-destructive" onClick={() => onDelete(confronto)}>
+                <Trash2 className="w-4 h-4" /> Elimina
+              </Button>
+            )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
