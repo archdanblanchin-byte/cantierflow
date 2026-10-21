@@ -59,6 +59,11 @@
           "user_condition": {
             "role": "responsabile_tecnico"
           }
+        },
+        {
+          "user_condition": {
+            "data.permessi_extra": "inventario"
+          }
         }
       ]
     },
@@ -70,6 +75,11 @@
         {
           "user_condition": {
             "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "data.permessi_extra": "inventario"
           }
         }
       ]
@@ -85,6 +95,11 @@
           "user_condition": {
             "role": "responsabile_tecnico"
           }
+        },
+        {
+          "user_condition": {
+            "data.permessi_extra": "inventario"
+          }
         }
       ]
     },
@@ -98,6 +113,11 @@
         {
           "user_condition": {
             "role": "responsabile_tecnico"
+          }
+        },
+        {
+          "user_condition": {
+            "data.permessi_extra": "inventario"
           }
         }
       ]
