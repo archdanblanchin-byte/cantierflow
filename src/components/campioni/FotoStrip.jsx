@@ -1,4 +1,4 @@
-import { Building2, Loader2, PaintBucket, Palette, Tag, X } from "lucide-react";
+import { Building2, Image as ImageIcon, Loader2, PaintBucket, Palette, Tag, X } from "lucide-react";
 import FotoCampione from "@/components/campioni/FotoCampione";
 
 // Le quattro foto del campione, in fila: si scattano prima di compilare,
@@ -21,6 +21,12 @@ function Slot({ voce, foto, inCorso, onScegli, onRimuovi, onCampiona }) {
     onCampiona((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
   };
 
+  const scelto = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    onScegli(file);
+  };
+
   return (
     <div className="flex-1 min-w-0">
       <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-dashed border-border">
@@ -35,9 +41,9 @@ function Slot({ voce, foto, inCorso, onScegli, onRimuovi, onCampiona }) {
           </div>
         )}
 
-        {/* Il campo file è trasparente ma reale e copre il riquadro: il tocco
-            è una pressione diretta sull'input, così la fotocamera si apre
-            su tutti i telefoni (i click simulati spesso non aprono nulla). */}
+        {/* Tocco sul riquadro = fotocamera (predefinito). Sono campi file
+            trasparenti ma reali: la pressione è diretta sull'input, così la
+            fotocamera si apre su tutti i telefoni. */}
         {campionabile ? (
           <button
             type="button"
@@ -49,14 +55,27 @@ function Slot({ voce, foto, inCorso, onScegli, onRimuovi, onCampiona }) {
           <input
             type="file"
             accept="image/*"
-            aria-label={voce.label}
+            capture="environment"
+            aria-label={`Scatta la foto: ${voce.label}`}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              onScegli(file);
-            }}
+            onChange={scelto}
           />
+        )}
+
+        {/* Seconda opzione: caricare dalla galleria. */}
+        {!inCorso && (
+          <>
+            <span className="absolute bottom-1 left-1 z-20 w-5 h-5 rounded bg-background/85 flex items-center justify-center pointer-events-none">
+              <ImageIcon className="w-3 h-3 text-foreground" />
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              aria-label={`Carica dalla galleria: ${voce.label}`}
+              className="absolute bottom-1 left-1 z-20 w-5 h-5 opacity-0 cursor-pointer"
+              onChange={scelto}
+            />
+          </>
         )}
 
         {inCorso && (
@@ -69,7 +88,7 @@ function Slot({ voce, foto, inCorso, onScegli, onRimuovi, onCampiona }) {
           <button
             type="button"
             onClick={onRimuovi}
-            className="absolute top-1 right-1 z-20 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+            className="absolute top-1 right-1 z-30 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
           >
             <X className="w-3 h-3" />
           </button>
@@ -97,8 +116,8 @@ export default function FotoStrip({ foto, lavoro = {}, onScegli, onRimuovi, onCa
         ))}
       </div>
       <p className="text-[11px] text-muted-foreground mt-2">
-        Tocca un riquadro per scattare la foto o sceglierla dalla galleria. Sul riquadro colore, tocca la foto nel punto
-        della tinta per correggerla.
+        Tocca il riquadro per scattare la foto, oppure l'icona in basso a sinistra per caricarla dalla galleria. Sul
+        riquadro colore, tocca la foto nel punto della tinta per correggerla.
       </p>
     </div>
   );
