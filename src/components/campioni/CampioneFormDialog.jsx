@@ -117,6 +117,17 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
       riempiti += 1;
     };
 
+    // Quello che l'etichetta dice ma non entra in un campo (o che non si legge
+    // bene) finisce nelle note: nessuna informazione va persa.
+    const aggiungiNota = (valore) => {
+      const testo = String(valore || "").trim();
+      if (!testo) return;
+      const nota = String(next.note || "").trim();
+      if (nota.includes(testo)) return;
+      next.note = nota ? `${nota}\n${testo}` : testo;
+      riempiti += 1;
+    };
+
     if (tipoEtichetta === "fornitore") {
       metti("nome", dati.nome);
       metti("marca", dati.marca);
@@ -134,13 +145,14 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
         riempiti += 1;
       }
       next.testo_fornitore = corrente.testo_fornitore || String(dati.testo_letto || "").trim();
+      aggiungiNota(dati.note);
     } else {
       metti("cantiere_etichetta", dati.cantiere_nome);
       metti("marca", dati.marca);
       metti("nome", dati.nome);
       metti("codice", dati.codice);
       metti("data_etichetta", dati.data);
-      metti("note", dati.note);
+      aggiungiNota(dati.note);
       next.testo_azienda = corrente.testo_azienda || String(dati.testo_letto || "").trim();
 
       const cercato = String(dati.cantiere_nome || "").trim().toLowerCase();
@@ -375,7 +387,12 @@ export default function CampioneFormDialog({ open, campione, onClose, onSaved })
             </div>
             <div>
               <Label>Note</Label>
-              <Textarea value={form.note} onChange={(e) => setCampo("note", e.target.value)} rows={2} />
+              <Textarea
+                value={form.note}
+                onChange={(e) => setCampo("note", e.target.value)}
+                rows={3}
+                placeholder="Qui finisce anche quello che sull'etichetta non è chiaro o non entra negli altri campi"
+              />
             </div>
           </div>
         </div>

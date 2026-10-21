@@ -19,7 +19,11 @@ const SCHEMA = {
     unita_misura: { type: 'string' },
     data: { type: 'string' },
     cantiere_nome: { type: 'string' },
-    note: { type: 'string' },
+    note: {
+      type: 'string',
+      description:
+        'Tutto ciò che è leggibile ma non entra negli altri campi, più le parti illeggibili o incerte. Vuoto solo se ogni dato è chiaro e ha trovato il suo campo.',
+    },
   },
   required: ['testo_letto'],
 };
@@ -57,7 +61,8 @@ Regole:
 - "quantita": solo il numero del contenuto (es. 12). "unita_misura": solo L, kg, pz o ml.
 - "data": solo se leggibile, in formato yyyy-MM-dd.
 - "tipo": scegli tra ${TIPI.join(', ')}. Se non è deducibile lascia vuoto.
-- "cantiere_nome": valorizzalo solo se sull'etichetta compare il nome di un cantiere.`;
+- "cantiere_nome": valorizzalo solo se sull'etichetta compare il nome di un cantiere.
+- "note": nessuna informazione va persa. Scrivi qui tutto quello che leggi ma che non entra in un campo (numeri di lotto, scadenze, avvertenze, indicazioni d'uso, pesi, altre diciture) e segnala con chiarezza le parti illeggibili o incerte (es. "codice illeggibile", "data parzialmente coperta: 03/2_", "colore non leggibile"). Usa frasi brevi, una per riga. Lascia "note" vuoto solo se hai letto tutto senza dubbi e ogni dato ha trovato il suo campo.`;
 
     const risposta = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
