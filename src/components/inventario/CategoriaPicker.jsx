@@ -17,7 +17,7 @@ export default function CategoriaPicker({ valore, onChange, onSuggerisci, sugger
           value={valore}
           onChange={(e) => onChange(e.target.value)}
           list="categorie-materiale-suggerite"
-          placeholder="Es. Pitture e vernici"
+          placeholder="Es. Pitture, vernici e solventi"
         />
         {onSuggerisci && (
           <Button variant="outline" size="icon" onClick={onSuggerisci} disabled={suggerendo} title="Fai suggerire la categoria all'AI">

@@ -1,24 +1,19 @@
 // Categorie merceologiche suggerite per l'inventario.
 // Sono un suggerimento: il magazziniere può comunque scrivere una categoria propria.
 export const CATEGORIE_MATERIALE = [
-  "Pitture e vernici",
-  "Malte e intonaci",
-  "Rasanti e stucchi",
-  "Prodotti di protezione",
-  "Prodotti di pulizia",
+  "Pitture, vernici e solventi",
+  "Manti, intonaci e rasanti",
+  "Pulizia, protezione e adesivi",
   "Rulli e pennelli",
   "Attrezzi e utensili",
   "Abbigliamento e DPI",
   "Ferramenta e minuteria",
-  "Nastri e adesivi",
   "Silicone e sigillanti",
   "Abrasivi e carteggiatura",
-  "Impermeabilizzanti e guaine",
-  "Solventi e diluenti",
   "Isolanti e pannelli",
   "Idraulica e impianti",
   "Materiale elettrico",
-  "Antigraffiti",
+  "Segnaletica di cantiere",
   "Varie",
 ];
 

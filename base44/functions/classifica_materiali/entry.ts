@@ -4,24 +4,19 @@ const RUOLI_GESTORI = ['admin', 'responsabile_tecnico'];
 
 // Categorie suggerite all'AI: sono le stesse proposte nell'interfaccia.
 const CATEGORIE = [
-  'Pitture e vernici',
-  'Malte e intonaci',
-  'Rasanti e stucchi',
-  'Prodotti di protezione',
-  'Prodotti di pulizia',
+  'Pitture, vernici e solventi',
+  'Manti, intonaci e rasanti',
+  'Pulizia, protezione e adesivi',
   'Rulli e pennelli',
   'Attrezzi e utensili',
   'Abbigliamento e DPI',
   'Ferramenta e minuteria',
-  'Nastri e adesivi',
   'Silicone e sigillanti',
   'Abrasivi e carteggiatura',
-  'Impermeabilizzanti e guaine',
-  'Solventi e diluenti',
   'Isolanti e pannelli',
   'Idraulica e impianti',
   'Materiale elettrico',
-  'Antigraffiti',
+  'Segnaletica di cantiere',
   'Varie',
 ];
 
@@ -64,9 +59,9 @@ async function caricaTutti(sr) {
 // Chiede all'AI una categoria per ogni nome ricevuto.
 async function chiediCategorie(sr, nomi) {
   const prompt = `Sei il magazziniere di un'impresa edile italiana e devi ordinare la check list del magazzino.
-Per OGNI prodotto della lista assegna UNA sola categoria merceologica, scegliendo quando possibile tra queste:
+Per OGNI prodotto della lista assegna UNA sola categoria merceologica, scegliendo SEMPRE tra queste: sono poche di proposito, quindi non inventarne di nuove se una di queste può andare bene.
 ${CATEGORIE.join(', ')}.
-Se nessuna di queste è adatta, proponi una categoria breve e chiara in italiano (es. "Rulli e pennelli").
+Solo se davvero nessuna è adatta, proponi una categoria breve e chiara in italiano (es. "Teli e coperture").
 Rispondi con tutti i prodotti ricevuti, nello stesso ordine e con lo stesso nome, senza aggiungerne altri.
 
 Prodotti:
