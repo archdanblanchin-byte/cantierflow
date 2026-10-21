@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Hammer, Palette, Megaphone } from "lucide-react";
+import AndamentoPanel from "@/components/foto/AndamentoPanel";
+import CodiciColorePanel from "@/components/foto/CodiciColorePanel";
+import MarketingPanel from "@/components/foto/MarketingPanel";
 
 // Le tre categorie della sezione Foto: ogni categoria è un flusso a sé,
 // con il suo archivio e il suo modo di caricare le immagini.
@@ -32,7 +35,6 @@ const CATEGORIE = [
 export default function FotoPage() {
   const navigate = useNavigate();
   const [categoria, setCategoria] = useState("andamento");
-  const attiva = CATEGORIE.find((c) => c.id === categoria);
 
   return (
     <div className="min-h-screen bg-background">
@@ -73,17 +75,9 @@ export default function FotoPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-center gap-3">
-            <span className={`w-10 h-10 rounded-xl flex items-center justify-center ${attiva.colore}`}>
-              <attiva.Icona className="w-5 h-5" />
-            </span>
-            <div>
-              <h2 className="font-semibold">{attiva.label}</h2>
-              <p className="text-xs text-muted-foreground">{attiva.desc}</p>
-            </div>
-          </div>
-        </div>
+        {categoria === "andamento" && <AndamentoPanel />}
+        {categoria === "colori" && <CodiciColorePanel />}
+        {categoria === "marketing" && <MarketingPanel />}
       </div>
     </div>
   );
