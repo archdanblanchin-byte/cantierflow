@@ -19,15 +19,15 @@ function MultiPick({ titolo, options, selected, onToggle, emptyText }) {
       </div>
       <div className="max-h-32 overflow-y-auto rounded-lg border border-border p-1.5 space-y-0.5">
         {filtrati.length === 0 && <p className="text-xs text-muted-foreground p-2">{emptyText}</p>}
-        {filtrati.slice(0, 60).map((o) => (
-          <label key={o.id} className="flex items-center gap-2 p-1 rounded hover:bg-accent cursor-pointer">
+        {filtrati.slice(0, 60).map((o) =>
+        <label key={o.id} className="flex items-center gap-2 p-1 rounded hover:bg-accent cursor-pointer">
             <Checkbox checked={selected.some((s) => s.id === o.id)} onCheckedChange={() => onToggle(o)} />
             <span className="text-xs truncate">{o.nome}</span>
           </label>
-        ))}
+        )}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 /**
@@ -44,68 +44,68 @@ export default function NotaLinkFields({ value, onChange, cantieri = [], furgoni
   const attrezzi = value.attrezzi || [];
 
   const toggle = (key, lista, o) =>
-    set({ [key]: lista.some((x) => x.id === o.id) ? lista.filter((x) => x.id !== o.id) : [...lista, { id: o.id, nome: o.nome }] });
+  set({ [key]: lista.some((x) => x.id === o.id) ? lista.filter((x) => x.id !== o.id) : [...lista, { id: o.id, nome: o.nome }] });
 
   const chips = (key, lista) =>
-    lista.map((x) => (
-      <span key={x.id} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px]">
+  lista.map((x) =>
+  <span key={x.id} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px]">
         {x.nome}
         <button type="button" onClick={() => set({ [key]: lista.filter((y) => y.id !== x.id) })} aria-label={`Rimuovi ${x.nome}`}>
           <X className="w-3 h-3 text-muted-foreground hover:text-destructive" />
         </button>
       </span>
-    ));
+  );
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
-        {(value.cantiere_id || reveal.cantiere) ? (
-          <div className="space-y-1 flex-1 min-w-[140px]">
+        {value.cantiere_id || reveal.cantiere ?
+        <div className="space-y-1 flex-1 min-w-[140px]">
             <Label className="text-xs flex items-center justify-between">
               Cantiere
               {value.cantiere_id && <button type="button" onClick={() => set({ cantiere_id: "" })} className="text-[10px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>}
             </Label>
             <SheetSelect value={value.cantiere_id || ""} onValueChange={(v) => set({ cantiere_id: v })} options={cantieri.filter((c) => c.attivo !== false).map((c) => ({ value: c.id, label: c.nome }))} placeholder="Nessuno" />
-          </div>
-        ) : (
-          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => mostra("cantiere")}><Plus className="w-3 h-3" /> Cantiere</Button>
-        )}
-        {(value.furgone_id || reveal.furgone) ? (
-          <div className="space-y-1 flex-1 min-w-[140px]">
+          </div> :
+
+        <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => mostra("cantiere")}><Plus className="w-3 h-3" /> Cantiere</Button>
+        }
+        {value.furgone_id || reveal.furgone ?
+        <div className="space-y-1 flex-1 min-w-[140px]">
             <Label className="text-xs flex items-center justify-between">
               Furgone
               {value.furgone_id && <button type="button" onClick={() => set({ furgone_id: "" })} className="text-[10px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>}
             </Label>
             <SheetSelect value={value.furgone_id || ""} onValueChange={(v) => set({ furgone_id: v })} options={furgoni.filter((f) => f.attivo !== false).map((f) => ({ value: f.id, label: f.nome }))} placeholder="Nessuno" />
-          </div>
-        ) : (
-          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => mostra("furgone")}><Plus className="w-3 h-3" /> Furgone</Button>
-        )}
-        {(materiali.length > 0 || reveal.materiali) ? (
-          <div className="space-y-1 w-full">
+          </div> :
+
+        <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1 hidden" onClick={() => mostra("furgone")}><Plus className="w-3 h-3" /> Furgone</Button>
+        }
+        {materiali.length > 0 || reveal.materiali ?
+        <div className="space-y-1 w-full">
             <Label className="text-xs flex items-center justify-between">
               Materiali
               <button type="button" onClick={() => set({ materiali: [] })} className="text-[10px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>
             </Label>
             {materiali.length > 0 && <div className="flex flex-wrap gap-1">{chips("materiali", materiali)}</div>}
             <MultiPick titolo="Materiali" options={materialiList} selected={materiali} onToggle={(o) => toggle("materiali", materiali, o)} emptyText="Nessun materiale in anagrafica" />
-          </div>
-        ) : (
-          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => mostra("materiali")}><Plus className="w-3 h-3" /> Materiali</Button>
-        )}
-        {(attrezzi.length > 0 || reveal.attrezzi) ? (
-          <div className="space-y-1 w-full">
+          </div> :
+
+        <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => mostra("materiali")}><Plus className="w-3 h-3" /> Materiali</Button>
+        }
+        {attrezzi.length > 0 || reveal.attrezzi ?
+        <div className="space-y-1 w-full">
             <Label className="text-xs flex items-center justify-between">
               Attrezzi
               <button type="button" onClick={() => set({ attrezzi: [] })} className="text-[10px] font-normal text-muted-foreground hover:text-destructive">rimuovi</button>
             </Label>
             {attrezzi.length > 0 && <div className="flex flex-wrap gap-1">{chips("attrezzi", attrezzi)}</div>}
             <MultiPick titolo="Attrezzi" options={attrezziList} selected={attrezzi} onToggle={(o) => toggle("attrezzi", attrezzi, o)} emptyText="Nessun attrezzo in anagrafica" />
-          </div>
-        ) : (
-          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => mostra("attrezzi")}><Plus className="w-3 h-3" /> Attrezzi</Button>
-        )}
+          </div> :
+
+        <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => mostra("attrezzi")}><Plus className="w-3 h-3" /> Attrezzi</Button>
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
