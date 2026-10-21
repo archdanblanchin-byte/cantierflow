@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, ListTodo, Plus, Loader2, Send, CheckCheck, Mic, User } from "lucide-react";
+import { ArrowLeft, ListTodo, Plus, Loader2, Send, Mic, User } from "lucide-react";
 import { toast } from "sonner";
 import TaskCard from "@/components/task/TaskCard";
 import TaskFormDialog from "@/components/task/TaskFormDialog";
@@ -13,20 +13,19 @@ import TaskVocaleDialog from "@/components/task/TaskVocaleDialog";
 import NotificationsBell from "@/components/NotificationsBell";
 
 const TABS = [
-  { key: "da_fare", label: "Da fare", icon: ListTodo },
-  { key: "assegnati", label: "Assegnati da me", icon: Send },
-  { key: "completati", label: "Completati", icon: CheckCheck },
+  { key: "personali", label: "Personali", icon: User },
+  { key: "assegnati", label: "Assegnati", icon: Send },
 ];
 
 /**
- * Task personali e task assegnati ad altri utenti, con dettatura IA,
- * notifica di assegnazione e avviso al completamento.
+ * Task personali e task assegnati: in ogni sezione i task da fare stanno sopra,
+ * quelli già completati sotto. Con dettatura IA.
  */
 export default function Task() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
-  const [tab, setTab] = useState("da_fare");
+  const [tab, setTab] = useState("personali");
   const [formOpen, setFormOpen] = useState(false);
   const [vocaleOpen, setVocaleOpen] = useState(false);
   const [quick, setQuick] = useState("");
@@ -43,21 +42,14 @@ export default function Task() {
   });
 
   const email = user?.email;
+  const perData = (a, b) => new Date(b.created_date) - new Date(a.created_date);
   const task = note.filter((n) => n.tipo === "task");
 
-  const miei = task.filter((n) => n.created_by === email || (n.destinatari_email || []).includes(email));
-  const daFare = miei
-    .filter((n) => !n.completato)
-    .filter((n) => !((n.destinatari_email || []).length > 0 && !(n.destinatari_email || []).includes(email)))
-    .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-
-  const assegnati = miei
-    .filter((n) => !n.completato && n.created_by === email && (n.destinatari_email || []).length > 0 && !(n.destinatari_email || []).includes(email))
-    .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-
-  const completati = miei
-    .filter((n) => n.completato)
-    .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+  // Personali: nessun assegnatario. Assegnati: coinvolgono qualcuno (assegnati da me o a me).
+  const personali = task.filter((n) => n.created_by === email && (n.destinatari_email || []).length === 0).sort(perData);
+  const assegnati = task
+    .filter((n) => (n.destinatari_email || []).length > 0 && (n.created_by === email || (n.destinatari_email || []).includes(email)))
+    .sort(perData);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["note"] });
 
@@ -82,10 +74,10 @@ export default function Task() {
     }
   };
 
-  const lista = tab === "da_fare" ? daFare : tab === "assegnati" ? assegnati : completati;
-  const vuoto = tab === "da_fare" ? "Nessun task da fare"
-    : tab === "assegnati" ? "Non hai assegnato task ad altri"
-    : "Nessun task completato";
+  const lista = tab === "personali" ? personali : assegnati;
+  const aperti = lista.filter((n) => !n.completato);
+  const chiusi = lista.filter((n) => n.completato);
+  const vuoto = tab === "personali" ? "Nessun task personale" : "Nessun task assegnato";
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -99,7 +91,7 @@ export default function Task() {
           </div>
           <div>
             <h1 className="text-base font-bold leading-tight">Task</h1>
-            <p className="text-[11px] text-muted-foreground">I tuoi e quelli assegnati agli altri</p>
+            <p className="text-[11px] text-muted-foreground">Personali e assegnati agli altri</p>
           </div>
           <div className="ml-auto"><NotificationsBell /></div>
         </div>
@@ -129,12 +121,12 @@ export default function Task() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-muted">
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-muted">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-semibold transition-colors leading-tight ${tab === t.key ? "bg-card text-emerald-600 shadow-sm" : "text-muted-foreground"}`}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${tab === t.key ? "bg-card text-emerald-600 shadow-sm" : "text-muted-foreground"}`}
             >
               <t.icon className="w-4 h-4 shrink-0" />
               {t.label}
@@ -151,7 +143,15 @@ export default function Task() {
           </div>
         ) : (
           <div className="space-y-2">
-            {lista.map((n) => <TaskCard key={n.id} nota={n} currentUser={user} onChanged={refresh} />)}
+            {aperti.map((n) => <TaskCard key={n.id} nota={n} currentUser={user} onChanged={refresh} />)}
+            {chiusi.length > 0 && (
+              <>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1 pt-3 pb-1">
+                  Completati · {chiusi.length}
+                </p>
+                {chiusi.map((n) => <TaskCard key={n.id} nota={n} currentUser={user} onChanged={refresh} />)}
+              </>
+            )}
           </div>
         )}
       </div>

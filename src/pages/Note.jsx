@@ -69,7 +69,7 @@ export default function Note() {
             <Plus className="w-4 h-4" /> Nuova nota
           </Button>
           <Button variant="outline" className="gap-2 h-11" onClick={() => setRecording((r) => !r)}>
-            <Mic className="w-4 h-4" /> Dettatura
+            <Mic className="w-4 h-4" /> Dettatura IA
           </Button>
         </div>
 

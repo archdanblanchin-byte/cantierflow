@@ -163,7 +163,7 @@ Resoconto vocale:
         (async () => {
           const blob = new Blob(chunks.current, { type: "audio/webm" });
           const file = new File([blob], "nota.webm", { type: blob.type });
-          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
           const transcript = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
           return base44.integrations.Core.InvokeLLM({
             prompt: buildPrompt(transcript),
