@@ -2,6 +2,10 @@
   "name": "Nota",
   "type": "object",
   "properties": {
+    "titolo": {
+      "type": "string",
+      "description": "Titolo della nota personale"
+    },
     "testo": {
       "type": "string",
       "description": "Contenuto della nota / task / comunicazione"
@@ -20,7 +24,7 @@
     },
     "items": {
       "type": "array",
-      "description": "Voci della lista (per tipo=lista)",
+      "description": "Voci della checklist (per tipo=lista)",
       "items": {
         "type": "object",
         "properties": {
@@ -30,6 +34,25 @@
           "done": {
             "type": "boolean",
             "default": false
+          }
+        }
+      }
+    },
+    "disegno": {
+      "type": "string",
+      "description": "Disegno a mano libera allegato alla nota (file privato)"
+    },
+    "allegati": {
+      "type": "array",
+      "description": "File allegati alla nota personale",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "file_uri": {
+            "type": "string"
           }
         }
       }
@@ -98,6 +121,14 @@
       "items": {
         "type": "string"
       }
+    },
+    "assegnato_da": {
+      "type": "string",
+      "description": "Email di chi ha assegnato il task (per la notifica di completamento)"
+    },
+    "assegnato_da_nome": {
+      "type": "string",
+      "description": "Nome di chi ha assegnato il task (denormalizzato)"
     },
     "data_promemoria": {
       "type": "string",
@@ -173,6 +204,18 @@
               }
             }
           ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
         },
         {
           "user_condition": {
