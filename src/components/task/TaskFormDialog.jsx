@@ -30,7 +30,8 @@ export default function TaskFormDialog({ open, onOpenChange, initial, onSaved })
   useEffect(() => { base44.auth.me().then(setUtente).catch(() => {}); }, []);
 
   const opzioni = [
-    { value: "", label: "Nessuno (task personale)" },
+    // "nessuno" è un valore sentinella: lo Select non accetta una voce vuota.
+    { value: "nessuno", label: "Nessuno (task personale)" },
     ...buildDestOptions(users, collaboratori)
       .filter((o) => o.email !== utente?.email)
       .map((o) => ({ value: o.email, label: `${o.nome} · ${o.email}` })),
@@ -102,7 +103,12 @@ export default function TaskFormDialog({ open, onOpenChange, initial, onSaved })
 
           <div className="space-y-1">
             <Label>Assegna a</Label>
-            <SheetSelect value={assegnatario} onValueChange={setAssegnatario} options={opzioni} placeholder="Nessuno (task personale)" />
+            <SheetSelect
+              value={assegnatario || "nessuno"}
+              onValueChange={(v) => setAssegnatario(v === "nessuno" ? "" : v)}
+              options={opzioni}
+              placeholder="Nessuno (task personale)"
+            />
             <p className="text-[11px] text-muted-foreground">
               {assegnatario
                 ? "Chi riceve il task lo vede nella sua sezione Task e riceve una notifica in app e via email. Quando lo completa, tu vieni avvisato."
