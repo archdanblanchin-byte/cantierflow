@@ -1,0 +1,79 @@
+{
+  "name": "FotoMarketing",
+  "type": "object",
+  "properties": {
+    "cantiere_id": {
+      "type": "string",
+      "description": "ID del cantiere del confronto"
+    },
+    "cantiere_nome": {
+      "type": "string",
+      "description": "Nome del cantiere (denormalizzato)"
+    },
+    "titolo": {
+      "type": "string",
+      "description": "Titolo del confronto (es. Facciata nord)"
+    },
+    "foto_prima": {
+      "type": "string",
+      "description": "File privato della foto scattata prima dei lavori"
+    },
+    "foto_dopo": {
+      "type": "string",
+      "description": "File privato della foto scattata a lavori finiti"
+    },
+    "data_prima": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quando \u00e8 stata scattata la foto del prima"
+    },
+    "data_dopo": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quando \u00e8 stata scattata la foto del dopo"
+    },
+    "nota_prima": {
+      "type": "string",
+      "description": "Nota sulla situazione di partenza"
+    },
+    "nota_dopo": {
+      "type": "string",
+      "description": "Nota sul risultato finale"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email di chi ha creato il confronto"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome di chi ha creato il confronto (denormalizzato)"
+    }
+  },
+  "required": [
+    "cantiere_id",
+    "foto_prima"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

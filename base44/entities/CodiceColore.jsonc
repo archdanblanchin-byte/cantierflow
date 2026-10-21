@@ -1,0 +1,114 @@
+{
+  "name": "CodiceColore",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome del prodotto letto sull'etichetta"
+    },
+    "tipo": {
+      "type": "string",
+      "description": "Pittura, Graffiato, Smalto, Altro"
+    },
+    "marca": {
+      "type": "string",
+      "description": "Marca del prodotto"
+    },
+    "codice": {
+      "type": "string",
+      "description": "Codice prodotto"
+    },
+    "fornitore": {
+      "type": "string",
+      "description": "Fornitore del prodotto"
+    },
+    "colore_nome": {
+      "type": "string",
+      "description": "Nome commerciale del colore"
+    },
+    "colore_hex": {
+      "type": "string",
+      "description": "Tinta stimata dalla foto (#rrggbb), correggibile a mano"
+    },
+    "data_etichetta": {
+      "type": "string",
+      "format": "date",
+      "description": "Data letta sull'etichetta"
+    },
+    "cantiere_id": {
+      "type": "string",
+      "description": "ID del cantiere a cui si riferisce il colore"
+    },
+    "cantiere_nome": {
+      "type": "string",
+      "description": "Nome del cantiere (denormalizzato)"
+    },
+    "note": {
+      "type": "string",
+      "description": "Annotazioni libere sul colore e sul suo utilizzo"
+    },
+    "testo_fornitore": {
+      "type": "string",
+      "description": "Trascrizione fedele dell'etichetta del fornitore"
+    },
+    "testo_azienda": {
+      "type": "string",
+      "description": "Trascrizione fedele dell'etichetta della ditta"
+    },
+    "foto_fornitore": {
+      "type": "string",
+      "description": "File privato dell'etichetta del fornitore"
+    },
+    "foto_azienda": {
+      "type": "string",
+      "description": "File privato dell'etichetta della ditta"
+    },
+    "foto_secchio": {
+      "type": "string",
+      "description": "File privato del contenitore"
+    },
+    "foto_colore": {
+      "type": "string",
+      "description": "File privato della foto usata per stimare la tinta"
+    },
+    "data": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quando la scheda \u00e8 stata registrata"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email di chi ha registrato il codice colore"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome di chi ha registrato il codice colore (denormalizzato)"
+    }
+  },
+  "required": [
+    "nome"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

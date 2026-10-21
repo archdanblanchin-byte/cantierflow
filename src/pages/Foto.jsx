@@ -1,98 +1,90 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/AuthContext";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Plus, Camera, Image, Folder } from "lucide-react";
-import FotoCard from "@/components/foto/FotoCard";
-import AggiungiFotoModal from "@/components/foto/AggiungiFotoModal";
+import { ArrowLeft, Hammer, Palette, Megaphone } from "lucide-react";
+
+// Le tre categorie della sezione Foto: ogni categoria è un flusso a sé,
+// con il suo archivio e il suo modo di caricare le immagini.
+const CATEGORIE = [
+  {
+    id: "andamento",
+    label: "Andamento cantiere",
+    desc: "Le foto dei lavori, con note e annotazioni",
+    Icona: Hammer,
+    colore: "text-blue-600 bg-blue-500/10",
+  },
+  {
+    id: "colori",
+    label: "Codici colore",
+    desc: "Etichette e tinte dei prodotti usati",
+    Icona: Palette,
+    colore: "text-fuchsia-600 bg-fuchsia-500/10",
+  },
+  {
+    id: "marketing",
+    label: "Marketing prima/dopo",
+    desc: "Il confronto prima e dopo, dalla stessa posizione",
+    Icona: Megaphone,
+    colore: "text-amber-600 bg-amber-500/10",
+  },
+];
 
 export default function FotoPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const isAdmin = user?.role === "admin";
-  const [showModal, setShowModal] = useState(false);
+  const [categoria, setCategoria] = useState("andamento");
+  const attiva = CATEGORIE.find((c) => c.id === categoria);
 
-  const { data: foto = [], isLoading: loadingFoto } = useQuery({
-    queryKey: ["foto"],
-    queryFn: () => base44.entities.Foto.list("-created_date", 100)
-  });
-
-  const { data: cantieri = [] } = useQuery({
-    queryKey: ["cantieri"],
-    queryFn: () => base44.entities.Cantiere.list()
-  });
-
-  const handleDelete = async (f) => {
-    await base44.entities.Foto.delete(f.id);
-    queryClient.invalidateQueries({ queryKey: ["foto"] });
-  };
-
-  const handleEdit = async (f) => {
-
-    // Apri editor — per ora naviga al dettaglio (futuro: inline edit)
-  };
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-card border-b border-border sticky top-0 z-10 safe-area-top-pt">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div className="bg-card border-b border-border sticky top-0 z-20 safe-area-top-pt">
+        <div className="max-w-2xl mx-auto px-4 pt-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="font-bold">Foto</h1>
-              <p className="text-xs text-muted-foreground">
-                {loadingFoto ? "..." : `${foto.length} foto`}
-              </p>
+              <h1 className="font-bold text-lg">Foto</h1>
+              <p className="text-xs text-muted-foreground">Tre archivi separati: andamento, colori, marketing</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {isAdmin &&
-            <Button variant="outline" size="sm" onClick={() => navigate("/importa-foto")} className="gap-2 hidden">
-                <Folder className="w-4 h-4" />Drive
-              </Button>
-            }
-            <Button onClick={() => setShowModal(true)} className="gap-2 shadow-lg shadow-primary/20">
-              <Plus className="w-4 h-4" />
-              Aggiungi
-            </Button>
+
+          {/* Selettore delle tre categorie */}
+          <div className="mt-4 -mx-4 px-4 overflow-x-auto pb-3">
+            <div className="flex gap-2 min-w-max">
+              {CATEGORIE.map(({ id, label, Icona, colore }) => (
+                <button
+                  key={id}
+                  onClick={() => setCategoria(id)}
+                  className={`flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition-all ${
+                    categoria === id
+                      ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                      : "border-border bg-card text-muted-foreground hover:border-primary/40"
+                  }`}
+                >
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center ${categoria === id ? "bg-primary-foreground/20" : colore}`}>
+                    <Icona className="w-3.5 h-3.5" />
+                  </span>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {loadingFoto ?
-        <div className="grid grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="aspect-video rounded-xl" />)}
-          </div> :
-        foto.length === 0 ?
-        <div className="text-center py-16">
-            <Camera className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground font-medium">Nessuna foto</p>
-            <p className="text-sm text-muted-foreground mt-1">Aggiungi la prima foto o codice colore</p>
-            <Button className="mt-4 gap-2" onClick={() => setShowModal(true)}>
-              <Plus className="w-4 h-4" />Aggiungi foto
-            </Button>
-          </div> :
-
-        <div className="grid grid-cols-2 gap-3">
-            {foto.map((f) =>
-          <FotoCard key={f.id} foto={f} onDelete={handleDelete} />
-          )}
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-3">
+            <span className={`w-10 h-10 rounded-xl flex items-center justify-center ${attiva.colore}`}>
+              <attiva.Icona className="w-5 h-5" />
+            </span>
+            <div>
+              <h2 className="font-semibold">{attiva.label}</h2>
+              <p className="text-xs text-muted-foreground">{attiva.desc}</p>
+            </div>
           </div>
-        }
+        </div>
       </div>
-
-      <AggiungiFotoModal
-        open={showModal}
-        onClose={() => setShowModal(false)}
-        cantieri={cantieri}
-        onSaved={() => queryClient.invalidateQueries({ queryKey: ["foto"] })} />
-      
-    </div>);
-
+    </div>
+  );
 }

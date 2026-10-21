@@ -1,0 +1,89 @@
+{
+  "name": "FotoAndamento",
+  "type": "object",
+  "properties": {
+    "cantiere_id": {
+      "type": "string",
+      "description": "ID del cantiere a cui si riferiscono le foto"
+    },
+    "cantiere_nome": {
+      "type": "string",
+      "description": "Nome del cantiere (denormalizzato)"
+    },
+    "titolo": {
+      "type": "string",
+      "description": "Titolo della sessione di foto (es. Sopralluogo iniziale, Avanzamento settimana)"
+    },
+    "data": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data della sessione fotografica"
+    },
+    "nota_generale": {
+      "type": "string",
+      "description": "Nota valida per tutta la sessione di foto"
+    },
+    "foto": {
+      "type": "array",
+      "description": "Le foto della sessione, ognuna con la sua nota e le sue annotazioni",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file_uri": {
+            "type": "string",
+            "description": "File privato della foto originale"
+          },
+          "url_annotata": {
+            "type": "string",
+            "description": "File privato della foto con le annotazioni disegnate sopra"
+          },
+          "nota": {
+            "type": "string",
+            "description": "Nota della singola foto"
+          },
+          "annotazioni": {
+            "type": "array",
+            "description": "Forme disegnate sulla foto (frecce, riquadri, misure)",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email di chi ha caricato le foto"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome di chi ha caricato le foto (denormalizzato)"
+    }
+  },
+  "required": [
+    "cantiere_id"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
