@@ -8,7 +8,7 @@ import { isToday } from "date-fns";
 import RapportinoUnico from "@/components/rapportino/RapportinoUnico";
 import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
 import { fmtOre } from "@/lib/timbratureUtils";
-import { sincronizzaScaricoRapportino } from "@/lib/inventario";
+import { caricaTuttiMateriali, sincronizzaScaricoRapportino } from "@/lib/inventario";
 
 export default function EditReport() {
   const { id } = useParams();
@@ -63,7 +63,7 @@ export default function EditReport() {
   });
   const { data: materialiBase = [] } = useQuery({
     queryKey: ["materialiBase"],
-    queryFn: () => base44.entities.MaterialeBase.list(),
+    queryFn: () => caricaTuttiMateriali(),
   });
 
   const updateForm = (updates) => setFormData((prev) => ({ ...prev, ...updates }));

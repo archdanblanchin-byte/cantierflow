@@ -12,6 +12,7 @@ import NotaFormDialog from "@/components/note/NotaFormDialog";
 import NotaReviewDialog from "@/components/note/NotaReviewDialog";
 import NotaCard from "@/components/note/NotaCard";
 import NotificationsBell from "@/components/NotificationsBell";
+import { caricaTuttiMateriali } from "@/lib/inventario";
 
 export default function Note() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function Note() {
   const { data: furgoni = [] } = useQuery({ queryKey: ["furgoni"], queryFn: () => base44.entities.Furgone.list() });
   const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: () => base44.entities.User.list() });
   const { data: collaboratori = [] } = useQuery({ queryKey: ["collaboratori"], queryFn: () => base44.entities.Collaboratore.list() });
-  const { data: materialiList = [] } = useQuery({ queryKey: ["materiali-base"], queryFn: () => base44.entities.MaterialeBase.list() });
+  const { data: materialiList = [] } = useQuery({ queryKey: ["materiali-base"], queryFn: () => caricaTuttiMateriali() });
   const { data: attrezziList = [] } = useQuery({ queryKey: ["attrezzi"], queryFn: () => base44.entities.AnagrafaAttrezzo.list() });
 
   const colleghi = [

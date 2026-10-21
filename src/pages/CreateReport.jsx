@@ -12,7 +12,7 @@ import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
 import { usePermessoRapportinoManuale } from "@/hooks/usePermessoRapportinoManuale";
 import { fmtOre } from "@/lib/timbratureUtils";
 import { buildSquadraDaTimbrature, getRapportinoCantiereGiorno } from "@/lib/rapportiniFromTimbrature";
-import { sincronizzaScaricoRapportino } from "@/lib/inventario";
+import { caricaTuttiMateriali, sincronizzaScaricoRapportino } from "@/lib/inventario";
 
 const AUTOSAVE_INTERVAL = 60000; // 1 minuto
 
@@ -131,7 +131,7 @@ export default function CreateReport() {
   });
   const { data: materialiBase = [] } = useQuery({
     queryKey: ["materialiBase"],
-    queryFn: () => base44.entities.MaterialeBase.list(),
+    queryFn: () => caricaTuttiMateriali(),
   });
 
   // Mantiene aggiornata la lista email dei partecipanti (autore + collaboratori)

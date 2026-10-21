@@ -1,0 +1,106 @@
+{
+  "name": "SegnalazioneMateriale",
+  "type": "object",
+  "properties": {
+    "materiale_id": {
+      "type": "string",
+      "description": "ID del materiale segnalato"
+    },
+    "materiale_nome": {
+      "type": "string",
+      "description": "Nome del materiale (denormalizzato)"
+    },
+    "posizione_scaffale": {
+      "type": "string",
+      "description": "Posizione dello scaffale al momento della segnalazione (denormalizzata)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email di chi ha fatto la segnalazione"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome di chi ha fatto la segnalazione (denormalizzato)"
+    },
+    "testo": {
+      "type": "string",
+      "description": "Cosa manca o cosa \u00e8 stato notato (es. il prodotto non c'\u00e8 pi\u00f9, \u00e8 finito)"
+    },
+    "stato": {
+      "type": "string",
+      "enum": [
+        "aperta",
+        "gestita"
+      ],
+      "default": "aperta",
+      "description": "aperta = da gestire dal magazziniere, gestita = gi\u00e0 sistemata"
+    },
+    "gestita_da_nome": {
+      "type": "string",
+      "description": "Nome di chi ha gestito la segnalazione (denormalizzato)"
+    }
+  },
+  "required": [
+    "materiale_id",
+    "testo"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    }
+  }
+}

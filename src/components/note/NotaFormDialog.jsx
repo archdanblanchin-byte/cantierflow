@@ -12,6 +12,7 @@ import NotaLinkFields from "@/components/note/NotaLinkFields";
 import { Plus, Trash2, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { maybeMirrorNotaToFurgone } from "@/lib/notaFurgoneMirror";
+import { caricaTuttiMateriali } from "@/lib/inventario";
 import { TIPI, PRIORITA, toLocalInput, buildDestOptions } from "@/lib/notaResolve";
 
 /**
@@ -24,7 +25,7 @@ export default function NotaFormDialog({ open, onOpenChange, initial, onSaved, m
   const { data: furgoni = [] } = useQuery({ queryKey: ["furgoni"], queryFn: () => base44.entities.Furgone.list() });
   const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: () => base44.entities.User.list() });
   const { data: collaboratori = [] } = useQuery({ queryKey: ["collaboratori"], queryFn: () => base44.entities.Collaboratore.list() });
-  const { data: materialiList = [] } = useQuery({ queryKey: ["materiali-base"], queryFn: () => base44.entities.MaterialeBase.list() });
+  const { data: materialiList = [] } = useQuery({ queryKey: ["materiali-base"], queryFn: () => caricaTuttiMateriali() });
   const { data: attrezziList = [] } = useQuery({ queryKey: ["attrezzi"], queryFn: () => base44.entities.AnagrafaAttrezzo.list() });
 
   const [testo, setTesto] = useState("");

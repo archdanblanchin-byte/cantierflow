@@ -10,6 +10,18 @@
       "type": "string",
       "description": "Unit\u00e0 di misura predefinita"
     },
+    "posizione_scaffale": {
+      "type": "string",
+      "description": "Posizione dello scaffale in magazzino (numero di sezione della check list)"
+    },
+    "fornitore": {
+      "type": "string",
+      "description": "Fornitore a cui ordinare il materiale"
+    },
+    "note_checklist": {
+      "type": "string",
+      "description": "Annotazioni dalla check list: minimi non numerici (X, trattino) e casi da verificare"
+    },
     "gestito_magazzino": {
       "type": "boolean",
       "default": false,

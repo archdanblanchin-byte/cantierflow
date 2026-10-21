@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Bell, MapPin, ListTodo, AlertTriangle, Package } from "lucide-react";
+import { Bell, MapPin, ListTodo, AlertTriangle, Package, Flag } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { caricaTuttiMateriali } from "@/lib/inventario";
 
 export default function NotificationsBell() {
   const [open, setOpen] = useState(false);
@@ -35,10 +36,7 @@ export default function NotificationsBell() {
 
   const { data: materialiScorta = [] } = useQuery({
     queryKey: ["materiali-inventario"],
-    queryFn: async () => {
-      const page = await base44.entities.MaterialeBase.filter({ gestito_magazzino: true }, { limit: 200 });
-      return page?.items || [];
-    },
+    queryFn: () => caricaTuttiMateriali({ gestito_magazzino: true }),
     enabled: !!user,
     refetchInterval: 60000,
   });
@@ -51,6 +49,21 @@ export default function NotificationsBell() {
     },
     enabled: !!user,
     refetchInterval: 120000,
+  });
+
+  // Materiale segnalato mancante in magazzino: la vede il magazziniere e l'amministratore
+  const isGestore = ["admin", "responsabile_tecnico"].includes(user?.role);
+  const { data: segnalazioniMateriale = [] } = useQuery({
+    queryKey: ["segnalazioni-materiale-aperte"],
+    queryFn: async () => {
+      const page = await base44.entities.SegnalazioneMateriale.filter(
+        { stato: "aperta" },
+        { sort: "-created_date", limit: 100 }
+      );
+      return page?.items || [];
+    },
+    enabled: !!user && isGestore,
+    refetchInterval: 60000,
   });
 
   // Task / comunicazioni assegnati direttamente a me
@@ -80,7 +93,7 @@ export default function NotificationsBell() {
     !(n.letto_da || []).includes(user?.email) &&
     mieiCantieri.some((p) => p.cantiere_id === n.cantiere_id));
 
-  const count = daLeggere.length + allarmiCantiere.length + scorteBasse.length;
+  const count = daLeggere.length + allarmiCantiere.length + scorteBasse.length + segnalazioniMateriale.length;
 
   return (
     <div className="relative">
@@ -117,6 +130,29 @@ export default function NotificationsBell() {
                     </p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                       Soglia {Number(m.soglia_minima || 0)} {m.unita_misura || ""} · serve un carico
+                    </p>
+                  </button>
+                ))}
+              </>
+            )}
+
+            {segnalazioniMateriale.length > 0 && (
+              <>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-700 px-2 py-1 flex items-center gap-1">
+                  <Flag className="w-3 h-3" /> Materiale segnalato mancante · {segnalazioniMateriale.length}
+                </p>
+                {segnalazioniMateriale.slice(0, 6).map((s) => (
+                  <button
+                    key={`m-${s.id}`}
+                    onClick={() => { setOpen(false); navigate("/inventario"); }}
+                    className="w-full text-left p-2 rounded-lg hover:bg-accent bg-rose-500/10"
+                  >
+                    <p className="text-xs font-medium flex items-center gap-1.5">
+                      <Package className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                      <span>{s.materiale_nome}{s.posizione_scaffale ? ` · scaffale ${s.posizione_scaffale}` : ""}</span>
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                      {s.testo} · da {s.user_nome || s.user_email}
                     </p>
                   </button>
                 ))}

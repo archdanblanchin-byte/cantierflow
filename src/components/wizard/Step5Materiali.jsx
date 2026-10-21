@@ -1,8 +1,8 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import MaterialeCombobox from "@/components/wizard/MaterialeCombobox";
 import { Plus, Trash2, Package } from "lucide-react";
 import AudioMaterialiRecorder from "@/components/wizard/AudioMaterialiRecorder";
 import NumeroInput from "@/components/wizard/NumeroInput";
@@ -76,33 +76,22 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Materiale</Label>
-                <Select
-                  value={mat.materiale_id || "custom"}
-                  onValueChange={(val) => {
-                    if (val === "custom") {
-                      updateMateriale(i, { materiale_id: "", nome: "", unita_misura: "" });
-                    } else {
-                      const m = materialiBase.find((m) => m.id === val);
-                      updateMateriale(i, {
-                        materiale_id: val,
-                        nome: m?.nome || "",
-                        unita_misura: m?.unita_misura || "",
-                      });
-                    }
-                  }}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seleziona materiale..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {materialiBase.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.nome} ({m.unita_misura})
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="custom">✏️ Personalizzato</SelectItem>
-                  </SelectContent>
-                </Select>
+                <MaterialeCombobox
+                  materiali={materialiBase}
+                  value={mat.materiale_id}
+                  onSelect={(m) =>
+                    updateMateriale(i, { materiale_id: m.id, nome: m.nome, unita_misura: m.unita_misura || "" })
+                  }
+                />
+                {mat.materiale_id ? (
+                  <button
+                    type="button"
+                    onClick={() => updateMateriale(i, { materiale_id: "", nome: "", unita_misura: "" })}
+                    className="text-[11px] text-muted-foreground underline mt-1"
+                  >
+                    Usa un materiale personalizzato
+                  </button>
+                ) : null}
               </div>
               {!mat.materiale_id && (
                 <div>

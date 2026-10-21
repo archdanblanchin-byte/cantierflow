@@ -9,6 +9,7 @@ import { resolveNota, buildNotaPayload, buildDestOptions } from "@/lib/notaResol
 import { Loader2, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { maybeMirrorNotaToFurgone } from "@/lib/notaFurgoneMirror";
+import { caricaTuttiMateriali } from "@/lib/inventario";
 
 /**
  * Revisione di più note estratte da una singola registrazione vocale.
@@ -19,7 +20,7 @@ export default function NotaReviewDialog({ open, onOpenChange, notes = [], onSav
   const { data: furgoni = [] } = useQuery({ queryKey: ["furgoni"], queryFn: () => base44.entities.Furgone.list() });
   const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: () => base44.entities.User.list() });
   const { data: collaboratori = [] } = useQuery({ queryKey: ["collaboratori"], queryFn: () => base44.entities.Collaboratore.list() });
-  const { data: materialiList = [] } = useQuery({ queryKey: ["materiali-base"], queryFn: () => base44.entities.MaterialeBase.list() });
+  const { data: materialiList = [] } = useQuery({ queryKey: ["materiali-base"], queryFn: () => caricaTuttiMateriali() });
   const { data: attrezziList = [] } = useQuery({ queryKey: ["attrezzi"], queryFn: () => base44.entities.AnagrafaAttrezzo.list() });
 
   const destOptions = buildDestOptions(users, collaboratori);
