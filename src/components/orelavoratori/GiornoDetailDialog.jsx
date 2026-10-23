@@ -255,7 +255,7 @@ export default function GiornoDetailDialog({
         {correzioneTrasferta && <ModificaTrasfertaGiorno {...correzioneTrasferta} />}
 
         {/* Nota della giornata scritta dal dipendente */}
-        {notaGiornata?.testo && (
+        {(notaGiornata?.testo || notaGiornata?.dinamica) && (
           <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
               <NotebookPen className="w-3.5 h-3.5 text-primary" /> Note della giornata
@@ -264,7 +264,9 @@ export default function GiornoDetailDialog({
               {notaGiornata.dinamica && (
                 <p className="text-[11px] font-medium text-primary">Dinamica: {notaGiornata.dinamica}</p>
               )}
-              <p className="text-sm whitespace-pre-wrap">{notaGiornata.testo}</p>
+              {notaGiornata.testo && (
+                <p className="text-sm whitespace-pre-wrap">{notaGiornata.testo}</p>
+              )}
             </Card>
           </div>
         )}
@@ -284,7 +286,7 @@ export default function GiornoDetailDialog({
           </div>
         )}
 
-        {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && !permesso && note.length === 0 && luoghiLavoro.length === 0 && !notaGiornata?.testo && (
+        {cantieri.length === 0 && spostamenti.length === 0 && !trasferta && !permesso && note.length === 0 && luoghiLavoro.length === 0 && !notaGiornata?.testo && !notaGiornata?.dinamica && (
           <p className="text-center text-sm text-muted-foreground py-6">Nessun dato per questa giornata</p>
         )}
 
