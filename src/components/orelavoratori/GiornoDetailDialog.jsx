@@ -260,7 +260,10 @@ export default function GiornoDetailDialog({
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
               <NotebookPen className="w-3.5 h-3.5 text-primary" /> Note della giornata
             </p>
-            <Card className="p-3 border-primary/30 bg-primary/5">
+            <Card className="p-3 border-primary/30 bg-primary/5 space-y-1.5">
+              {notaGiornata.dinamica && (
+                <p className="text-[11px] font-medium text-primary">Dinamica: {notaGiornata.dinamica}</p>
+              )}
               <p className="text-sm whitespace-pre-wrap">{notaGiornata.testo}</p>
             </Card>
           </div>

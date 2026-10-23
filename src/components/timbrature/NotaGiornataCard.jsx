@@ -4,9 +4,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import DinamicaSelect from "@/components/DinamicaSelect";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { NotebookPen, Loader2, Check } from "lucide-react";
+
+const ESEMPI = [
+  "Sono andato a prendere materiale dal fornitore",
+  "La timbratura iniziale è stata fatta in ritardo, dovrebbe essere per le 7:30",
+];
 
 // Nota libera della giornata del dipendente: serve a spiegare le anomalie
 // (timbri in ritardo, materiale, visite mediche, spostamenti...) prima che
@@ -15,6 +21,7 @@ export default function NotaGiornataCard() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [testo, setTesto] = useState("");
+  const [dinamica, setDinamica] = useState("");
   const [salvando, setSalvando] = useState(false);
   const giornoKey = format(new Date(), "yyyy-MM-dd");
 
@@ -35,19 +42,21 @@ export default function NotaGiornataCard() {
     if (!isFetched || caricataRef.current) return;
     caricataRef.current = true;
     setTesto(note[0]?.testo || "");
+    setDinamica(note[0]?.dinamica || "");
   }, [isFetched, note]);
 
   const salva = async () => {
     setSalvando(true);
     try {
       if (esistente) {
-        await base44.entities.NotaGiornata.update(esistente.id, { testo });
+        await base44.entities.NotaGiornata.update(esistente.id, { testo, dinamica });
       } else {
         await base44.entities.NotaGiornata.create({
           data: giornoKey,
           user_email: user.email,
           user_nome: user.full_name || "",
           testo,
+          dinamica,
         });
       }
       queryClient.invalidateQueries({ queryKey: ["nota-giornata"] });
@@ -73,15 +82,23 @@ export default function NotaGiornataCard() {
         )}
       </div>
       <Textarea
-        rows={3}
+        rows={2}
         value={testo}
         onChange={(e) => setTesto(e.target.value)}
-        className="text-base sm:text-sm"
-        placeholder={"Es. Sono andato a prendere materiale · Ho effettuato una visita medica · Ho lavorato in un'altra zona dello stesso cantiere · La timbratura delle 12:30 è stata fatta in ritardo · Sono passato dal capannone a scaricare"}
+        className="min-h-[52px] text-base sm:text-sm"
+        placeholder="Scrivi la nota della giornata..."
       />
-      <p className="text-[11px] text-muted-foreground">
-        Scrivi qui eventuali spiegazioni sulla giornata: la nota resta collegata a questa data ed è visibile all'amministratore.
-      </p>
+      <div className="space-y-1">
+        <p className="text-[11px] font-medium text-muted-foreground">Esempi</p>
+        <ul className="space-y-0.5">
+          {ESEMPI.map((e) => (
+            <li key={e} className="text-[11px] text-muted-foreground/80 leading-snug">
+              · “{e}”
+            </li>
+          ))}
+        </ul>
+      </div>
+      <DinamicaSelect value={dinamica} onChange={setDinamica} />
       <Button onClick={salva} disabled={salvando} className="w-full gap-2">
         {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
         {esistente ? "Aggiorna nota" : "Salva nota"}

@@ -18,6 +18,10 @@
     "testo": {
       "type": "string",
       "description": "Nota libera della giornata: spiegazioni su anomalie, spostamenti, dimenticanze, visite mediche, materiale"
+    },
+    "dinamica": {
+      "type": "string",
+      "description": "Dinamica particolare della giornata scelta dalla tendina (voce dell'elenco oppure descrizione libera)"
     }
   },
   "required": [

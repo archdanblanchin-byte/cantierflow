@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import SheetSelect from "@/components/ui/sheet-select";
+import DinamicaSelect from "@/components/DinamicaSelect";
 import OreInput from "@/components/wizard/OreInput";
 import { fmtOre } from "@/lib/timbratureUtils";
 import { cn } from "@/lib/utils";
@@ -10,38 +11,6 @@ import {
   Users, ChevronDown, LogIn, LogOut, Coffee, AlertTriangle, MapPin,
   Trash2, Plus, Pencil, Clock,
 } from "lucide-react";
-
-const NOTE_OPTIONS = [
-  "Uscita anticipata dal cantiere concordata",
-  "Arrivo in cantiere posticipato concordato",
-  "Andato direttamente in cantiere senza passare dal magazzino",
-  "Andato in cantiere con il proprio veicolo dopo essere passato dal magazzino",
-  "Altro",
-];
-
-function Dinamica({ value, onChange }) {
-  const isAltro = value && !NOTE_OPTIONS.slice(0, -1).includes(value);
-  const selectValue = isAltro ? "Altro" : value || "";
-  return (
-    <div className="space-y-1">
-      <Label className="text-[11px] text-muted-foreground">Trasferta / dinamica particolare</Label>
-      <SheetSelect
-        value={selectValue}
-        onValueChange={(v) => onChange(v)}
-        options={NOTE_OPTIONS.map((o) => ({ value: o, label: o }))}
-        placeholder="Nessuna"
-      />
-      {(selectValue === "Altro" || isAltro) && (
-        <Textarea
-          value={isAltro ? value : ""}
-          onChange={(e) => onChange(e.target.value)}
-          className="mt-1 min-h-[56px] text-xs"
-          placeholder="Descrivi la dinamica..."
-        />
-      )}
-    </div>
-  );
-}
 
 // Riga compatta: CHI → QUANTE ORE → eventuale trasferta/dinamica
 export default function SquadraCompatta({ data, onChange, collaboratoriList = [], canEdit = false }) {
@@ -234,7 +203,8 @@ export default function SquadraCompatta({ data, onChange, collaboratoriList = []
                       </Button>
                     ) : null}
 
-                    <Dinamica
+                    <DinamicaSelect
+                      label="Trasferta / dinamica particolare"
                       value={coll.note_imprevisti || ""}
                       onChange={(v) => updateCollab(i, { note_imprevisti: v })}
                     />
