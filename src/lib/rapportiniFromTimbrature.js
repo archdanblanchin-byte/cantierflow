@@ -45,6 +45,26 @@ export function calcolaOrePerCantiere(timbrature) {
 
   // Le sessioni sono per persona: ognuno apre e chiude la propria.
   const emailDi = (t) => t.user_email || "anon";
+
+  // Pausa pranzo "tra cantieri": se dopo la fine pausa la persona entra in un
+  // cantiere DIVERSO, l'inizio pausa chiude il cantiere corrente e il tratto
+  // fine pausa -> ingresso successivo diventa uno spostamento. In ogni altro
+  // caso la pausa resta un semplice intervallo non lavorato (invariato).
+  const pausaChiude = new Set();
+  const pausaSposta = new Set();
+  tOrd.forEach((t, i) => {
+    if (t.tipo_evento !== "pausa_fine") return;
+    const email = emailDi(t);
+    const next = tOrd.slice(i + 1).find((x) => emailDi(x) === email && x.tipo_evento === "ingresso");
+    if (!next || !next.cantiere_id || next.cantiere_id === t.cantiere_id) return;
+    pausaSposta.add(i);
+    for (let j = i - 1; j >= 0; j--) {
+      if (emailDi(tOrd[j]) !== email) continue;
+      if (tOrd[j].tipo_evento === "pausa_inizio") { pausaChiude.add(j); break; }
+      if (tOrd[j].tipo_evento === "ingresso" || tOrd[j].tipo_evento === "uscita") break;
+    }
+  });
+
   const aperte = new Map();
   const chiudi = (email, ts) => {
     const open = aperte.get(email);
@@ -59,7 +79,7 @@ export function calcolaOrePerCantiere(timbrature) {
     aperte.delete(email);
   };
 
-  tOrd.forEach((t) => {
+  tOrd.forEach((t, idx) => {
     const email = emailDi(t);
     const c = t.cantiere_id ? ensure(t.cantiere_id, t.cantiere_nome) : null;
     if (t.tipo_evento === "ingresso") {
@@ -74,8 +94,12 @@ export function calcolaOrePerCantiere(timbrature) {
       });
       if (c && !c.ingresso) c.ingresso = t;
     } else if (t.tipo_evento === "pausa_inizio") {
-      const open = aperte.get(email);
-      if (open) open.pausaIn = new Date(t.data_ora);
+      if (pausaChiude.has(idx)) {
+        chiudi(email, new Date(t.data_ora));
+      } else {
+        const open = aperte.get(email);
+        if (open) open.pausaIn = new Date(t.data_ora);
+      }
     } else if (t.tipo_evento === "pausa_fine") {
       const open = aperte.get(email);
       if (open && open.pausaIn) {
@@ -94,7 +118,8 @@ export function calcolaOrePerCantiere(timbrature) {
   // di partenza e di arrivo (con catena A→B→C il cantiere centrale accumula
   // metà di entrambi).
   tOrd.forEach((t, idx) => {
-    if (t.tipo_evento !== "uscita" && t.tipo_evento !== "spostamento") return;
+    const partenza = t.tipo_evento === "uscita" || t.tipo_evento === "spostamento" || pausaSposta.has(idx);
+    if (!partenza) return;
     if (!t.cantiere_id) return;
     const next = tOrd
       .slice(idx + 1)
@@ -138,6 +163,26 @@ export function classificaSpostamentiGiornata(timbrature) {
 export function buildSquadraDaTimbrature(timbrature, collaboratoriList = []) {
   const tOrd = sortTimbri(timbrature);
   const perUser = new Map();
+
+  // Pausa pranzo "tra cantieri": se dopo la fine pausa la persona entra in un
+  // cantiere DIVERSO, l'inizio pausa chiude il cantiere corrente e il tratto
+  // fine pausa -> ingresso successivo diventa uno spostamento. Negli altri casi
+  // la pausa resta un intervallo non lavorato (comportamento invariato).
+  const emailDi = (t) => t.user_email || "anon";
+  const pausaChiude = new Set();
+  const pausaSposta = new Set();
+  tOrd.forEach((t, i) => {
+    if (t.tipo_evento !== "pausa_fine") return;
+    const email = emailDi(t);
+    const next = tOrd.slice(i + 1).find((x) => emailDi(x) === email && x.tipo_evento === "ingresso");
+    if (!next || !next.cantiere_id || next.cantiere_id === t.cantiere_id) return;
+    pausaSposta.add(i);
+    for (let j = i - 1; j >= 0; j--) {
+      if (emailDi(tOrd[j]) !== email) continue;
+      if (tOrd[j].tipo_evento === "pausa_inizio") { pausaChiude.add(j); break; }
+      if (tOrd[j].tipo_evento === "ingresso" || tOrd[j].tipo_evento === "uscita") break;
+    }
+  });
   const getU = (email, nome) => {
     if (!perUser.has(email)) {
       perUser.set(email, {
@@ -174,14 +219,31 @@ export function buildSquadraDaTimbrature(timbrature, collaboratoriList = []) {
       if (t.cantiere_id && !u.cantieri.includes(t.cantiere_id)) u.cantieri.push(t.cantiere_id);
     } else if (t.tipo_evento === "pausa_inizio") {
       const s = u.sessions[u.sessions.length - 1];
-      if (s) s.pausaIn = new Date(t.data_ora);
+      if (pausaChiude.has(idx)) {
+        if (s && !s.end) s.end = new Date(t.data_ora);
+        u.pausaInAttesa = new Date(t.data_ora);
+      } else if (s) {
+        s.pausaIn = new Date(t.data_ora);
+      }
     } else if (t.tipo_evento === "pausa_fine") {
-      const s = u.sessions[u.sessions.length - 1];
-      if (s && s.pausaIn) {
-        const d = new Date(t.data_ora) - s.pausaIn;
-        s.pausaMs += d;
-        u.pausaMs += d;
-        s.pausaIn = null;
+      if (u.pausaInAttesa) {
+        u.pausaMs += new Date(t.data_ora) - u.pausaInAttesa;
+        u.pausaInAttesa = null;
+      } else {
+        const s = u.sessions[u.sessions.length - 1];
+        if (s && s.pausaIn) {
+          const d = new Date(t.data_ora) - s.pausaIn;
+          s.pausaMs += d;
+          u.pausaMs += d;
+          s.pausaIn = null;
+        }
+      }
+      if (pausaSposta.has(idx)) {
+        const next = tOrd.slice(idx + 1).find((x) => x.user_email === t.user_email && x.tipo_evento === "ingresso");
+        if (next) {
+          const ms = new Date(next.data_ora) - new Date(t.data_ora);
+          if (ms > 0) u.spostamentoMs += ms;
+        }
       }
     } else if (t.tipo_evento === "uscita" || t.tipo_evento === "spostamento") {
       const s = u.sessions[u.sessions.length - 1];
@@ -377,18 +439,43 @@ export function minutiScopertiGiornata(timbrature) {
   if (!ingressi.length || !uscite.length) return 0;
 
   const intervallo = new Date(uscite[uscite.length - 1].data_ora) - new Date(ingressi[0].data_ora);
+  const emailDi = (t) => t.user_email || "anon";
+
+  // Pausa "tra cantieri": l'inizio pausa chiude il cantiere e il tratto
+  // fine pausa -> ingresso successivo è spostamento (non tempo scoperto).
+  const pausaChiude = new Set();
+  tOrd.forEach((t, i) => {
+    if (t.tipo_evento !== "pausa_fine") return;
+    const email = emailDi(t);
+    const next = tOrd.slice(i + 1).find((x) => emailDi(x) === email && x.tipo_evento === "ingresso");
+    if (!next || !next.cantiere_id || next.cantiere_id === t.cantiere_id) return;
+    for (let j = i - 1; j >= 0; j--) {
+      if (emailDi(tOrd[j]) !== email) continue;
+      if (tOrd[j].tipo_evento === "pausa_inizio") { pausaChiude.add(j); break; }
+      if (tOrd[j].tipo_evento === "ingresso" || tOrd[j].tipo_evento === "uscita") break;
+    }
+  });
+
   const aperte = new Map();
+  const pauseFuoriSessione = new Map();
   let lavorato = 0;
   let pausa = 0;
 
-  tOrd.forEach((t) => {
-    const e = t.user_email || "anon";
+  tOrd.forEach((t, idx) => {
+    const e = emailDi(t);
     if (t.tipo_evento === "ingresso") {
       aperte.set(e, { start: new Date(t.data_ora), pausaMs: 0, pausaIn: null });
     } else if (t.tipo_evento === "pausa_inizio") {
       const s = aperte.get(e);
-      if (s) s.pausaIn = new Date(t.data_ora);
+      if (pausaChiude.has(idx)) {
+        if (s) { lavorato += Math.max(0, new Date(t.data_ora) - s.start - s.pausaMs); aperte.delete(e); }
+        pauseFuoriSessione.set(e, new Date(t.data_ora));
+      } else if (s) {
+        s.pausaIn = new Date(t.data_ora);
+      }
     } else if (t.tipo_evento === "pausa_fine") {
+      const p = pauseFuoriSessione.get(e);
+      if (p) { pausa += new Date(t.data_ora) - p; pauseFuoriSessione.delete(e); }
       const s = aperte.get(e);
       if (s && s.pausaIn) { s.pausaMs += new Date(t.data_ora) - s.pausaIn; s.pausaIn = null; }
     } else if (t.tipo_evento === "uscita" || t.tipo_evento === "spostamento") {

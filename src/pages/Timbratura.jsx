@@ -134,7 +134,7 @@ export default function Timbratura() {
   const spostamentiOggi = (() => {
     const out = [];
     timbratureOrd.forEach((t, i) => {
-      if (t.tipo_evento !== "uscita") return;
+      if (t.tipo_evento !== "uscita" && t.tipo_evento !== "pausa_fine") return;
       const next = timbratureOrd.slice(i + 1).find((x) => x.tipo_evento === "ingresso");
       if (!next || next.cantiere_id === t.cantiere_id) return;
       const km = kmTraCantieri(
