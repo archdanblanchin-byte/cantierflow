@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
-  ChevronDown, ChevronRight, Clock, Navigation, AlertTriangle, StickyNote, Plus, ListPlus, NotebookPen,
+  ChevronDown, ChevronRight, Clock, Navigation, AlertTriangle, StickyNote, Plus, ListPlus, NotebookPen, Sparkles,
 } from "lucide-react";
 import { fmtOre } from "@/lib/timbratureUtils";
 import { calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
@@ -74,10 +74,16 @@ export default function GiornoPersoneList({
                       {p.note} note
                     </Badge>
                   )}
-                  {haNota && (
+                  {nota?.testo && (
                     <Badge className="text-[10px] gap-1 bg-primary/10 text-primary border-primary/20 font-semibold">
                       <NotebookPen className="w-2.5 h-2.5" />
                       Nota giornata
+                    </Badge>
+                  )}
+                  {nota?.dinamica && (
+                    <Badge className="text-[10px] gap-1 bg-violet-100 text-violet-800 border-violet-300 font-semibold max-w-[240px]">
+                      <Sparkles className="w-2.5 h-2.5 shrink-0" />
+                      <span className="truncate">{nota.dinamica}</span>
                     </Badge>
                   )}
                   {p.fuoriPosto > 0 && (
