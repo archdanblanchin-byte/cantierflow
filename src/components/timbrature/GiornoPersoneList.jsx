@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
-  ChevronDown, ChevronRight, Clock, Navigation, AlertTriangle, StickyNote, Plus, ListPlus,
+  ChevronDown, ChevronRight, Clock, Navigation, AlertTriangle, StickyNote, Plus, ListPlus, NotebookPen,
 } from "lucide-react";
 import { fmtOre } from "@/lib/timbratureUtils";
 import { calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
@@ -13,6 +13,7 @@ import TimbraturaTimeline from "@/components/timbrature/TimbraturaTimeline";
 // elimina oppure aggiunge un singolo timbro o una sequenza di timbri.
 export default function GiornoPersoneList({
   timbrature = [], isAdmin = false, onEdit, onDelete, onAdd, onAddSequenza,
+  giornoKey = null, noteGiornata = {},
 }) {
   const [aperti, setAperti] = useState({});
 
@@ -42,6 +43,9 @@ export default function GiornoPersoneList({
       {persone.map((p) => {
         const aperto = !!aperti[p.email];
         const email = p.email === "—" ? "" : p.email;
+        // Nota testuale della giornata scritta dal dipendente in timbratura
+        const nota = giornoKey ? noteGiornata[`${(p.email || "").toLowerCase()}|${giornoKey}`] : null;
+        const haNota = !!(nota && (nota.testo || nota.dinamica));
         return (
           <div key={p.email} className="rounded-lg border border-border bg-card overflow-hidden">
             <button
@@ -70,6 +74,12 @@ export default function GiornoPersoneList({
                       {p.note} note
                     </Badge>
                   )}
+                  {haNota && (
+                    <Badge className="text-[10px] gap-1 bg-primary/10 text-primary border-primary/20 font-semibold">
+                      <NotebookPen className="w-2.5 h-2.5" />
+                      Nota giornata
+                    </Badge>
+                  )}
                   {p.fuoriPosto > 0 && (
                     <Badge className="text-[10px] gap-1 bg-amber-100 text-amber-800 border-amber-300 font-semibold">
                       <AlertTriangle className="w-2.5 h-2.5" />
@@ -87,6 +97,17 @@ export default function GiornoPersoneList({
 
             {aperto && (
               <div className="px-2.5 pb-2.5 pt-1 space-y-3 border-t border-border">
+                {haNota && (
+                  <div className="rounded-md border border-primary/30 bg-primary/5 p-2.5 space-y-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-primary flex items-center gap-1">
+                      <NotebookPen className="w-3 h-3" /> Nota della giornata
+                    </p>
+                    {nota.dinamica && (
+                      <p className="text-[11px] font-medium text-primary">Dinamica: {nota.dinamica}</p>
+                    )}
+                    {nota.testo && <p className="text-sm whitespace-pre-wrap">{nota.testo}</p>}
+                  </div>
+                )}
                 {isAdmin && (
                   <div className="flex items-center gap-2 pt-1">
                     <button

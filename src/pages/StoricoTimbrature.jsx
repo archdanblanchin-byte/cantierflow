@@ -188,6 +188,25 @@ export default function StoricoTimbrature({ mode = "own" }) {
     queryFn: () => base44.entities.Cantiere.list(),
   });
 
+  // Note testuali che i dipendenti scrivono in timbratura (NotaGiornata):
+  // l'amministratore le vede accanto alle timbrature di ogni persona.
+  const giorniKeys = useMemo(
+    () => [...new Set((timbrature || []).map((t) => format(new Date(t.data_ora), "yyyy-MM-dd")))],
+    [timbrature]
+  );
+  const { data: noteGiornata = [] } = useQuery({
+    queryKey: ["note-giornata-admin", giorniKeys],
+    queryFn: () => base44.entities.NotaGiornata.filter({ data: { $in: giorniKeys } }),
+    enabled: canSeeAll && giorniKeys.length > 0,
+  });
+  const notePerPersona = useMemo(() => {
+    const m = {};
+    noteGiornata.forEach((n) => {
+      m[`${(n.user_email || "").toLowerCase()}|${n.data}`] = n;
+    });
+    return m;
+  }, [noteGiornata]);
+
   // Raggruppa per giorno (chiave locale yyyy-MM-dd)
   const giorni = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -382,6 +401,8 @@ export default function StoricoTimbrature({ mode = "own" }) {
                     <GiornoPersoneList
                       timbrature={giorno.list}
                       isAdmin={isAdmin}
+                      giornoKey={giorno.key}
+                      noteGiornata={notePerPersona}
                       onEdit={(t) => { setEditTarget(t); setEditOpen(true); }}
                       onDelete={(t) => setDeleteTarget(t)}
                       onAdd={(email) => { setAddPrefill({ email, data: giorno.key }); setAddOpen(true); }}
