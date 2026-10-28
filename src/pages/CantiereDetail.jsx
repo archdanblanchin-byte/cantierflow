@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, MapPin, Pencil, FileText, Shield, Truck, Calculator,
-  Pause, Play, CheckCircle2, Trash2, Loader2,
+  Pause, Play, CheckCircle2, Trash2, Loader2, AlertTriangle,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -18,6 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CantiereComunicazioni from "@/components/cantiere/CantiereComunicazioni";
+import GpsMancanteBadge, { mancaGps } from "@/components/cantiere/GpsMancanteBadge";
 import CantiereFotoSection from "@/components/cantiere/CantiereFotoSection";
 import ReportPDFButton, { ReportPDFContent, captureToPdfFile } from "@/components/ReportPDF";
 import { format } from "date-fns";
@@ -236,6 +237,7 @@ export default function CantiereDetail() {
             <Badge className={`text-[10px] uppercase ${STATO_BADGE[statoOf(cantiere)].className}`}>
               {STATO_BADGE[statoOf(cantiere)].label}
             </Badge>
+            {canManage && <GpsMancanteBadge cantiere={cantiere} />}
             {cantiere.anno && <Badge variant="outline" className="text-[10px]">{cantiere.anno}</Badge>}
             {cantiere.codice && <span className="text-xs font-mono text-muted-foreground">{cantiere.codice}</span>}
             {cantiere.data_chiusura && <span className="text-xs text-muted-foreground">Chiuso il {format(new Date(cantiere.data_chiusura), "d MMM yyyy", { locale: it })}</span>}
@@ -246,6 +248,24 @@ export default function CantiereDetail() {
               <MapPin className="w-4 h-4" />
               {cantiere.indirizzo}{cantiere.indirizzo && cantiere.citta ? ", " : ""}{cantiere.citta}
             </a>
+          )}
+
+          {/* Avviso: cantiere senza geolocalizzazione (compito di admin/responsabile) */}
+          {canManage && mancaGps(cantiere) && (
+            <div className="rounded-lg border border-red-300 bg-red-50 p-3">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-red-700">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Geolocalizzazione mancante
+              </p>
+              <p className="mt-0.5 text-[11px] leading-snug text-red-700/90">
+                Senza coordinate non è possibile verificare se le timbrature sono dentro l'area del cantiere.
+              </p>
+              <Link to={`/cantieri/${id}/modifica`}>
+                <Button size="sm" variant="outline" className="mt-2 gap-1.5 text-xs border-red-300 text-red-700 hover:bg-red-100">
+                  <MapPin className="w-3.5 h-3.5" /> Aggiungi geolocalizzazione
+                </Button>
+              </Link>
+            </div>
           )}
 
           {/* Gestione stato (solo admin/responsabile) */}

@@ -16,6 +16,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import CantiereListPdfButton from "@/components/cantiere/CantiereListPdfButton";
+import GpsMancanteBadge from "@/components/cantiere/GpsMancanteBadge";
 import CantierePdfGenerator from "@/components/cantiere/CantierePdfGenerator";
 
 const STATO_TABS = [
@@ -219,6 +220,7 @@ export default function Cantieri() {
                           >
                             {badge.label}
                           </Badge>
+                          {canManage && <GpsMancanteBadge cantiere={c} />}
                           {c.codice && <span className="text-[10px] text-muted-foreground font-mono">{c.codice}</span>}
                         </div>
                         <p className="font-semibold truncate">{c.nome}</p>

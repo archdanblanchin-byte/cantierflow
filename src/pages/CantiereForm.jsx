@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Save, Crosshair, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Save, Crosshair, Loader2, AlertTriangle } from "lucide-react";
 import { getPosizione } from "@/lib/timbratureUtils";
+import { useAuth } from "@/lib/AuthContext";
+import { mancaGps } from "@/components/cantiere/GpsMancanteBadge";
 import FotoUpload from "@/components/cantiere/FotoUpload";
 import DocumentiUpload from "@/components/cantiere/DocumentiUpload";
 import CantiereMappa from "@/components/cantiere/CantiereMappa";
@@ -48,6 +50,11 @@ export default function CantiereForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const ruolo = user?.role === "user" ? "collaboratore" : user?.role;
+  // Solo amministrazione e responsabili tecnici possono salvare un cantiere
+  // senza coordinate: gli altri hanno l'obbligo di geolocalizzarlo.
+  const canManage = ruolo === "admin" || ruolo === "responsabile_tecnico";
   const isEdit = !!id;
 
   const [form, setForm] = useState({ ...EMPTY, codice: generateCodice() });
@@ -69,6 +76,10 @@ export default function CantiereForm() {
 
   const handleSave = async () => {
     if (!form.nome) { toast.error("Inserisci il nome del cantiere"); return; }
+    if (!canManage && mancaGps(form)) {
+      toast.error("Rileva la geolocalizzazione del cantiere: serve per controllare le timbrature");
+      return;
+    }
     setSaving(true);
     // ore_stimate è un campo numerico: se il campo è vuoto ("" o null) va
     // inviato null, altrimenti l'API rifiuta la stringa vuota.
@@ -204,6 +215,19 @@ export default function CantiereForm() {
 
           {/* Coordinate GPS */}
           <div className="space-y-2">
+            {mancaGps(form) && (
+              <div className={`rounded-lg border px-3 py-2 ${canManage ? "border-amber-300 bg-amber-50" : "border-red-300 bg-red-50"}`}>
+                <p className={`flex items-center gap-1.5 text-xs font-semibold ${canManage ? "text-amber-800" : "text-red-700"}`}>
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {canManage ? "Questo cantiere non ha la geolocalizzazione" : "Geolocalizzazione obbligatoria"}
+                </p>
+                <p className={`mt-0.5 text-[11px] leading-snug ${canManage ? "text-amber-800/80" : "text-red-700/90"}`}>
+                  {canManage
+                    ? "Aggiungila qui: serve a capire se le timbrature dei ragazzi sono dentro l'area del cantiere."
+                    : "Rileva la posizione mentre sei sul cantiere oppure incolla le coordinate: senza geolocalizzazione non puoi salvare il cantiere."}
+                </p>
+              </div>
+            )}
             <Label className="text-xs text-muted-foreground">Coordinate GPS (incolla da Google Maps)</Label>
             <Input
               value={form.latitudine != null && form.longitudine != null ? `${form.latitudine}, ${form.longitudine}` : ""}
