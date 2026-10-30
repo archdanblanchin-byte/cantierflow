@@ -2,6 +2,11 @@ import { startOfMonth, endOfMonth, eachDayOfInterval, format } from "date-fns";
 import { arrotondaOre, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
 import { oreGiornoDaTimbrature, calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
 
+// Ore lavorative previste in una giornata ordinaria.
+// Giornate con permesso parziale: la soglia scende delle ore di permesso.
+// Giornate di ferie intere: nessuna segnalazione di ore mancanti.
+export const ORE_STANDARD_GIORNALIERE = 8;
+
 // Ore in forma compatta per le celle del foglio: "8h", "7h45"
 export function fmtOreBreve(ore) {
   if (!ore || ore <= 0) return "";
@@ -137,6 +142,7 @@ export function buildRiepilogoMensile({
     // 5) sintesi della giornata
     const nomiCantieri = new Set();
     let totOre = 0;
+    let totStraordinari = 0;
     let totSpost = 0;
     let totKm = 0;
     let nTrasferte = 0;
@@ -170,7 +176,23 @@ export function buildRiepilogoMensile({
       cella.cantiere = cella.cantieri[0] || null;
       cella.cantieri.forEach((n) => nomiCantieri.add(n));
 
+      // Straordinario / deficit rispetto alle ore previste della giornata.
+      // Solo se c'è stato lavoro effettivo: giornate senza dati non generano
+      // segnalazione di ore mancanti.
+      cella.straordinario = 0;
+      cella.deficit = 0;
+      if (cella.ore > 0 && cella.permesso !== "ferie") {
+        const perm = cella.permesso === "permesso" ? (cella.permessoOre || 0) : 0;
+        const soglia = ORE_STANDARD_GIORNALIERE - perm;
+        if (cella.ore > soglia) {
+          cella.straordinario = arrotondaOre(cella.ore - soglia);
+        } else if (cella.ore < soglia) {
+          cella.deficit = arrotondaOre(soglia - cella.ore);
+        }
+      }
+
       totOre += cella.ore;
+      totStraordinari += cella.straordinario;
       totSpost += cella.oreSpost;
       if (cella.ore > 0) giorniLavorati++;
       if (cella.permesso === "permesso" && cella.permessoOre) totPermessoOre += cella.permessoOre;
@@ -189,6 +211,7 @@ export function buildRiepilogoMensile({
       celle,
       cantieriUsati: [...nomiCantieri].sort((a, b) => a.localeCompare(b, "it")),
       totOre: arrotondaOre(totOre),
+      totStraordinari: arrotondaOre(totStraordinari),
       totSpost: arrotondaOre(totSpost),
       totKm: Math.round(totKm * 10) / 10,
       nTrasferte,

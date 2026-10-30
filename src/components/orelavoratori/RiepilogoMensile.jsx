@@ -13,6 +13,9 @@ const FINE_SETTIMANA = [0, 6];
 const COLORE_SEDE = "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200";
 const COLORE_FERIE = "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200";
 const COLORE_PERMESSO = "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-200";
+// Sotto le ore previste (rosso) / sopra (verde, straordinario)
+const COLORE_DEFICIT = "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200";
+const COLORE_EXTRA = "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200";
 // Sigla mostrata nella cella: F = ferie, P = permesso
 const SIGLA_PERMESSO = { ferie: "F", permesso: "P" };
 // Sigla con le ore lette dal titolo del calendario: "P 4h", "F", ...
@@ -39,6 +42,7 @@ export default function RiepilogoMensile({
 }) {
   const [cantiereAperto, setCantiereAperto] = useState(null);
   const totaleSquadra = righe.reduce((s, r) => s + (r.totOre || 0), 0);
+  const totaleStraordinari = righe.reduce((s, r) => s + (r.totStraordinari || 0), 0);
   const cantieri = cantieriDelMese({ righe });
 
   const dettaglioCantiere = cantiereAperto
@@ -113,6 +117,7 @@ export default function RiepilogoMensile({
                 );
               })}
               <th className="sticky top-0 z-20 w-16 border-b border-r bg-primary/10 px-1 py-1 text-center">Tot ore</th>
+              <th className="sticky top-0 z-20 w-14 border-b border-r bg-emerald-50 dark:bg-emerald-900/30 px-1 py-1 text-center">Straord.</th>
               <th className="sticky top-0 z-20 w-16 border-b border-r bg-muted px-1 py-1 text-center">Spost.</th>
               <th className="sticky top-0 z-20 w-16 border-b bg-muted px-1 py-1 text-center">Trasf.</th>
             </tr>
@@ -134,8 +139,15 @@ export default function RiepilogoMensile({
                   const permesso = cella?.permesso || null;
                   const haLavoro = !!cella && ((cella.ore || 0) > 0 || !!cella.trasferta);
                   const vuota = !haLavoro && !permesso;
+                  // Priorità visiva: deficit (rosso) e straordinario (verde) prevalgono
+                  // sul colore della fascia di trasferta, così si vede subito chi non
+                  // ha fatto le 8 ore o chi ne ha fatte di extra.
                   const colore = !haLavoro && permesso
                     ? (permesso === "ferie" ? COLORE_FERIE : COLORE_PERMESSO)
+                    : cella?.deficit > 0
+                    ? COLORE_DEFICIT
+                    : cella?.straordinario > 0
+                    ? COLORE_EXTRA
                     : cella?.inSede
                     ? COLORE_SEDE
                     : cfg
@@ -179,6 +191,16 @@ export default function RiepilogoMensile({
                         ) : (
                           <>
                             <span className="text-[10px] font-bold">{fmtOreBreve(cella.ore) || "—"}</span>
+                            {cella.straordinario > 0 && (
+                              <span className="text-[8px] font-bold text-emerald-700 dark:text-emerald-300">
+                                +{fmtOreBreve(cella.straordinario)}
+                              </span>
+                            )}
+                            {cella.deficit > 0 && (
+                              <span className="text-[8px] font-bold text-red-700 dark:text-red-300">
+                                -{fmtOreBreve(cella.deficit)}
+                              </span>
+                            )}
                             {cella.inSede && <span className="text-[8px] font-semibold opacity-80">sede</span>}
                             {!cella.inSede && cfg && (
                               <span className="text-[8px] font-semibold opacity-80">
@@ -202,6 +224,9 @@ export default function RiepilogoMensile({
                 })}
 
                 <td className="border-b border-r text-center font-bold bg-primary/5">{fmtOreBreve(r.totOre) || "—"}</td>
+                <td className="border-b border-r text-center font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50/60 dark:bg-emerald-900/20">
+                  {r.totStraordinari > 0 ? `+${fmtOreBreve(r.totStraordinari)}` : "—"}
+                </td>
                 <td className="border-b border-r text-center text-orange-700 dark:text-orange-400">
                   {fmtOreBreve(r.totSpost) || "—"}
                 </td>
@@ -251,6 +276,9 @@ export default function RiepilogoMensile({
               <td className="sticky bottom-0 z-20 border-r px-1 py-1 text-center font-bold bg-primary/20">
                 {fmtOreBreve(totaleSquadra) || "—"}
               </td>
+              <td className="sticky bottom-0 z-20 border-r px-1 py-1 text-center font-bold bg-emerald-100/70 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                {totaleStraordinari > 0 ? `+${fmtOreBreve(totaleStraordinari)}` : "—"}
+              </td>
               <td className="sticky bottom-0 z-20 border-r bg-muted" />
               <td className="sticky bottom-0 z-20 bg-muted" />
             </tr>
@@ -260,6 +288,14 @@ export default function RiepilogoMensile({
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
         <span className="font-semibold uppercase tracking-wider text-[10px]">Legenda</span>
+        <span className="inline-flex items-center gap-1">
+          <Badge variant="outline" className={`text-[9px] px-1 py-0 ${COLORE_DEFICIT}`}>7h30</Badge>
+          ore sotto le 8 previste
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Badge variant="outline" className={`text-[9px] px-1 py-0 ${COLORE_EXTRA}`}>+0h30</Badge>
+          straordinario del giorno
+        </span>
         <span className="inline-flex items-center gap-1">
           <Badge variant="outline" className={`text-[9px] px-1 py-0 ${COLORE_SEDE}`}>sede</Badge>
           nessuna trasferta

@@ -30,6 +30,7 @@ export function esportaRiepilogoMensile({ giorni, righe }, mese) {
       "Dipendente",
       ...giorni.map((d) => format(d, "d")),
       "Tot ore",
+      "Straordinari",
       "Spostamenti",
       "Trasferte (gg)",
       "Km trasferta",
@@ -46,10 +47,18 @@ export function esportaRiepilogoMensile({ giorni, righe }, mese) {
         if (!c) return "";
         const sigla = c.permesso ? (c.permesso === "ferie" ? "F" : "P") : "";
         const perm = sigla ? `${sigla}${c.permessoOre ? ` ${fmtOrePermesso(c.permessoOre)}` : ""}` : "";
-        if ((c.ore || 0) > 0) return perm ? `${fmtOreBreve(c.ore)} + ${perm}` : c.ore;
+        // Marca le giornate: +extra (verde) o -deficit (rosso) come testo
+        let marca = "";
+        if (c.straordinario > 0) marca = ` +${fmtOreBreve(c.straordinario)}`;
+        else if (c.deficit > 0) marca = ` -${fmtOreBreve(c.deficit)}`;
+        if ((c.ore || 0) > 0) {
+          const base = perm ? `${fmtOreBreve(c.ore)} + ${perm}` : c.ore;
+          return `${base}${marca}`;
+        }
         return perm;
       }),
       r.totOre || 0,
+      r.totStraordinari || 0,
       r.totSpost || 0,
       r.nTrasferte || 0,
       r.totKm || 0,
@@ -65,6 +74,7 @@ export function esportaRiepilogoMensile({ giorni, righe }, mese) {
       return valoreOre(righe.reduce((s, r) => s + (r.celle[k]?.ore || 0), 0));
     }),
     arrotondaOre(righe.reduce((s, r) => s + r.totOre, 0)),
+    arrotondaOre(righe.reduce((s, r) => s + (r.totStraordinari || 0), 0)),
     "",
     "",
     "",
@@ -74,7 +84,7 @@ export function esportaRiepilogoMensile({ giorni, righe }, mese) {
 
   const wb = creaFoglio(
     aoa,
-    [24, ...giorni.map(() => 9), 9, 12, 13, 13, 12, 10],
+    [24, ...giorni.map(() => 10), 9, 11, 12, 13, 13, 12, 10],
     "Riepilogo"
   );
   salva(wb, `Riepilogo ore ${nomeMese(mese)}`);
