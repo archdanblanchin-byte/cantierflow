@@ -209,27 +209,23 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
           <Wrench className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Lavorazioni</h2>
+          <h2 className="text-lg font-semibold">Aggiungere lavorazione</h2>
           <p className="text-sm text-muted-foreground">
-            Registra tutte le lavorazioni della giornata. Se una è extra (concordata fuori preventivo), attiva il pulsante «Extra» in alto a destra.
+            Scegli come aggiungere le lavorazioni della giornata. Se una è extra (concordata fuori preventivo), attiva il pulsante «Extra» in alto a destra della riga.
           </p>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <AudioLavorazioniRecorder mode="normali" tipiLavorazione={tipiLavorazione} onResult={handleAudioResult} />
-        <span className="text-xs text-muted-foreground">
-          Parla: l'IA aggiunge le voci e compila le ore che dici. Puoi rivederle e modificarle dopo.
-        </span>
-      </div>
-
-      {items.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-border p-6 text-center text-muted-foreground">
-          <Wrench className="w-6 h-6 mx-auto mb-1.5 opacity-40" />
-          <p className="text-sm">Nessuna lavorazione</p>
-          <p className="text-xs mt-0.5">Aggiungi le attività svolte oggi</p>
+      {/* Controlli di inserimento — sempre in alto, sopra l'elenco */}
+      <div className="grid grid-cols-2 gap-2 sticky top-0 z-10 -mx-1 px-1 py-1 bg-background/95 backdrop-blur">
+        <Button variant="outline" onClick={addLavorazione} className="gap-2 h-11">
+          <Plus className="w-4 h-4" />
+          Manualmente
+        </Button>
+        <div className="min-w-0">
+          <AudioLavorazioniRecorder mode="normali" tipiLavorazione={tipiLavorazione} onResult={handleAudioResult} />
         </div>
-      )}
+      </div>
 
       <div className="space-y-3">
         {items.map((lav, i) => {
@@ -387,11 +383,6 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
             </div>
           );
         })}
-
-        <Button variant="outline" onClick={addLavorazione} className="gap-2 w-full border-dashed">
-          <Plus className="w-4 h-4" />
-          Aggiungi Lavorazione
-        </Button>
 
         <NuovaLavorazioneDialog
           open={nuovaLavIndex !== null}
