@@ -70,7 +70,7 @@ const STILE = {
 // riepilogo della trasferta (sede↔cantiere, in km e fuori dalle ore lavorate),
 // distinta dagli spostamenti (tra cantieri, in ore). Il lavoro svolto in sede
 // — anche per un altro cantiere — è marcato esplicitamente.
-export default function SequenzaGiornata({ timbrature }) {
+export default function SequenzaGiornata({ timbrature, mostraTrasferta = false }) {
   const tOrd = (timbrature || [])
     .slice()
     .sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
@@ -133,8 +133,10 @@ export default function SequenzaGiornata({ timbrature }) {
         </div>
       </div>
 
-      {/* Riepilogo trasferta: sede↔cantiere, in km, NON conteggiata nelle ore. */}
-      {trasferta && (
+      {/* Riepilogo trasferta: sede↔cantiere, in km, NON conteggiata nelle ore.
+          Visibile solo agli amministratori: l'operatore vede la propria sequenza
+          di lavoro, non il calcolo della trasferta. */}
+      {mostraTrasferta && trasferta && (
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5 space-y-1.5">
           <div className="flex items-center gap-1.5 text-primary">
             <Route className="w-3.5 h-3.5 shrink-0" />
@@ -218,12 +220,14 @@ export default function SequenzaGiornata({ timbrature }) {
         })}
       </div>
 
-      <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground bg-muted/40 rounded-md p-2">
-        <Info className="w-3 h-3 mt-0.5 shrink-0" />
-        <span>
-          <b>Trasferta</b> = sede↔primo/ultimo cantiere (km, fuori dalle ore). <b>Spostamento</b> = tra un cantiere e l'altro (ore, diviso tra i cantieri). <b>Sede</b> = lavoro timbrato in capannone, anche per un altro cantiere.
-        </span>
-      </div>
+      {mostraTrasferta && (
+        <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground bg-muted/40 rounded-md p-2">
+          <Info className="w-3 h-3 mt-0.5 shrink-0" />
+          <span>
+            <b>Trasferta</b> = sede↔primo/ultimo cantiere (km, fuori dalle ore). <b>Spostamento</b> = tra un cantiere e l'altro (ore, diviso tra i cantieri). <b>Sede</b> = lavoro timbrato in capannone, anche per un altro cantiere.
+          </span>
+        </div>
+      )}
     </Card>
   );
 }

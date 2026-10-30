@@ -72,7 +72,7 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, canEdi
         </div>
       </Card>
 
-      <SequenzaGiornata timbrature={timbratureOrd} />
+      <SequenzaGiornata timbrature={timbratureOrd} mostraTrasferta={isAdmin || canEdit} />
 
       {spostamenti.length > 0 && (
         <Card className="p-4 space-y-2 border-orange-200 bg-orange-50/30">
