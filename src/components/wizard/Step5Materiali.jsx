@@ -58,16 +58,35 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-2">
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
           <Package className="w-5 h-5 text-primary" />
         </div>
-        <div className="flex-1">
-          <h2 className="text-lg font-semibold">Materiali</h2>
-          <p className="text-sm text-muted-foreground">Materiali utilizzati durante la giornata</p>
+        <div>
+          <h2 className="text-lg font-semibold">Aggiungi materiale</h2>
+          <p className="text-sm text-muted-foreground">Scegli come aggiungere i materiali utilizzati durante la giornata.</p>
         </div>
+      </div>
+
+      {/* Controlli di inserimento — uno dopo l'altro, sopra l'elenco */}
+      <div className="flex flex-col gap-2 sticky top-0 z-10 -mx-1 px-1 py-1 bg-background/95 backdrop-blur">
+        <Button variant="outline" onClick={addMateriale} className="gap-2 h-11 w-full justify-center">
+          <Plus className="w-4 h-4" />
+          Manualmente
+        </Button>
         <AudioMaterialiRecorder materialiBase={materialiBase} onResult={handleAudioResult} />
+      </div>
+
+      {/* Istruzioni di compilazione */}
+      <div className="rounded-xl border border-border bg-muted/30 p-3 text-[12px] text-muted-foreground space-y-1.5">
+        <p className="font-semibold text-foreground">Cosa segnare per ogni materiale</p>
+        <ul className="list-disc pl-4 space-y-0.5">
+          <li><span className="font-medium text-foreground">Materiale</span>: cosa è stato usato (es. pittura bianca opaca, malta fine).</li>
+          <li><span className="font-medium text-foreground">Quantità</span>: quanto ne è stato usato (es. 3, 0,5).</li>
+          <li><span className="font-medium text-foreground">Unità / tipo di confezione</span>: secchio, sacco, tanica, kg, m, pz…</li>
+          <li><span className="font-medium text-foreground">Provenienza</span>: dove l'avete preso — fornitore o magazzino (capannone).</li>
+        </ul>
       </div>
 
       {materiali.map((mat, i) => (
@@ -158,11 +177,6 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
           </div>
         </div>
       ))}
-
-      <Button variant="outline" onClick={addMateriale} className="gap-2">
-        <Plus className="w-4 h-4" />
-        Aggiungi Materiale
-      </Button>
 
       {materiali.length === 0 && (
         <div className="rounded-xl border-2 border-dashed border-border p-8 text-center text-muted-foreground">
