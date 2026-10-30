@@ -216,15 +216,13 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
         </div>
       </div>
 
-      {/* Controlli di inserimento — sempre in alto, sopra l'elenco */}
-      <div className="grid grid-cols-2 gap-2 sticky top-0 z-10 -mx-1 px-1 py-1 bg-background/95 backdrop-blur">
-        <Button variant="outline" onClick={addLavorazione} className="gap-2 h-11">
+      {/* Controlli di inserimento — sempre in alto, uno dopo l'altro, sopra l'elenco */}
+      <div className="flex flex-col gap-2 sticky top-0 z-10 -mx-1 px-1 py-1 bg-background/95 backdrop-blur">
+        <Button variant="outline" onClick={addLavorazione} className="gap-2 h-11 w-full justify-center">
           <Plus className="w-4 h-4" />
           Manualmente
         </Button>
-        <div className="min-w-0">
-          <AudioLavorazioniRecorder mode="normali" tipiLavorazione={tipiLavorazione} onResult={handleAudioResult} />
-        </div>
+        <AudioLavorazioniRecorder mode="normali" tipiLavorazione={tipiLavorazione} onResult={handleAudioResult} />
       </div>
 
       <div className="space-y-3">
