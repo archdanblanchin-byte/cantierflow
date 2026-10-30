@@ -13,9 +13,9 @@ const FINE_SETTIMANA = [0, 6];
 const COLORE_SEDE = "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200";
 const COLORE_FERIE = "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200";
 const COLORE_PERMESSO = "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-200";
-// Sotto le ore previste (rosso) / sopra (verde, straordinario)
-const COLORE_DEFICIT = "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200";
-const COLORE_EXTRA = "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200";
+// Solo colore del testo: lo sfondo resta quello della trasferta.
+const TESTO_DEFICIT = "text-red-600 dark:text-red-400";
+const TESTO_EXTRA = "text-emerald-600 dark:text-emerald-400";
 // Sigla mostrata nella cella: F = ferie, P = permesso
 const SIGLA_PERMESSO = { ferie: "F", permesso: "P" };
 // Sigla con le ore lette dal titolo del calendario: "P 4h", "F", ...
@@ -139,19 +139,19 @@ export default function RiepilogoMensile({
                   const permesso = cella?.permesso || null;
                   const haLavoro = !!cella && ((cella.ore || 0) > 0 || !!cella.trasferta);
                   const vuota = !haLavoro && !permesso;
-                  // Priorità visiva: deficit (rosso) e straordinario (verde) prevalgono
-                  // sul colore della fascia di trasferta, così si vede subito chi non
-                  // ha fatto le 8 ore o chi ne ha fatte di extra.
+                  // Lo sfondo resta quello della trasferta/sede; deficit e straordinario
+                  // si vedono solo dal colore del testo.
                   const colore = !haLavoro && permesso
                     ? (permesso === "ferie" ? COLORE_FERIE : COLORE_PERMESSO)
-                    : cella?.deficit > 0
-                    ? COLORE_DEFICIT
-                    : cella?.straordinario > 0
-                    ? COLORE_EXTRA
                     : cella?.inSede
                     ? COLORE_SEDE
                     : cfg
                     ? cfg.color
+                    : "";
+                  const testoOre = cella?.deficit > 0
+                    ? TESTO_DEFICIT
+                    : cella?.straordinario > 0
+                    ? TESTO_EXTRA
                     : "";
                   return (
                     <td
@@ -190,14 +190,14 @@ export default function RiepilogoMensile({
                           <span className="text-[11px] font-bold">{siglaConOre(cella)}</span>
                         ) : (
                           <>
-                            <span className="text-[10px] font-bold">{fmtOreBreve(cella.ore) || "—"}</span>
+                            <span className={`text-[10px] font-bold ${testoOre}`}>{fmtOreBreve(cella.ore) || "—"}</span>
                             {cella.straordinario > 0 && (
-                              <span className="text-[8px] font-bold text-emerald-700 dark:text-emerald-300">
+                              <span className="text-[8px] font-bold text-emerald-600 dark:text-emerald-400">
                                 +{fmtOreBreve(cella.straordinario)}
                               </span>
                             )}
                             {cella.deficit > 0 && (
-                              <span className="text-[8px] font-bold text-red-700 dark:text-red-300">
+                              <span className="text-[8px] font-bold text-red-600 dark:text-red-400">
                                 -{fmtOreBreve(cella.deficit)}
                               </span>
                             )}
@@ -289,11 +289,11 @@ export default function RiepilogoMensile({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
         <span className="font-semibold uppercase tracking-wider text-[10px]">Legenda</span>
         <span className="inline-flex items-center gap-1">
-          <Badge variant="outline" className={`text-[9px] px-1 py-0 ${COLORE_DEFICIT}`}>7h30</Badge>
+          <Badge variant="outline" className={`text-[9px] px-1 py-0 ${TESTO_DEFICIT}`}>7h30</Badge>
           ore sotto le 8 previste
         </span>
         <span className="inline-flex items-center gap-1">
-          <Badge variant="outline" className={`text-[9px] px-1 py-0 ${COLORE_EXTRA}`}>+0h30</Badge>
+          <Badge variant="outline" className={`text-[9px] px-1 py-0 ${TESTO_EXTRA}`}>+0h30</Badge>
           straordinario del giorno
         </span>
         <span className="inline-flex items-center gap-1">
