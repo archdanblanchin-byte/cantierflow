@@ -5,6 +5,7 @@ import { it } from "date-fns/locale";
 import { MapPin, Clock, AlertTriangle, Navigation, Pencil, Trash2, StickyNote } from "lucide-react";
 import { STEP_CONFIG, fmtOre } from "@/lib/timbratureUtils";
 import { calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
+import SequenzaGiornata from "@/components/timbrature/SequenzaGiornata";
 
 export default function TimbraturaTimeline({ timbrature, isAdmin = false, canEdit = isAdmin, onEdit, onDelete }) {
   const timbratureOrd = (timbrature || []).slice().sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
@@ -69,6 +70,8 @@ export default function TimbraturaTimeline({ timbrature, isAdmin = false, canEdi
           )}
         </div>
       </Card>
+
+      <SequenzaGiornata timbrature={timbratureOrd} />
 
       {spostamenti.length > 0 && (
         <Card className="p-4 space-y-2 border-orange-200 bg-orange-50/30">

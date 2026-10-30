@@ -3,6 +3,41 @@ import { base44 } from "@/api/base44Client";
 
 const byDataOra = (a, b) => new Date(a.data_ora) - new Date(b.data_ora);
 const sortTimbri = (timbrature) => (timbrature || []).slice().sort(byDataOra);
+
+// Determina quali "pausa_inizio" chiudono il cantiere: accade quando, dopo la
+// fine pausa, la persona entra in un cantiere DIVERSO senza prima riprendere e
+// uscire dallo stesso cantiere. In quel caso il tratto fine-pausa -> ingresso
+// successivo è uno spostamento. Se invece la persona riprende il lavoro e poi
+// timbra l'uscita dallo stesso cantiere, la pausa resta un intervallo normale
+// (è l'uscita a chiudere la sessione). Senza questo controllo il lavoro dopo la
+// pausa veniva perso (es. 11:40→15:05 non conteggiato).
+function calcolaPausaChiude(tOrd) {
+  const pausaChiude = new Set();
+  const pausaSposta = new Set();
+  const emailDi = (t) => t.user_email || "anon";
+  tOrd.forEach((t, i) => {
+    if (t.tipo_evento !== "pausa_fine") return;
+    const email = emailDi(t);
+    // Prossimo ingresso o uscita della stessa persona dopo la fine pausa.
+    const nextEvt = tOrd.slice(i + 1).find(
+      (x) => emailDi(x) === email && (x.tipo_evento === "ingresso" || x.tipo_evento === "uscita")
+    );
+    if (!nextEvt) return;
+    // Se la persona esce dal cantiere dopo la pausa (la sessione prosegue fino
+    // all'uscita), la pausa è un intervallo normale: non chiude il cantiere.
+    if (nextEvt.tipo_evento === "uscita") return;
+    // Il prossimo evento è un ingresso: se è nello stesso cantiere, pausa normale.
+    if (!nextEvt.cantiere_id || nextEvt.cantiere_id === t.cantiere_id) return;
+    // La pausa chiude il cantiere: il tratto fine-pausa -> ingresso è spostamento.
+    pausaSposta.add(i);
+    for (let j = i - 1; j >= 0; j--) {
+      if (emailDi(tOrd[j]) !== email) continue;
+      if (tOrd[j].tipo_evento === "pausa_inizio") { pausaChiude.add(j); break; }
+      if (tOrd[j].tipo_evento === "ingresso" || tOrd[j].tipo_evento === "uscita") break;
+    }
+  });
+  return { pausaChiude, pausaSposta };
+}
 const minutiDa = (ms) => Math.round((ms || 0) / 60000);
 const hhmm = (iso) => {
   const d = new Date(iso);
@@ -46,24 +81,7 @@ export function calcolaOrePerCantiere(timbrature) {
   // Le sessioni sono per persona: ognuno apre e chiude la propria.
   const emailDi = (t) => t.user_email || "anon";
 
-  // Pausa pranzo "tra cantieri": se dopo la fine pausa la persona entra in un
-  // cantiere DIVERSO, l'inizio pausa chiude il cantiere corrente e il tratto
-  // fine pausa -> ingresso successivo diventa uno spostamento. In ogni altro
-  // caso la pausa resta un semplice intervallo non lavorato (invariato).
-  const pausaChiude = new Set();
-  const pausaSposta = new Set();
-  tOrd.forEach((t, i) => {
-    if (t.tipo_evento !== "pausa_fine") return;
-    const email = emailDi(t);
-    const next = tOrd.slice(i + 1).find((x) => emailDi(x) === email && x.tipo_evento === "ingresso");
-    if (!next || !next.cantiere_id || next.cantiere_id === t.cantiere_id) return;
-    pausaSposta.add(i);
-    for (let j = i - 1; j >= 0; j--) {
-      if (emailDi(tOrd[j]) !== email) continue;
-      if (tOrd[j].tipo_evento === "pausa_inizio") { pausaChiude.add(j); break; }
-      if (tOrd[j].tipo_evento === "ingresso" || tOrd[j].tipo_evento === "uscita") break;
-    }
-  });
+  const { pausaChiude, pausaSposta } = calcolaPausaChiude(tOrd);
 
   const aperte = new Map();
   const chiudi = (email, ts) => {
@@ -169,20 +187,7 @@ export function buildSquadraDaTimbrature(timbrature, collaboratoriList = []) {
   // fine pausa -> ingresso successivo diventa uno spostamento. Negli altri casi
   // la pausa resta un intervallo non lavorato (comportamento invariato).
   const emailDi = (t) => t.user_email || "anon";
-  const pausaChiude = new Set();
-  const pausaSposta = new Set();
-  tOrd.forEach((t, i) => {
-    if (t.tipo_evento !== "pausa_fine") return;
-    const email = emailDi(t);
-    const next = tOrd.slice(i + 1).find((x) => emailDi(x) === email && x.tipo_evento === "ingresso");
-    if (!next || !next.cantiere_id || next.cantiere_id === t.cantiere_id) return;
-    pausaSposta.add(i);
-    for (let j = i - 1; j >= 0; j--) {
-      if (emailDi(tOrd[j]) !== email) continue;
-      if (tOrd[j].tipo_evento === "pausa_inizio") { pausaChiude.add(j); break; }
-      if (tOrd[j].tipo_evento === "ingresso" || tOrd[j].tipo_evento === "uscita") break;
-    }
-  });
+  const { pausaChiude, pausaSposta } = calcolaPausaChiude(tOrd);
   const getU = (email, nome) => {
     if (!perUser.has(email)) {
       perUser.set(email, {
@@ -441,20 +446,7 @@ export function minutiScopertiGiornata(timbrature) {
   const intervallo = new Date(uscite[uscite.length - 1].data_ora) - new Date(ingressi[0].data_ora);
   const emailDi = (t) => t.user_email || "anon";
 
-  // Pausa "tra cantieri": l'inizio pausa chiude il cantiere e il tratto
-  // fine pausa -> ingresso successivo è spostamento (non tempo scoperto).
-  const pausaChiude = new Set();
-  tOrd.forEach((t, i) => {
-    if (t.tipo_evento !== "pausa_fine") return;
-    const email = emailDi(t);
-    const next = tOrd.slice(i + 1).find((x) => emailDi(x) === email && x.tipo_evento === "ingresso");
-    if (!next || !next.cantiere_id || next.cantiere_id === t.cantiere_id) return;
-    for (let j = i - 1; j >= 0; j--) {
-      if (emailDi(tOrd[j]) !== email) continue;
-      if (tOrd[j].tipo_evento === "pausa_inizio") { pausaChiude.add(j); break; }
-      if (tOrd[j].tipo_evento === "ingresso" || tOrd[j].tipo_evento === "uscita") break;
-    }
-  });
+  const { pausaChiude } = calcolaPausaChiude(tOrd);
 
   const aperte = new Map();
   const pauseFuoriSessione = new Map();
