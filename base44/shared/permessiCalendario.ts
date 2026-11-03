@@ -8,10 +8,19 @@ const ICAL_URL = `https://calendar.google.com/calendar/ical/${encodeURIComponent
   CALENDAR_ID
 )}/public/basic.ics`;
 
+// Secondo calendario pubblico: i corsi di formazione.
+// Ogni evento di questo calendario viene interpretato come impegno di tipo "corso".
+const CALENDAR_ID_CORSI =
+  "14408cec4b4c5d2629e7da4071cb08a98cdd1a2fbff5a74c3689fb3adcd73702@group.calendar.google.com";
+const ICAL_URL_CORSI = `https://calendar.google.com/calendar/ical/${encodeURIComponent(
+  CALENDAR_ID_CORSI
+)}/public/basic.ics`;
+
 // Copia in memoria del calendario: evita di scaricare l'ICS a ogni chiamata
 // (Google limita le richieste ripetute) e rende le risposte immediate.
 const CACHE_TTL_MS = 15 * 60 * 1000;
 let cacheIcs = { testo: null, istante: 0 };
+let cacheIcsCorsi = { testo: null, istante: 0 };
 
 // `forza` = true salta la copia in memoria: serve al pulsante di aggiornamento
 // per rileggere subito il calendario dopo una modifica fatta su Google.
@@ -27,6 +36,21 @@ export async function leggiCalendario(forza = false) {
   }
   const testo = await res.text();
   cacheIcs = { testo, istante: Date.now() };
+  return testo;
+}
+
+// Stessa logica di lettura e cache, applicata al calendario dei corsi.
+export async function leggiCalendarioCorsi(forza = false) {
+  if (!forza && cacheIcsCorsi.testo && Date.now() - cacheIcsCorsi.istante < CACHE_TTL_MS) {
+    return cacheIcsCorsi.testo;
+  }
+  const res = await fetch(ICAL_URL_CORSI, { method: "GET" });
+  if (!res.ok) {
+    if (cacheIcsCorsi.testo) return cacheIcsCorsi.testo;
+    throw new Error(`Impossibile leggere il calendario corsi (status ${res.status})`);
+  }
+  const testo = await res.text();
+  cacheIcsCorsi = { testo, istante: Date.now() };
   return testo;
 }
 
@@ -212,6 +236,30 @@ export function permessiDelGiorno(events, giorno) {
   return result;
 }
 
+// Permessi/ferie/corsi di un singolo giorno unendo due calendari:
+// gli eventi del calendario corsi vengono sempre classificati come "corso"
+// (il titolo di un corso non contiene necessariamente la parola "corso").
+// Non ci sono doppioni: la chiave è tipo+nome, quindi una persona può avere
+// sia "permesso" sia "corso" nello stesso giorno (due voci distinte).
+export function permessiDelGiornoConCorsi(eventsPerm, eventsCorsi, giorno) {
+  const base = permessiDelGiorno(eventsPerm, giorno);
+  const corsi = permessiDelGiorno(eventsCorsi, giorno).map((p) => ({
+    ...p,
+    tipo: "corso",
+    ore: null,
+    fonte: "corsi",
+  }));
+  const seen = new Set(base.map((p) => `${p.tipo}:${p.nome.toLowerCase()}`));
+  const uniti = [...base];
+  for (const c of corsi) {
+    const key = `${c.tipo}:${c.nome.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    uniti.push(c);
+  }
+  return uniti;
+}
+
 // Elenco di permessi per ogni giorno dell'intervallo: { "yyyy-MM-dd": [...] }
 export function permessiDelPeriodo(events, da, a) {
   const perGiorno = {};
@@ -219,6 +267,20 @@ export function permessiDelPeriodo(events, da, a) {
   let guardia = 0;
   while (giorno <= a && guardia < 62) {
     const lista = permessiDelGiorno(events, giorno);
+    if (lista.length) perGiorno[giorno] = lista;
+    giorno = addOneDay(giorno);
+    guardia++;
+  }
+  return perGiorno;
+}
+
+// Come permessiDelPeriodo ma unendo i due calendari (permessi + corsi).
+export function permessiDelPeriodoConCorsi(eventsPerm, eventsCorsi, da, a) {
+  const perGiorno = {};
+  let giorno = da;
+  let guardia = 0;
+  while (giorno <= a && guardia < 62) {
+    const lista = permessiDelGiornoConCorsi(eventsPerm, eventsCorsi, giorno);
     if (lista.length) perGiorno[giorno] = lista;
     giorno = addOneDay(giorno);
     guardia++;

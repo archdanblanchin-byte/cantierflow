@@ -54,12 +54,14 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
   });
   const permessi = permessiData?.data?.permessi || [];
 
-  // Mappa nome collaboratore -> { tipo, nome } in permesso/ferie per la data.
+  // Mappa collaboratore id -> Set di tipi di impegno (permesso/ferie/corso) per la data.
   // Il titolo di un corso può contenere descrizioni oltre al nome
   // (es. "Corso Gru su autocarro Roberto" -> nome estratto "Gru su autocarro Roberto"):
   // oltre al match esatto e al primo token, riconosciamo il nome del collaboratore
   // come parola intera dentro il titolo estratto.
-  const permessiByColl = useMemo(() => {
+  // Una persona può comparire in entrambi i calendari: raccogliamo tutti i tipi
+  // senza duplicare la persona nell'elenco.
+  const impegniByColl = useMemo(() => {
     const map = new Map();
     if (!collaboratori.length || !permessi.length) return map;
     const norm = (s) => (s || "").trim().toLowerCase();
@@ -75,7 +77,10 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
         const re = new RegExp(`\\b${escapeRe(cNorm)}\\b`);
         return re.test(pNorm);
       });
-      if (match) map.set(match.id, p);
+      if (match) {
+        if (!map.has(match.id)) map.set(match.id, new Set());
+        map.get(match.id).add(p.tipo);
+      }
     }
     return map;
   }, [collaboratori, permessi]);
@@ -288,7 +293,7 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
             <div className="rounded-lg border border-border p-2 max-h-40 overflow-y-auto space-y-1">
               {(() => {
                 const visibili = collaboratori.filter(
-                  (c) => permessiByColl.has(c.id) || !collaboratoriUsati.has(c.id)
+                  (c) => impegniByColl.has(c.id) || !collaboratoriUsati.has(c.id)
                 );
                 if (visibili.length === 0) {
                   return (
@@ -300,29 +305,41 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
                   );
                 }
                 return visibili.map((c) => {
-                  const permesso = permessiByColl.get(c.id);
+                  const tipi = impegniByColl.get(c.id);
                   const checked = !!form.collaboratori.find((x) => x.collaboratore_id === c.id);
-                  if (permesso) {
-                    const isFerie = permesso.tipo === "ferie";
-                    const isCorso = permesso.tipo === "corso";
-                    const label = isFerie ? "In ferie" : isCorso ? "A corso" : "In permesso";
-                    const wrap = isCorso
+                  if (tipi && tipi.size) {
+                    const hasFerie = tipi.has("ferie");
+                    const hasCorso = tipi.has("corso");
+                    const hasPermesso = tipi.has("permesso");
+                    const wrap = hasCorso
                       ? "bg-blue-100 border-blue-300"
                       : "bg-purple-100 border-purple-300";
-                    const text = isCorso ? "text-blue-900" : "text-purple-900";
-                    const sub = isCorso ? "text-blue-700" : "text-purple-700";
-                    const badge = isCorso ? "bg-blue-600 text-white" : "bg-purple-600 text-white";
+                    const text = hasCorso ? "text-blue-900" : "text-purple-900";
+                    const sub = hasCorso ? "text-blue-700" : "text-purple-700";
+                    const labels = [
+                      hasFerie && "In ferie",
+                      hasPermesso && "In permesso",
+                      hasCorso && "A corso",
+                    ].filter(Boolean).join(" + ");
                     return (
                       <div
                         key={c.id}
                         className={`flex items-center gap-2 p-1.5 rounded border ${wrap}`}
-                        title={`${label} per questa data`}
+                        title={`${labels} per questa data`}
                       >
                         <Checkbox checked={false} disabled />
                         <span className={`text-sm font-medium line-through opacity-80 ${text}`}>{c.nome}</span>
                         {c.ruolo && <span className={`text-xs ${sub}`}>· {c.ruolo}</span>}
-                        <span className={`ml-auto text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${badge}`}>
-                          {isFerie ? "Ferie" : isCorso ? "Corso" : "Permesso"}
+                        <span className="ml-auto flex gap-1">
+                          {hasFerie && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-purple-600 text-white">Ferie</span>
+                          )}
+                          {hasPermesso && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-purple-600 text-white">Permesso</span>
+                          )}
+                          {hasCorso && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-blue-600 text-white">Corso</span>
+                          )}
                         </span>
                       </div>
                     );
@@ -337,9 +354,9 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
                 });
               })()}
             </div>
-            {permessiByColl.size > 0 && (
+            {impegniByColl.size > 0 && (
               <p className="text-xs text-purple-700">
-                {permessiByColl.size} collaboratore/i in ferie/permesso/corso per questa data (non selezionabili).
+                {impegniByColl.size} collaboratore/i in ferie/permesso/corso per questa data (non selezionabili).
               </p>
             )}
             {collaboratoriUsati.size > 0 && (

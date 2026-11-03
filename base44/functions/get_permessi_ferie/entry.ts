@@ -1,9 +1,10 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import {
   leggiCalendario,
+  leggiCalendarioCorsi,
   parseIcal,
-  permessiDelGiorno,
-  permessiDelPeriodo,
+  permessiDelGiornoConCorsi,
+  permessiDelPeriodoConCorsi,
 } from "../../shared/permessiCalendario.ts";
 
 /**
@@ -35,14 +36,25 @@ export default async function (req) {
       );
     }
 
-    const ics = await leggiCalendario(body.forza === true);
+    const [ics, icsCorsi] = await Promise.all([
+      leggiCalendario(body.forza === true),
+      leggiCalendarioCorsi(body.forza === true).catch(() => ""),
+    ]);
     const events = parseIcal(ics);
+    const eventsCorsi = icsCorsi ? parseIcal(icsCorsi) : [];
 
     if (isSingle) {
-      return Response.json({ data, permessi: permessiDelGiorno(events, data) });
+      return Response.json({
+        data,
+        permessi: permessiDelGiornoConCorsi(events, eventsCorsi, data),
+      });
     }
 
-    return Response.json({ da, a, permessi_per_giorno: permessiDelPeriodo(events, da, a) });
+    return Response.json({
+      da,
+      a,
+      permessi_per_giorno: permessiDelPeriodoConCorsi(events, eventsCorsi, da, a),
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
