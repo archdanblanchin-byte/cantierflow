@@ -295,17 +295,25 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
                   const checked = !!form.collaboratori.find((x) => x.collaboratore_id === c.id);
                   if (permesso) {
                     const isFerie = permesso.tipo === "ferie";
+                    const isCorso = permesso.tipo === "corso";
+                    const label = isFerie ? "In ferie" : isCorso ? "A corso" : "In permesso";
+                    const wrap = isCorso
+                      ? "bg-blue-100 border-blue-300"
+                      : "bg-purple-100 border-purple-300";
+                    const text = isCorso ? "text-blue-900" : "text-purple-900";
+                    const sub = isCorso ? "text-blue-700" : "text-purple-700";
+                    const badge = isCorso ? "bg-blue-600 text-white" : "bg-purple-600 text-white";
                     return (
                       <div
                         key={c.id}
-                        className="flex items-center gap-2 p-1.5 rounded bg-purple-100 border border-purple-300"
-                        title={`${isFerie ? "In ferie" : "In permesso"} per questa data`}
+                        className={`flex items-center gap-2 p-1.5 rounded border ${wrap}`}
+                        title={`${label} per questa data`}
                       >
                         <Checkbox checked={false} disabled />
-                        <span className="text-sm text-purple-900 font-medium line-through opacity-80">{c.nome}</span>
-                        {c.ruolo && <span className="text-xs text-purple-700">· {c.ruolo}</span>}
-                        <span className="ml-auto text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-purple-600 text-white">
-                          {isFerie ? "Ferie" : "Permesso"}
+                        <span className={`text-sm font-medium line-through opacity-80 ${text}`}>{c.nome}</span>
+                        {c.ruolo && <span className={`text-xs ${sub}`}>· {c.ruolo}</span>}
+                        <span className={`ml-auto text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${badge}`}>
+                          {isFerie ? "Ferie" : isCorso ? "Corso" : "Permesso"}
                         </span>
                       </div>
                     );
@@ -322,7 +330,7 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
             </div>
             {permessiByColl.size > 0 && (
               <p className="text-xs text-purple-700">
-                {permessiByColl.size} collaboratore/i in ferie/permesso per questa data (in viola, non selezionabili).
+                {permessiByColl.size} collaboratore/i in ferie/permesso/corso per questa data (non selezionabili).
               </p>
             )}
             {collaboratoriUsati.size > 0 && (

@@ -128,6 +128,7 @@ const toOre = (h, m) => h + (m ? m / 60 : 0);
 function tipoDalTitolo(t) {
   if (/\bferie\b/.test(t)) return "ferie";
   if (/\bpermessi\b|\bpermesso\b|\bperm\b/.test(t)) return "permesso";
+  if (/\bcorsi\b|\bcorso\b/.test(t)) return "corso";
   return "altro";
 }
 
@@ -170,7 +171,7 @@ function oreDalTitolo(t) {
 // "Permesso 3 ore Alessio" -> "Alessio" · "perm. Aleksandro dalle 16.00" -> "Aleksandro"
 function nomeDalTitolo(t) {
   return t
-    .replace(/\b(permessi|permesso|perm\.|perm|ferie)\b/gi, " ")
+    .replace(/\b(permessi|permesso|perm\.|perm|ferie|corsi|corso)\b/gi, " ")
     .replace(/\d{1,2}(?:[.,:]\d{2})?\s*[-–]\s*\d{1,2}(?:[.,:]\d{2})?/g, " ")
     .replace(/\b\d+(?:[.,]\d+)?\s*(?:ore|ora|h)\b/gi, " ")
     .replace(/\b(?:dal|dalle|dalla|fino|alle|alla|ore)\b/gi, " ")
@@ -191,7 +192,7 @@ export function parseSummary(summary) {
   return {
     tipo,
     nome: nomeDalTitolo(s),
-    ore: tipo === "altro" ? null : oreDalTitolo(lower),
+    ore: tipo === "altro" || tipo === "corso" ? null : oreDalTitolo(lower),
   };
 }
 
