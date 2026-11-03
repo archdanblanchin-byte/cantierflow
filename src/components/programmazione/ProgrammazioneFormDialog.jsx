@@ -54,18 +54,27 @@ export default function ProgrammazioneFormDialog({ open, onClose, onSaved, editi
   });
   const permessi = permessiData?.data?.permessi || [];
 
-  // Mappa nome collaboratore -> { tipo, nome } in permesso/ferie per la data
+  // Mappa nome collaboratore -> { tipo, nome } in permesso/ferie per la data.
+  // Il titolo di un corso può contenere descrizioni oltre al nome
+  // (es. "Corso Gru su autocarro Roberto" -> nome estratto "Gru su autocarro Roberto"):
+  // oltre al match esatto e al primo token, riconosciamo il nome del collaboratore
+  // come parola intera dentro il titolo estratto.
   const permessiByColl = useMemo(() => {
     const map = new Map();
     if (!collaboratori.length || !permessi.length) return map;
     const norm = (s) => (s || "").trim().toLowerCase();
     const firstToken = (s) => norm(s).split(/\s+/)[0];
+    const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     for (const p of permessi) {
       const pNorm = norm(p.nome);
       const pFirst = firstToken(p.nome);
-      const match = collaboratori.find(
-        (c) => norm(c.nome) === pNorm || firstToken(c.nome) === pFirst
-      );
+      const match = collaboratori.find((c) => {
+        const cNorm = norm(c.nome);
+        if (!cNorm) return false;
+        if (cNorm === pNorm || firstToken(c.nome) === pFirst) return true;
+        const re = new RegExp(`\\b${escapeRe(cNorm)}\\b`);
+        return re.test(pNorm);
+      });
       if (match) map.set(match.id, p);
     }
     return map;
