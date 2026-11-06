@@ -109,10 +109,13 @@ export function buildRiepilogoMensile({
       if (d < primo || d > ultimo) return;
       const cella = get(chiave(d));
       const split = classificaTrasfertaSplit(t.km_andata, t.km_ritorno, config);
+      const kmSpost = t.km_spostamenti ?? 0;
       cella.trasferta = {
         ...split,
+        km_spostamenti: kmSpost,
+        km_totali: t.km_totali ?? Math.round(((split.km_totali || 0) + kmSpost) * 10) / 10,
+        km_riconosciuti: t.km_riconosciuti ?? null,
         tipo_trasferta: t.tipo_trasferta || split.tipo_trasferta,
-        km_totali: t.km_totali ?? split.km_totali,
         confermata: true,
       };
     });
@@ -158,15 +161,20 @@ export function buildRiepilogoMensile({
         const calc = oreGiornoDaTimbrature(tims);
         cella.oreCantieri = calc.oreCantieri;
         cella.oreSpost = calc.oreSpost;
+        cella.oreSpostTot = calc.oreSpostTot || 0;
         cella.perCantiere = calc.perCantiere;
       } else {
         // Nessuna timbratura nella giornata: si usano i rapportini (storico).
         cella.perCantiere = cella.oreRapportino || {};
         cella.oreCantieri = Object.values(cella.perCantiere).reduce((s, o) => s + o, 0);
         cella.oreSpost = 0;
+        cella.oreSpostTot = 0;
         cella.cantieri = Object.keys(cella.perCantiere);
       }
       delete cella.oreRapportino;
+      // cella.oreSpost = spostamenti conteggiati come lavoro (solo il deficit
+      // sotto le 8h). cella.oreSpostTot = tempo totale degli spostamenti
+      // (mostrato nella colonna "Spost." del foglio).
       cella.ore = arrotondaOre((cella.oreCantieri || 0) + (cella.oreSpost || 0));
       if (!cella.trasferta && tims.length) {
         cella.trasferta = calcolaTrasfertaGiorno(tims, cantieri, config);
@@ -193,7 +201,7 @@ export function buildRiepilogoMensile({
 
       totOre += cella.ore;
       totStraordinari += cella.straordinario;
-      totSpost += cella.oreSpost;
+      totSpost += cella.oreSpostTot || cella.oreSpost || 0;
       if (cella.ore > 0) giorniLavorati++;
       if (cella.permesso === "permesso" && cella.permessoOre) totPermessoOre += cella.permessoOre;
       if (cella.permesso === "ferie") giorniFerie++;

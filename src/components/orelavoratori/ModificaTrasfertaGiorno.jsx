@@ -41,6 +41,7 @@ export default function ModificaTrasfertaGiorno({
 
   const kmA = kmAndata === "" ? null : parseFloat(kmAndata);
   const kmR = kmRitorno === "" ? null : parseFloat(kmRitorno);
+  const kmSpost = trasfertaCalcolata?.km_spostamenti ?? trasfertaEsistente?.km_spostamenti ?? 0;
   const split = classificaTrasfertaSplit(kmA, kmR, config);
   const tipoEffettivo = tipo || split?.tipo_trasferta || "";
 
@@ -57,6 +58,7 @@ export default function ModificaTrasfertaGiorno({
           trasfertaCalcolata?.ultimo_cantiere_nome || trasfertaEsistente?.ultimo_cantiere_nome || null,
         km_andata: kmA,
         km_ritorno: kmR,
+        km_spostamenti: kmSpost || null,
         km_totali: split?.km_totali ?? null,
         fascia_andata: split?.fascia_andata ?? null,
         fascia_ritorno: split?.fascia_ritorno ?? null,
@@ -121,6 +123,12 @@ export default function ModificaTrasfertaGiorno({
           />
         </div>
       </div>
+
+      {kmSpost > 0 && (
+        <p className="text-[10px] text-muted-foreground bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded px-2 py-1">
+          Spostamenti intermedi: <strong>{kmSpost.toFixed(1)} km</strong> (sommati alla trasferta)
+        </p>
+      )}
 
       <div className="flex items-center gap-2">
         <Label className="text-[10px] text-muted-foreground shrink-0">Fascia</Label>

@@ -159,19 +159,30 @@ export function calcolaOrePerCantiere(timbrature) {
   }));
 }
 
-// Regola delle 8 ore: classifica gli spostamenti della giornata come
-// 'lavorative' (se il totale lavorato esclusi gli spostamenti è < 8h)
-// o 'trasferta' (se il totale lavorato raggiunge o supera le 8h).
+// Ore di lavoro previste nella giornata: sotto questa soglia gli spostamenti
+// coprono il deficit, sopra gli spostamenti sono interamente trasferta.
+const ORE_LAVORO_GIORNO = 8;
+
+// Regola delle 8 ore: classifica gli spostamenti della giornata.
+// Se il lavoro in cantiere raggiunge le 8h, gli spostamenti sono interamente
+// trasferta (non conteggiati come ore lavorative). Se mancano ore, la parte
+// di spostamenti corrispondente al tempo mancante diventa lavoro (ripartita
+// sui cantieri), il resto è trasferta.
 export function classificaSpostamentiGiornata(timbrature) {
   const perCantiere = calcolaOrePerCantiere(timbrature);
   const totLavorazione = perCantiere.reduce((s, c) => s + (c.ore || 0), 0);
   const totSpostamento = perCantiere.reduce((s, c) => s + (c.ore_spostamento || 0), 0);
-  const spostamentoTipo = totSpostamento > 0 && totLavorazione >= 8 ? "trasferta" : "lavorative";
+  const deficitOre = Math.max(0, ORE_LAVORO_GIORNO - totLavorazione);
+  const oreSpostamentoLavorative = Math.min(totSpostamento, deficitOre);
+  const oreSpostamentoTrasferta = Math.max(0, totSpostamento - oreSpostamentoLavorative);
+  const spostamentoTipo = totSpostamento > 0 && totLavorazione >= ORE_LAVORO_GIORNO ? "trasferta" : "lavorative";
   return {
     totLavorazione,
     totSpostamento,
+    oreSpostamentoLavorative,
+    oreSpostamentoTrasferta,
     spostamentoTipo,
-    totGiornaliero: totLavorazione + totSpostamento,
+    totGiornaliero: totLavorazione + oreSpostamentoLavorative,
   };
 }
 

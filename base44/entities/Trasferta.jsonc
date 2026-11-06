@@ -39,17 +39,21 @@
       "type": "number",
       "description": "Km dall'ultimo cantiere al capannone"
     },
+    "km_spostamenti": {
+      "type": "number",
+      "description": "Km degli spostamenti intermedi tra cantieri nella giornata"
+    },
     "km_totali": {
       "type": "number",
-      "description": "Km totali (andata + ritorno)"
+      "description": "Km totali (andata + ritorno + spostamenti)"
     },
     "km_media": {
       "type": "number",
-      "description": "Km equivalenti della trasferta: media tra andata e ritorno"
+      "description": "Km equivalenti della trasferta: totali diviso 2 (andata + ritorno)"
     },
     "km_riconosciuti": {
       "type": "number",
-      "description": "Km di trasferta riconosciuti: media andata/ritorno meno i km equivalenti al tempo di lavoro mancante alle 8 ore"
+      "description": "Km di trasferta riconosciuti: (totali - deficit per ore mancanti) diviso 2"
     },
     "km_deficit": {
       "type": "number",
@@ -90,7 +94,7 @@
         "T3",
         "T4"
       ],
-      "description": "Fascia trasferta riconosciuta, calcolata sui km equivalenti (media andata/ritorno meno il tempo mancante)"
+      "description": "Fascia trasferta riconosciuta, calcolata sui km equivalenti (totali meno il tempo mancante, diviso 2)"
     },
     "mezzo_proprio": {
       "type": "boolean",

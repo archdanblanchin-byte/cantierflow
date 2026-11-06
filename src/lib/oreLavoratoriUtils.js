@@ -45,27 +45,61 @@ export function calcolaSpostamenti(timbratureGiorno) {
  */
 export function oreGiornoDaTimbrature(timbratureGiorno) {
   const perCantiere = {};
-  let oreCantieri = 0;
-  let oreSpost = 0;
+  let oreCantieriRaw = 0;
+  let oreSpostRaw = 0;
   calcolaOrePerCantiere(timbratureGiorno).forEach((c) => {
     const nome = c.cantiere_nome || "—";
     perCantiere[nome] = (perCantiere[nome] || 0) + (c.ore || 0);
-    oreCantieri += c.ore || 0;
-    oreSpost += c.ore_spostamento || 0;
+    oreCantieriRaw += c.ore || 0;
+    oreSpostRaw += c.ore_spostamento || 0;
   });
-  // Totale di giornata arrotondato una volta sola, sempre in su (8h32 -> 8h35).
+  // Regola delle 8 ore: gli spostamenti coprono solo il deficit di lavoro.
+  // Se il lavoro in cantiere raggiunge le 8h, gli spostamenti non si sommano
+  // alle ore lavorate (sono trasferta). Sotto le 8h, la parte di spostamento
+  // corrispondente al tempo mancante diventa lavoro, il resto è trasferta.
+  const deficitOre = Math.max(0, ORE_LAVORO_GIORNO - oreCantieriRaw);
+  const oreSpostLavorative = Math.min(oreSpostRaw, deficitOre);
   return {
-    oreCantieri: arrotondaOreSu(oreCantieri),
-    oreSpost: arrotondaOreSu(oreSpost),
+    oreCantieri: arrotondaOreSu(oreCantieriRaw),
+    oreSpost: arrotondaOreSu(oreSpostLavorative),
+    oreSpostTot: arrotondaOreSu(oreSpostRaw),
     perCantiere,
   };
+}
+
+/**
+ * Km degli spostamenti intermedi tra cantieri: somma delle distanze tra cantieri
+ * consecutivi visitati nella giornata (esclusa l'andata dal capannone e il ritorno
+ * al capannone, che sono tratte separate).
+ */
+export function calcolaKmSpostamenti(tims, cantieri) {
+  const ingressi = (tims || [])
+    .filter((t) => t.tipo_evento === "ingresso" && t.cantiere_id)
+    .sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
+  let km = 0;
+  for (let i = 1; i < ingressi.length; i++) {
+    const prev = ingressi[i - 1];
+    const curr = ingressi[i];
+    if (prev.cantiere_id === curr.cantiere_id) continue;
+    const cPrev = cantieri.find((c) => c.id === prev.cantiere_id);
+    const cCurr = cantieri.find((c) => c.id === curr.cantiere_id);
+    const coordPrev = coordinateTrasferta(prev, cPrev);
+    const coordCurr = coordinateTrasferta(curr, cCurr);
+    if (coordPrev && coordCurr) {
+      km += distanzaKmStrada(coordPrev.lat, coordPrev.lon, coordCurr.lat, coordCurr.lon);
+    }
+  }
+  return Math.round(km * 10) / 10;
 }
 
 /**
  * Calcola la trasferta giornaliera da una giornata di timbrature.
  *  - Andata: capannone -> primo cantiere (primo ingresso)
  *  - Ritorno: ultimo cantiere (ultimo ingresso) -> capannone
- *  - fasce separate + combinazione "metà andata + metà ritorno"
+ *  - Spostamenti: km tra cantieri consecutivi (sommati alla trasferta)
+ *  - Regola delle 8 ore: i km equivalenti al tempo di lavoro mancante vengono
+ *    tolti dal totale (1 min mancante = 1 km); il resto diviso 2 dà i km
+ *    riconosciuti per la fascia (la trasferta è andata + ritorno).
  */
 export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config) {
   const tims = (timbratureGiorno || [])
@@ -107,11 +141,16 @@ export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config) {
 
   // Entrambe le tratte a 0 km: giornata interamente in sede, nessuna trasferta.
   const nessunaTrasfertaSede = kmAndata === 0 && kmRitorno === 0;
-  const split = classificaTrasfertaSplit(kmAndata, kmRitorno, config);
 
-  // Andata e ritorno non sono due trasferte separate: si usa la media dei due
-  // percorsi come km equivalenti della giornata.
-  const kmMedia = split.km_media != null ? split.km_media : kmAndata != null ? kmAndata : kmRitorno;
+  // Spostamenti intermedi tra cantieri: i loro km si sommano alla trasferta.
+  const kmSpostamenti = calcolaKmSpostamenti(tims, cantieri);
+
+  // Totale = andata + ritorno + spostamenti. La trasferta è andata + ritorno,
+  // quindi i km equivalenti per la fascia si ottengono dividendo il totale per 2.
+  const ka = kmAndata ?? 0;
+  const kr = kmRitorno ?? 0;
+  const kmTotali = Math.round((ka + kr + kmSpostamenti) * 10) / 10;
+  const kmEquiv = Math.round((kmTotali / 2) * 10) / 10;
 
   // Regola delle 8 ore: la trasferta si riconosce solo per il lavoro
   // effettivamente svolto. Ogni minuto mancante alle 8 ore vale 1 km in meno
@@ -120,9 +159,12 @@ export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config) {
   const minutiLavorati = Math.round((classif?.totLavorazione || 0) * 60);
   const minutiMancanti = Math.max(0, ORE_LAVORO_GIORNO * 60 - minutiLavorati);
   const kmDeficit = Math.round(minutiMancanti * KM_PER_MINUTO_MANCANTE * 10) / 10;
-  const kmRiconosciuti = kmMedia == null ? null : Math.max(0, Math.round((kmMedia - kmDeficit) * 10) / 10);
-  const fasciaRiconosciuta = kmRiconosciuti == null ? null : classificaFascia(kmRiconosciuti, config);
-  const nessunaTrasferta = nessunaTrasfertaSede || (kmRiconosciuti != null && kmRiconosciuti <= 0);
+  // Km riconosciuti = (totale - deficit) / 2. Il deficit si toglie dal totale
+  // (andata + ritorno + spostamenti) e poi si divide per 2.
+  const kmRiconosciuti = Math.max(0, Math.round(((kmTotali - kmDeficit) / 2) * 10) / 10);
+  const fasciaRiconosciuta = classificaFascia(kmRiconosciuti, config);
+  const split = classificaTrasfertaSplit(kmAndata, kmRitorno, config);
+  const nessunaTrasferta = nessunaTrasfertaSede || kmRiconosciuti <= 0;
   const label = nessunaTrasferta
     ? "—"
     : split.fascia_andata && split.fascia_ritorno && split.fascia_andata !== split.fascia_ritorno
@@ -131,7 +173,9 @@ export function calcolaTrasfertaGiorno(timbratureGiorno, cantieri, config) {
 
   return {
     ...split,
-    km_media: kmMedia,
+    km_spostamenti: kmSpostamenti,
+    km_totali: kmTotali,
+    km_media: kmEquiv,
     km_riconosciuti: kmRiconosciuti,
     km_deficit: kmDeficit,
     minuti_lavorati: minutiLavorati,
@@ -200,8 +244,13 @@ export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
   const oreCantieri = daTimbrature
     ? daTimbrature.oreCantieri
     : cantieri.reduce((s, c) => s + c.ore, 0);
+  // oreSpostamenti = spostamenti conteggiati come lavoro (solo il deficit sotto
+  // le 8h). oreSpostamentiTot = tempo totale degli spostamenti (per display).
   const oreSpostamenti = daTimbrature
     ? daTimbrature.oreSpost
+    : spostamenti.reduce((s, sp) => s + sp.durata, 0);
+  const oreSpostamentiTot = daTimbrature
+    ? daTimbrature.oreSpostTot || oreSpostamenti
     : spostamenti.reduce((s, sp) => s + sp.durata, 0);
 
   // Note / anomalie (es. uscito prima, permesso) dal campo note_imprevisti del rapportino
@@ -218,6 +267,7 @@ export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
     classificazioneSpostamenti,
     oreCantieri,
     oreSpostamenti,
+    oreSpostamentiTot,
     oreTotali: oreCantieri + oreSpostamenti,
   };
 }

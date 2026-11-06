@@ -51,6 +51,7 @@ export async function ricalcolaTrasferte() {
     await base44.entities.Trasferta.update(tr.id, {
       km_andata: calc.km_andata ?? 0,
       km_ritorno: calc.km_ritorno ?? 0,
+      km_spostamenti: calc.km_spostamenti ?? 0,
       km_totali: calc.km_totali ?? 0,
       fascia_andata: calc.fascia_andata,
       fascia_ritorno: calc.fascia_ritorno,

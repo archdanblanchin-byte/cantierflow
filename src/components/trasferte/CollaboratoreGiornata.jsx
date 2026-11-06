@@ -76,6 +76,7 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
   const senzaTrasferta = !!trasfertaCalc?.nessuna_trasferta;
   const kmAndataCalc = trasfertaCalc?.km_andata ?? null;
   const kmRitornoCalc = trasfertaCalc?.km_ritorno ?? null;
+  const kmSpostamentiCalc = trasfertaCalc?.km_spostamenti ?? 0;
   const splitCalc = trasfertaCalc || { fascia_andata: null, fascia_ritorno: null, km_media: null };
   const tipoCalc = trasfertaCalc?.tipo_trasferta ?? null;
   const fasciaAndataCalc = splitCalc.fascia_andata;
@@ -85,7 +86,7 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
   const kmAndata = editKmAndata !== "" ? parseFloat(editKmAndata) : kmAndataCalc;
   const kmRitorno = editKmRitorno !== "" ? parseFloat(editKmRitorno) : kmRitornoCalc;
   const tipoFinale = editTipo || (trasfertaEsistente?.tipo_trasferta) || tipoCalc;
-  const kmTotali = (kmAndata || 0) + (kmRitorno || 0);
+  const kmTotali = (kmAndata || 0) + (kmRitorno || 0) + kmSpostamentiCalc;
 
   const salvaTrasferta = async () => {
     setSalvando(true);
@@ -100,7 +101,12 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
         ultimo_cantiere_nome: ultimoIngresso?.cantiere_nome || null,
         km_andata: kmAndata != null ? kmAndata : null,
         km_ritorno: kmRitorno != null ? kmRitorno : null,
+        km_spostamenti: kmSpostamentiCalc || null,
         km_totali: kmTotali || null,
+        km_media: trasfertaCalc?.km_media ?? null,
+        km_riconosciuti: trasfertaCalc?.km_riconosciuti ?? null,
+        km_deficit: trasfertaCalc?.km_deficit ?? null,
+        minuti_mancanti: trasfertaCalc?.minuti_mancanti ?? null,
         fascia_andata: fasciaAndataCalc,
         fascia_ritorno: fasciaRitornoCalc,
         tipo_trasferta: tipoFinale || null,
@@ -253,10 +259,28 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
           </p>
         )}
 
-        {!senzaTrasferta && splitCalc.km_media != null && (
-          <p className="text-[10px] text-muted-foreground">
-            Andata {splitCalc.fascia_andata} · Ritorno {splitCalc.fascia_ritorno} · Media {splitCalc.km_media.toFixed(1)} km → proposta: <strong>{tipoCalc}</strong>
-          </p>
+        {!senzaTrasferta && (
+          <div className="text-[10px] text-muted-foreground space-y-0.5">
+            {kmSpostamentiCalc > 0 && (
+              <p>
+                Spostamenti: <strong>{kmSpostamentiCalc.toFixed(1)} km</strong>
+              </p>
+            )}
+            {trasfertaCalc?.km_totali != null && (
+              <p>
+                Totale {trasfertaCalc.km_totali.toFixed(1)} km
+                {kmSpostamentiCalc > 0 ? ` (andata ${(kmAndataCalc || 0).toFixed(1)} + spost. ${kmSpostamentiCalc.toFixed(1)} + ritorno ${(kmRitornoCalc || 0).toFixed(1)})` : ""}
+              </p>
+            )}
+            {trasfertaCalc?.km_riconosciuti != null && (
+              <p>
+                Riconosciuti: <strong>{trasfertaCalc.km_riconosciuti.toFixed(1)} km</strong>
+                {trasfertaCalc?.km_deficit > 0 ? ` (−${trasfertaCalc.km_deficit.toFixed(1)} km per ${trasfertaCalc.minuti_mancanti} min mancanti)` : ""}
+                {" → "}
+                <strong>{tipoCalc}</strong>
+              </p>
+            )}
+          </div>
         )}
 
         <div className="flex items-center gap-2">
