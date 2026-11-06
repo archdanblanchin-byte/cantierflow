@@ -32,14 +32,15 @@ export default function GiornoDetailDialog({
   const spostamenti = dettaglio?.spostamenti || [];
   const oreTotali = dettaglio?.oreTotali || 0;
   const oreCantieri = dettaglio?.oreCantieri || 0;
-  const oreSpostamenti = dettaglio?.oreSpostamenti || 0;
+  const oreSpostamenti = dettaglio?.oreSpostamentiTot || dettaglio?.oreSpostamenti || 0;
   const note = dettaglio?.note || [];
   const luoghiLavoro = dettaglio?.luoghiLavoro || [];
   const cfg = trasferta?.tipo_trasferta ? TRASFERTA_CONFIG[trasferta.tipo_trasferta] : null;
-  const cfgAndata = trasferta?.fascia_andata ? TRASFERTA_CONFIG[trasferta.fascia_andata] : null;
-  const cfgRitorno = trasferta?.fascia_ritorno ? TRASFERTA_CONFIG[trasferta.fascia_ritorno] : null;
-  const split = trasferta?.fascia_andata && trasferta?.fascia_ritorno && trasferta.fascia_andata !== trasferta.fascia_ritorno;
   const inSede = !!trasferta?.nessuna_trasferta;
+  const sopraOtto = !!trasferta?.sopra_otto;
+  const minutiMancanti = trasferta?.minuti_mancanti || 0;
+  const kmDeficit = trasferta?.km_deficit || 0;
+  const nCantieri = trasferta?.n_cantieri || cantieri.length || 1;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -59,7 +60,7 @@ export default function GiornoDetailDialog({
             <p className="text-xl font-bold text-primary">{fmtOre(oreTotali)}</p>
           </div>
           <div className="text-right text-[11px] text-muted-foreground space-y-0.5">
-            <p>Cantieri: <span className="font-semibold text-foreground">{fmtOre(oreCantieri)}</span></p>
+            <p>Lavorazione: <span className="font-semibold text-foreground">{fmtOre(oreCantieri)}</span></p>
             <p>Spostamenti: <span className="font-semibold text-foreground">{fmtOre(oreSpostamenti)}</span></p>
           </div>
         </Card>
@@ -143,9 +144,8 @@ export default function GiornoDetailDialog({
             ))}
             {dettaglio?.classificazioneSpostamenti?.totSpostamento > 0 && (
               <p className="text-[10px] text-muted-foreground">
-                {dettaglio.classificazioneSpostamenti.spostamentoTipo === "trasferta"
-                  ? "Oltre le 8 ore di cantiere: gli spostamenti sono conteggiati come trasferta (km sommati, ore escluse)."
-                  : "Fino a 8 ore di cantiere: gli spostamenti restano lavoro e non generano trasferta."}
+                Tempo totale spostamenti: {fmtOre(dettaglio.classificazioneSpostamenti.totSpostamento)}.
+                I km sono sempre sommati alla trasferta (vedi riepilogo sotto).
               </p>
             )}
           </div>
@@ -178,7 +178,7 @@ export default function GiornoDetailDialog({
             </p>
             <Card className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Giornata (media andata+ritorno)</span>
+                <span className="text-xs text-muted-foreground">Fascia (su km totali ÷ 2)</span>
                 {inSede ? (
                   <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-300">In sede</Badge>
                 ) : cfg ? (
@@ -195,52 +195,100 @@ export default function GiornoDetailDialog({
                   </p>
                 </div>
               )}
-              {split && !inSede && (
-                <div className="rounded-md bg-primary/10 px-2 py-1.5 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase">Combinazione</p>
-                  <p className="text-sm font-bold text-primary">{trasferta.label || `½ ${trasferta.fascia_andata} + ½ ${trasferta.fascia_ritorno}`}</p>
-                </div>
-              )}
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-md bg-muted/50 p-2">
-                  <p className="text-[9px] text-muted-foreground uppercase">Andata</p>
-                  <p className="text-sm font-bold">{trasferta.km_andata ?? 0} km</p>
-                  {trasferta.partenza_da_sede ? (
-                    <Badge variant="outline" className="mt-1 text-[9px] bg-slate-100 text-slate-600 border-slate-300">In sede</Badge>
-                  ) : cfgAndata ? (
-                    <Badge variant="outline" className={`mt-1 text-[9px] ${cfgAndata.color}`}>{cfgAndata.label}</Badge>
-                  ) : <p className="text-[9px] text-muted-foreground mt-1">—</p>}
-                  <p className="text-[9px] text-muted-foreground truncate mt-1">{trasferta.primo_cantiere_nome || "—"}</p>
-                </div>
-                <div className="rounded-md bg-muted/50 p-2">
-                  <p className="text-[9px] text-muted-foreground uppercase">Ritorno</p>
-                  <p className="text-sm font-bold">{trasferta.km_ritorno ?? 0} km</p>
-                  {trasferta.rientro_in_sede ? (
-                    <Badge variant="outline" className="mt-1 text-[9px] bg-slate-100 text-slate-600 border-slate-300">In sede</Badge>
-                  ) : cfgRitorno ? (
-                    <Badge variant="outline" className={`mt-1 text-[9px] ${cfgRitorno.color}`}>{cfgRitorno.label}</Badge>
-                  ) : <p className="text-[9px] text-muted-foreground mt-1">—</p>}
-                  <p className="text-[9px] text-muted-foreground truncate mt-1">{trasferta.ultimo_cantiere_nome || "—"}</p>
-                </div>
-                <div className="rounded-md bg-primary/10 p-2 flex flex-col">
-                  <p className="text-[9px] text-muted-foreground uppercase">Totali</p>
-                  <p className="text-sm font-bold text-primary flex-1 flex items-center">{trasferta.km_totali ?? 0} km</p>
-                  {trasferta.confermata && (
-                    <Badge className="mt-1 text-[9px] bg-emerald-600">confermata</Badge>
+              {!inSede && (
+                <>
+                  {/* Andata */}
+                  <div className="flex items-center justify-between rounded-md bg-muted/50 px-2.5 py-1.5">
+                    <div className="min-w-0">
+                      <p className="text-[9px] text-muted-foreground uppercase">Andata</p>
+                      <p className="text-[11px] font-medium truncate">
+                        {trasferta.partenza_da_sede
+                          ? <span className="text-slate-500">dalla sede</span>
+                          : `→ ${trasferta.primo_cantiere_nome || "—"}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-sm font-bold">{trasferta.km_andata ?? 0} km</span>
+                      {trasferta.partenza_da_sede && (
+                        <Badge variant="outline" className="text-[9px] bg-slate-100 text-slate-600 border-slate-300">sede</Badge>
+                      )}
+                    </div>
+                  </div>
+                  {/* Ritorno */}
+                  <div className="flex items-center justify-between rounded-md bg-muted/50 px-2.5 py-1.5">
+                    <div className="min-w-0">
+                      <p className="text-[9px] text-muted-foreground uppercase">Ritorno</p>
+                      <p className="text-[11px] font-medium truncate">
+                        {trasferta.rientro_in_sede
+                          ? <span className="text-slate-500">in sede</span>
+                          : `${trasferta.ultimo_cantiere_nome || "—"} →`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-sm font-bold">{trasferta.km_ritorno ?? 0} km</span>
+                      {trasferta.rientro_in_sede && (
+                        <Badge variant="outline" className="text-[9px] bg-slate-100 text-slate-600 border-slate-300">sede</Badge>
+                      )}
+                    </div>
+                  </div>
+                  {/* Spostamenti intermedi */}
+                  {(trasferta.km_spostamenti ?? 0) > 0 && (
+                    <div className="flex items-center justify-between rounded-md bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 px-2.5 py-1.5">
+                      <div className="min-w-0">
+                        <p className="text-[9px] text-orange-700 dark:text-orange-300 uppercase">Spostamenti intermedi</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {spostamenti.length} tratta/e
+                          {trasferta.minuti_spostamento ? ` · ${fmtOre(trasferta.minuti_spostamento / 60)}` : ""}
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold text-orange-700 dark:text-orange-300">{trasferta.km_spostamenti} km</span>
+                    </div>
                   )}
-                </div>
-              </div>
-              {trasferta.km_riconosciuti != null && !inSede && (
-                <div className="rounded-md bg-muted/50 px-2 py-1.5 space-y-0.5">
-                  <p className="text-[11px]">
-                    Trasferta riconosciuta: <span className="font-semibold">{trasferta.km_riconosciuti} km</span>
-                  </p>
-                  {trasferta.minuti_mancanti > 0 && (
-                    <p className="text-[10px] text-muted-foreground">
-                      −{trasferta.km_deficit} km per {trasferta.minuti_mancanti} min di lavoro mancanti alle 8h
-                    </p>
+                  {/* Totale km */}
+                  <div className="flex items-center justify-between rounded-md bg-primary/10 px-2.5 py-2">
+                    <div>
+                      <p className="text-[9px] text-muted-foreground uppercase">Totale km</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {(trasferta.km_andata ?? 0)} + {trasferta.km_spostamenti ?? 0} + {(trasferta.km_ritorno ?? 0)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-primary">{trasferta.km_totali ?? 0} km</span>
+                      {trasferta.confermata && (
+                        <Badge className="text-[9px] bg-emerald-600">confermata</Badge>
+                      )}
+                    </div>
+                  </div>
+                  {/* Riconosciuti e fascia */}
+                  {trasferta.km_riconosciuti != null && (
+                    <div className="rounded-md bg-muted/50 px-2.5 py-1.5 space-y-0.5">
+                      <p className="text-[11px]">
+                        Trasferta riconosciuta: <span className="font-semibold">{trasferta.km_riconosciuti} km</span>
+                        {" "}(totali ÷ 2)
+                        {cfg && <> → <span className="font-bold text-primary">{cfg.label}</span></>}
+                      </p>
+                    </div>
                   )}
-                </div>
+                  {/* Spiegazione regola delle 8 ore */}
+                  {sopraOtto
+                    ? (minutiMancanti === 0 && (trasferta.km_spostamenti ?? 0) > 0 && (
+                      <div className="rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1.5">
+                        <p className="text-[10px] text-emerald-800 dark:text-emerald-200 font-medium">
+                          Oltre le 8 ore di cantiere: ore e km degli spostamenti, andata e ritorno restano invariati e concorrono tutti alla trasferta.
+                        </p>
+                      </div>
+                    ))
+                    : minutiMancanti > 0 && (
+                      <div className="rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-2.5 py-1.5 space-y-1">
+                        <p className="text-[10px] text-amber-800 dark:text-amber-200 font-medium">
+                          Mancano <strong>{minutiMancanti} min</strong> alle 8 ore di cantiere.
+                        </p>
+                        <p className="text-[10px] text-amber-700 dark:text-amber-300">
+                          <strong>−{kmDeficit} km</strong> e <strong>{minutiMancanti} min</strong> sono stati tolti dagli spostamenti e aggiunti alle lavorazioni, divisi tra i {nCantieri} cantieri della giornata.
+                        </p>
+                      </div>
+                    )}
+                </>
               )}
               {trasferta.mezzo_proprio && (
                 <p className="text-[11px] text-muted-foreground flex items-center gap-1">

@@ -53,8 +53,6 @@ export async function ricalcolaTrasferte() {
       km_ritorno: calc.km_ritorno ?? 0,
       km_spostamenti: calc.km_spostamenti ?? 0,
       km_totali: calc.km_totali ?? 0,
-      fascia_andata: calc.fascia_andata,
-      fascia_ritorno: calc.fascia_ritorno,
       tipo_trasferta: calc.tipo_trasferta,
       km_media: calc.km_media ?? null,
       km_riconosciuti: calc.km_riconosciuti ?? null,

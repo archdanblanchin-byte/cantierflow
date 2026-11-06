@@ -118,8 +118,7 @@ export default function SequenzaGiornata({ timbrature, mostraTrasferta = false }
   }
 
   const inSedeGiornata = !!trasferta?.nessuna_trasferta;
-  const cfgAndata = trasferta?.fascia_andata ? TRASFERTA_CONFIG[trasferta.fascia_andata] : null;
-  const cfgRitorno = trasferta?.fascia_ritorno ? TRASFERTA_CONFIG[trasferta.fascia_ritorno] : null;
+  const cfgGiornata = trasferta?.tipo_trasferta ? TRASFERTA_CONFIG[trasferta.tipo_trasferta] : null;
 
   return (
     <Card className="p-4 space-y-3">
@@ -148,32 +147,45 @@ export default function SequenzaGiornata({ timbrature, mostraTrasferta = false }
             )}
           </div>
           {!inSedeGiornata && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-md bg-card/60 px-2 py-1.5">
-                <p className="text-[9px] text-muted-foreground uppercase">Andata</p>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold">{trasferta.km_andata ?? 0} km</span>
-                  {trasferta.partenza_da_sede
-                    ? <Badge variant="outline" className="text-[9px] bg-slate-100 text-slate-600 border-slate-300">In sede</Badge>
-                    : cfgAndata
-                      ? <Badge variant="outline" className={`text-[9px] ${cfgAndata.color}`}>{cfgAndata.label}</Badge>
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-md bg-card/60 px-2 py-1.5">
+                  <p className="text-[9px] text-muted-foreground uppercase">Andata</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-bold">{trasferta.km_andata ?? 0} km</span>
+                    {trasferta.partenza_da_sede
+                      ? <Badge variant="outline" className="text-[9px] bg-slate-100 text-slate-600 border-slate-300">In sede</Badge>
                       : null}
+                  </div>
+                  <p className="text-[9px] text-muted-foreground truncate">→ {trasferta.primo_cantiere_nome || "—"}</p>
                 </div>
-                <p className="text-[9px] text-muted-foreground truncate">→ {trasferta.primo_cantiere_nome || "—"}</p>
-              </div>
-              <div className="rounded-md bg-card/60 px-2 py-1.5">
-                <p className="text-[9px] text-muted-foreground uppercase">Ritorno</p>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold">{trasferta.km_ritorno ?? 0} km</span>
-                  {trasferta.rientro_in_sede
-                    ? <Badge variant="outline" className="text-[9px] bg-slate-100 text-slate-600 border-slate-300">In sede</Badge>
-                    : cfgRitorno
-                      ? <Badge variant="outline" className={`text-[9px] ${cfgRitorno.color}`}>{cfgRitorno.label}</Badge>
+                <div className="rounded-md bg-card/60 px-2 py-1.5">
+                  <p className="text-[9px] text-muted-foreground uppercase">Ritorno</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-bold">{trasferta.km_ritorno ?? 0} km</span>
+                    {trasferta.rientro_in_sede
+                      ? <Badge variant="outline" className="text-[9px] bg-slate-100 text-slate-600 border-slate-300">In sede</Badge>
                       : null}
+                  </div>
+                  <p className="text-[9px] text-muted-foreground truncate">{trasferta.ultimo_cantiere_nome || "—"} →</p>
                 </div>
-                <p className="text-[9px] text-muted-foreground truncate">{trasferta.ultimo_cantiere_nome || "—"} →</p>
               </div>
-            </div>
+              {(trasferta.km_spostamenti ?? 0) > 0 && (
+                <div className="flex items-center justify-between rounded-md bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 px-2 py-1.5">
+                  <span className="text-[9px] text-orange-700 dark:text-orange-300 uppercase">Spostamenti intermedi</span>
+                  <span className="text-xs font-bold text-orange-700 dark:text-orange-300">{trasferta.km_spostamenti} km</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between rounded-md bg-primary/10 px-2 py-1.5">
+                <span className="text-[9px] text-muted-foreground uppercase">Totale ÷ 2</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-bold text-primary">{trasferta.km_totali ?? 0} km</span>
+                  {cfgGiornata && (
+                    <Badge variant="outline" className={`text-[9px] ${cfgGiornata.color}`}>{cfgGiornata.label}</Badge>
+                  )}
+                </div>
+              </div>
+            </>
           )}
           <p className="text-[10px] text-muted-foreground">
             La trasferta è in km e non si somma alle ore lavorate.

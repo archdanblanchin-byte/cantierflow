@@ -74,10 +74,7 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
   const kmAndataCalc = trasfertaCalc?.km_andata ?? null;
   const kmRitornoCalc = trasfertaCalc?.km_ritorno ?? null;
   const kmSpostamentiCalc = trasfertaCalc?.km_spostamenti ?? 0;
-  const splitCalc = trasfertaCalc || { fascia_andata: null, fascia_ritorno: null, km_media: null };
   const tipoCalc = trasfertaCalc?.tipo_trasferta ?? null;
-  const fasciaAndataCalc = splitCalc.fascia_andata;
-  const fasciaRitornoCalc = splitCalc.fascia_ritorno;
 
   // Valori usati per il salvataggio (se l'admin modifica, usa quelli, altrimenti i calcolati)
   const kmAndata = editKmAndata !== "" ? parseFloat(editKmAndata) : kmAndataCalc;

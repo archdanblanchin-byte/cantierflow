@@ -1,19 +1,23 @@
-import { classificaFascia, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
+import { classificaFascia } from "@/lib/timbratureUtils";
 
 const decimo = (n) => Math.round(n * 10) / 10;
 
 // Unico calcolo dei valori derivati, usato sia in lettura sia nel salvataggio.
-// I km degli spostamenti arrivano già classificati dalla giornata (regola 8h).
+// Nuova logica: la fascia è UNICA, calcolata sui km complessivi
+// (andata + ritorno + spostamenti) diviso 2, meno il deficit di ore di cantiere
+// (1 min mancante alle 8h = 1 km tolto dalla trasferta).
+// Non si usano più fasce separate per andata e ritorno.
 export function calcolaValoriTrasferta(dati = {}, config) {
-  const split = classificaTrasfertaSplit(dati.km_andata ?? null, dati.km_ritorno ?? null, config);
+  const km_andata = dati.km_andata ?? 0;
+  const km_ritorno = dati.km_ritorno ?? 0;
   const km_spostamenti = dati.km_spostamenti ?? 0;
   const minuti_mancanti = Math.max(0, dati.minuti_mancanti ?? 0);
-  const km_totali = decimo((split.km_andata ?? 0) + (split.km_ritorno ?? 0) + km_spostamenti);
+  const km_totali = decimo(km_andata + km_ritorno + km_spostamenti);
   const km_deficit = decimo(minuti_mancanti); // 1 minuto mancante = 1 km
   const km_riconosciuti = Math.max(0, decimo((km_totali - km_deficit) / 2));
-  const { label, ...tratte } = split;
   return {
-    ...tratte,
+    km_andata: decimo(km_andata),
+    km_ritorno: decimo(km_ritorno),
     km_spostamenti,
     km_totali,
     km_media: decimo(km_totali / 2),
