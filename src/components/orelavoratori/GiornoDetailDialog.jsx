@@ -144,8 +144,8 @@ export default function GiornoDetailDialog({
             {dettaglio?.classificazioneSpostamenti?.totSpostamento > 0 && (
               <p className="text-[10px] text-muted-foreground">
                 {dettaglio.classificazioneSpostamenti.spostamentoTipo === "trasferta"
-                  ? "Oltre le 8 ore: gli spostamenti sono conteggiati come trasferta."
-                  : "Entro le 8 ore: gli spostamenti sono divisi tra i cantieri della giornata."}
+                  ? "Oltre le 8 ore di cantiere: gli spostamenti sono conteggiati come trasferta (km sommati, ore escluse)."
+                  : "Fino a 8 ore di cantiere: gli spostamenti restano lavoro e non generano trasferta."}
               </p>
             )}
           </div>
