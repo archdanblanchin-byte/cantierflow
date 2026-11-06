@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { RefreshCw, Loader2 } from "lucide-react";
 import { ricalcolaTrasferte } from "@/lib/ricalcoloTrasferte";
 
 export default function RicalcolaTrasferteCard() {
+  const queryClient = useQueryClient();
   const [me, setMe] = useState(null);
   const [conferma, setConferma] = useState(false);
   const [nRecord, setNRecord] = useState(null);
@@ -25,8 +27,7 @@ export default function RicalcolaTrasferteCard() {
     setNRecord(null);
     setConferma(true);
     try {
-      const lista = await base44.entities.Trasferta.list("-data", 5000);
-      setNRecord(lista.length);
+      setNRecord(await base44.entities.Trasferta.count());
     } catch {
       setNRecord(0);
     }
@@ -36,6 +37,7 @@ export default function RicalcolaTrasferteCard() {
     setInCorso(true);
     try {
       const r = await ricalcolaTrasferte();
+      await queryClient.invalidateQueries({ queryKey: ["trasferte-mese"] });
       setEsito(r);
     } finally {
       setInCorso(false);

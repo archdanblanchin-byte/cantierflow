@@ -1,6 +1,7 @@
 import { startOfMonth, endOfMonth, eachDayOfInterval, format } from "date-fns";
-import { arrotondaOre, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
+import { arrotondaOre } from "@/lib/timbratureUtils";
 import { oreGiornoDaTimbrature, calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
+import { risolviTrasfertaGiorno } from "@/lib/trasfertaValori";
 
 // Ore lavorative previste in una giornata ordinaria.
 // Giornate con permesso parziale: la soglia scende delle ore di permesso.
@@ -108,16 +109,11 @@ export function buildRiepilogoMensile({
       const d = new Date(t.data + "T00:00:00");
       if (d < primo || d > ultimo) return;
       const cella = get(chiave(d));
-      const split = classificaTrasfertaSplit(t.km_andata, t.km_ritorno, config);
-      const kmSpost = t.km_spostamenti ?? 0;
-      cella.trasferta = {
-        ...split,
-        km_spostamenti: kmSpost,
-        km_totali: t.km_totali ?? Math.round(((split.km_totali || 0) + kmSpost) * 10) / 10,
-        km_riconosciuti: t.km_riconosciuti ?? null,
-        tipo_trasferta: t.tipo_trasferta || split.tipo_trasferta,
-        confermata: true,
-      };
+      const precedente = cella.trasfertaSalvata;
+      if (!precedente || (t.confermata && !precedente.confermata) ||
+          (!!t.confermata === !!precedente.confermata && t.updated_date > precedente.updated_date)) {
+        cella.trasfertaSalvata = t;
+      }
     });
 
     // 4) permessi e ferie letti in automatico dal calendario Google collegato
@@ -176,9 +172,9 @@ export function buildRiepilogoMensile({
       // sotto le 8h). cella.oreSpostTot = tempo totale degli spostamenti
       // (mostrato nella colonna "Spost." del foglio).
       cella.ore = arrotondaOre((cella.oreCantieri || 0) + (cella.oreSpost || 0));
-      if (!cella.trasferta && tims.length) {
-        cella.trasferta = calcolaTrasfertaGiorno(tims, cantieri, config);
-      }
+      const trasfertaAuto = tims.length ? calcolaTrasfertaGiorno(tims, cantieri, config) : null;
+      cella.trasferta = risolviTrasfertaGiorno(cella.trasfertaSalvata, trasfertaAuto, config);
+      delete cella.trasfertaSalvata;
       cella.fascia = cella.trasferta?.tipo_trasferta || null;
       cella.inSede = !!cella.trasferta?.nessuna_trasferta;
       cella.cantiere = cella.cantieri[0] || null;

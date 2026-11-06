@@ -9,23 +9,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import AdminTimbraturaList from "@/components/timbrature/AdminTimbraturaList";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
 import { MapPin, Navigation, Clock, Save, CheckCircle2, Car, AlertTriangle, Settings, ChevronDown } from "lucide-react";
-import {
-  STEP_CONFIG, arrotondaMinutiSu, fmtOre, distanzaKmStrada,
-  CAPANNONE, classificaTrasfertaSplit, getCapannone, TRASFERTA_CONFIG, timbroInSede,
-} from "@/lib/timbratureUtils";
+import { arrotondaMinutiSu, fmtOre, getCapannone, TRASFERTA_CONFIG } from "@/lib/timbratureUtils";
 import { calcolaTrasfertaGiorno } from "@/lib/oreLavoratoriUtils";
+import { calcolaValoriTrasferta } from "@/lib/trasfertaValori";
 
 export default function CollaboratoreGiornata({ email, nome, trackingPosizione, timbrature, cantieri, data, trasfertaEsistente, config, onSalvata, editable, onTimbraturaCambiata }) {
   const capannone = getCapannone(config);
-  const [editKmAndata, setEditKmAndata] = useState("");
-  const [editKmRitorno, setEditKmRitorno] = useState("");
-  const [editTipo, setEditTipo] = useState("");
-  const [mezzoProprio, setMezzoProprio] = useState(false);
-  const [note, setNote] = useState("");
+  const [editKmAndata, setEditKmAndata] = useState(trasfertaEsistente?.km_andata != null ? String(trasfertaEsistente.km_andata) : "");
+  const [editKmRitorno, setEditKmRitorno] = useState(trasfertaEsistente?.km_ritorno != null ? String(trasfertaEsistente.km_ritorno) : "");
+  const [editTipo, setEditTipo] = useState(trasfertaEsistente?.tipo_trasferta || "");
+  const [mezzoProprio, setMezzoProprio] = useState(!!trasfertaEsistente?.mezzo_proprio);
+  const [note, setNote] = useState(trasfertaEsistente?.note || "");
   const [salvando, setSalvando] = useState(false);
+  const [errore, setErrore] = useState("");
   const [confermata, setConfermata] = useState(trasfertaEsistente?.confermata || false);
 
   const tOrd = (timbrature || []).slice().sort((a, b) => new Date(a.data_ora) - new Date(b.data_ora));
@@ -85,11 +82,19 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
   // Valori usati per il salvataggio (se l'admin modifica, usa quelli, altrimenti i calcolati)
   const kmAndata = editKmAndata !== "" ? parseFloat(editKmAndata) : kmAndataCalc;
   const kmRitorno = editKmRitorno !== "" ? parseFloat(editKmRitorno) : kmRitornoCalc;
-  const tipoFinale = editTipo || (trasfertaEsistente?.tipo_trasferta) || tipoCalc;
-  const kmTotali = (kmAndata || 0) + (kmRitorno || 0) + kmSpostamentiCalc;
+  const valori = calcolaValoriTrasferta({
+    km_andata: kmAndata,
+    km_ritorno: kmRitorno,
+    km_spostamenti: kmSpostamentiCalc,
+    minuti_mancanti: trasfertaCalc?.minuti_mancanti ?? trasfertaEsistente?.minuti_mancanti ?? 0,
+  }, config);
+  const tipoFinale = editTipo || valori.tipo_trasferta;
+  const kmNonValidi = [kmAndata, kmRitorno].some((km) => km != null && (!Number.isFinite(km) || km < 0));
 
   const salvaTrasferta = async () => {
+    if (kmNonValidi) return;
     setSalvando(true);
+    setErrore("");
     try {
       const payload = {
         data,
@@ -99,16 +104,7 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
         primo_cantiere_nome: primoIngresso?.cantiere_nome || null,
         ultimo_cantiere_id: ultimoIngresso?.cantiere_id || null,
         ultimo_cantiere_nome: ultimoIngresso?.cantiere_nome || null,
-        km_andata: kmAndata != null ? kmAndata : null,
-        km_ritorno: kmRitorno != null ? kmRitorno : null,
-        km_spostamenti: kmSpostamentiCalc || null,
-        km_totali: kmTotali || null,
-        km_media: trasfertaCalc?.km_media ?? null,
-        km_riconosciuti: trasfertaCalc?.km_riconosciuti ?? null,
-        km_deficit: trasfertaCalc?.km_deficit ?? null,
-        minuti_mancanti: trasfertaCalc?.minuti_mancanti ?? null,
-        fascia_andata: fasciaAndataCalc,
-        fascia_ritorno: fasciaRitornoCalc,
+        ...valori,
         tipo_trasferta: tipoFinale || null,
         mezzo_proprio: mezzoProprio,
         note,
@@ -123,7 +119,7 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
       setConfermata(true);
       onSalvata();
     } catch (e) {
-      console.error(e);
+      setErrore(e.message || "Impossibile salvare la trasferta.");
     } finally {
       setSalvando(false);
     }
@@ -211,7 +207,7 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
               step="0.1"
               placeholder={kmAndataCalc != null ? kmAndataCalc.toString() : "—"}
               value={editKmAndata}
-              onChange={(e) => setEditKmAndata(e.target.value)}
+              onChange={(e) => { setEditKmAndata(e.target.value); setEditTipo(""); }}
               className="h-8 text-sm"
             />
           </div>
@@ -223,7 +219,7 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
               step="0.1"
               placeholder={kmRitornoCalc != null ? kmRitornoCalc.toString() : "—"}
               value={editKmRitorno}
-              onChange={(e) => setEditKmRitorno(e.target.value)}
+              onChange={(e) => { setEditKmRitorno(e.target.value); setEditTipo(""); }}
               className="h-8 text-sm"
             />
           </div>
@@ -266,18 +262,18 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
                 Spostamenti: <strong>{kmSpostamentiCalc.toFixed(1)} km</strong>
               </p>
             )}
-            {trasfertaCalc?.km_totali != null && (
+            {valori.km_totali != null && (
               <p>
-                Totale {trasfertaCalc.km_totali.toFixed(1)} km
-                {kmSpostamentiCalc > 0 ? ` (andata ${(kmAndataCalc || 0).toFixed(1)} + spost. ${kmSpostamentiCalc.toFixed(1)} + ritorno ${(kmRitornoCalc || 0).toFixed(1)})` : ""}
+                Totale {valori.km_totali.toFixed(1)} km
+                {kmSpostamentiCalc > 0 ? ` (andata ${(kmAndata || 0).toFixed(1)} + spost. ${kmSpostamentiCalc.toFixed(1)} + ritorno ${(kmRitorno || 0).toFixed(1)})` : ""}
               </p>
             )}
-            {trasfertaCalc?.km_riconosciuti != null && (
+            {valori.km_riconosciuti != null && (
               <p>
-                Riconosciuti: <strong>{trasfertaCalc.km_riconosciuti.toFixed(1)} km</strong>
-                {trasfertaCalc?.km_deficit > 0 ? ` (−${trasfertaCalc.km_deficit.toFixed(1)} km per ${trasfertaCalc.minuti_mancanti} min mancanti)` : ""}
+                Riconosciuti: <strong>{valori.km_riconosciuti.toFixed(1)} km</strong>
+                {valori.km_deficit > 0 ? ` (−${valori.km_deficit.toFixed(1)} km per ${valori.minuti_mancanti} min mancanti)` : ""}
                 {" → "}
-                <strong>{tipoCalc}</strong>
+                <strong>{tipoFinale}</strong>
               </p>
             )}
           </div>
@@ -299,7 +295,8 @@ export default function CollaboratoreGiornata({ email, nome, trackingPosizione, 
           className="h-8 text-xs"
         />
 
-        <Button onClick={salvaTrasferta} disabled={salvando} size="sm" className="w-full gap-2">
+        {errore && <p role="alert" className="text-xs text-destructive">{errore}</p>}
+        <Button onClick={salvaTrasferta} disabled={salvando || kmNonValidi} size="sm" className="w-full gap-2">
           <Save className="w-3.5 h-3.5" />
           {salvando ? "Salvataggio..." : "Conferma trasferta"}
         </Button>

@@ -10,8 +10,9 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Users, Route, CalendarDays
 import BottomNav from "@/components/BottomNav";
 import { format, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import { it } from "date-fns/locale";
-import { fmtOre, arrotondaOre, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
+import { fmtOre, arrotondaOre } from "@/lib/timbratureUtils";
 import { buildDettaglioGiorno, calcolaTrasfertaGiorno, oreGiornoDaTimbrature } from "@/lib/oreLavoratoriUtils";
+import { risolviTrasfertaGiorno } from "@/lib/trasfertaValori";
 import CalendarioMese from "@/components/orelavoratori/CalendarioMese";
 import GiornoDetailDialog from "@/components/orelavoratori/GiornoDetailDialog";
 import RiepilogoMensile from "@/components/orelavoratori/RiepilogoMensile";
@@ -194,24 +195,12 @@ export default function OreLavoratori() {
       if (!matchCollab(t)) return;
       if (!t.data) return;
       const key = format(new Date(t.data + "T00:00:00"), "yyyy-MM-dd");
-      const split = classificaTrasfertaSplit(t.km_andata, t.km_ritorno, config);
-      let label = split.label;
-      if (t.fascia_andata && t.fascia_ritorno && t.fascia_andata !== t.fascia_ritorno) {
-        label = `½ ${t.fascia_andata} + ½ ${t.fascia_ritorno}`;
+      // Conserva tutti i campi: non perdere spostamenti, deficit e km riconosciuti.
+      const precedente = map[key];
+      if (!precedente || (t.confermata && !precedente.confermata) ||
+          (!!t.confermata === !!precedente.confermata && t.updated_date > precedente.updated_date)) {
+        map[key] = t;
       }
-      map[key] = {
-        tipo_trasferta: t.tipo_trasferta || split.tipo_trasferta,
-        fascia_andata: t.fascia_andata || split.fascia_andata,
-        fascia_ritorno: t.fascia_ritorno || split.fascia_ritorno,
-        km_totali: t.km_totali ?? split.km_totali,
-        km_andata: t.km_andata ?? split.km_andata,
-        km_ritorno: t.km_ritorno ?? split.km_ritorno,
-        primo_cantiere_nome: t.primo_cantiere_nome,
-        ultimo_cantiere_nome: t.ultimo_cantiere_nome,
-        mezzo_proprio: t.mezzo_proprio,
-        confermata: t.confermata,
-        label,
-      };
     });
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -266,7 +255,7 @@ export default function OreLavoratori() {
       sintesi[key] = {
         ore,
         oreSpost: arrotondaOre(oreSpost),
-        trasferta: trasfertaConfermata || trasfertaAuto || null,
+        trasferta: risolviTrasfertaGiorno(trasfertaConfermata, trasfertaAuto, config),
         hasNote,
         luoghi,
       };
@@ -341,9 +330,10 @@ export default function OreLavoratori() {
     giornoKey && selectedCollab
       ? {
           dataKey: giornoKey,
-          collaboratore: selectedCollab,
-          trasfertaEsistente: trasferte.find((t) => t.data === giornoKey && matchCollab(t)) || null,
-          trasfertaCalcolata: trasfertaGiorno,
+          collaboratore: { ...selectedCollab, user_email: selectedCollab.user_email || timbGiornoMap[giornoKey]?.find((t) => t.user_email)?.user_email || trasferteMap[giornoKey]?.user_email || "" },
+          trasfertaEsistente: trasferteMap[giornoKey] || null,
+          // La base automatica deve essere indipendente dalla correzione salvata.
+          trasfertaCalcolata: calcolaTrasfertaGiorno(timbGiornoMap[giornoKey] || [], cantieri, config),
           config,
           onSalvata: () => setGiornoKey(null),
         }

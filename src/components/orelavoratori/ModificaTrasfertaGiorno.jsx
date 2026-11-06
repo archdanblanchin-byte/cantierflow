@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, Save, CheckCircle2, Loader2 } from "lucide-react";
-import { TRASFERTA_CONFIG, classificaTrasfertaSplit } from "@/lib/timbratureUtils";
+import { TRASFERTA_CONFIG } from "@/lib/timbratureUtils";
+import { calcolaValoriTrasferta } from "@/lib/trasfertaValori";
 
 /**
  * Correzione manuale della trasferta di una giornata.
@@ -33,20 +34,27 @@ export default function ModificaTrasfertaGiorno({
   const [kmRitorno, setKmRitorno] = useState(
     String(trasfertaEsistente?.km_ritorno ?? trasfertaCalcolata?.km_ritorno ?? "")
   );
-  const [tipo, setTipo] = useState(
-    trasfertaEsistente?.tipo_trasferta || trasfertaCalcolata?.tipo_trasferta || ""
-  );
-  const [mezzoProprio, setMezzoProprio] = useState(!!trasfertaEsistente?.mezzo_proprio);
+  const [tipo, setTipo] = useState(trasfertaEsistente?.confermata ? trasfertaEsistente.tipo_trasferta || "" : "");
+  const [mezzoProprio, setMezzoProprio] = useState(!!(trasfertaEsistente?.mezzo_proprio ?? trasfertaCalcolata?.mezzo_proprio));
+  const [errore, setErrore] = useState("");
   const [note, setNote] = useState(trasfertaEsistente?.note || "");
 
   const kmA = kmAndata === "" ? null : parseFloat(kmAndata);
   const kmR = kmRitorno === "" ? null : parseFloat(kmRitorno);
   const kmSpost = trasfertaCalcolata?.km_spostamenti ?? trasfertaEsistente?.km_spostamenti ?? 0;
-  const split = classificaTrasfertaSplit(kmA, kmR, config);
-  const tipoEffettivo = tipo || split?.tipo_trasferta || "";
+  const valori = calcolaValoriTrasferta({
+    km_andata: kmA,
+    km_ritorno: kmR,
+    km_spostamenti: kmSpost,
+    minuti_mancanti: trasfertaCalcolata?.minuti_mancanti ?? trasfertaEsistente?.minuti_mancanti ?? 0,
+  }, config);
+  const tipoEffettivo = tipo || valori.tipo_trasferta || "";
+  const kmNonValidi = [kmA, kmR].some((km) => km != null && (!Number.isFinite(km) || km < 0));
 
   const salva = async () => {
+    if (kmNonValidi) return;
     setSalvando(true);
+    setErrore("");
     try {
       const payload = {
         data: dataKey,
@@ -56,12 +64,7 @@ export default function ModificaTrasfertaGiorno({
           trasfertaCalcolata?.primo_cantiere_nome || trasfertaEsistente?.primo_cantiere_nome || null,
         ultimo_cantiere_nome:
           trasfertaCalcolata?.ultimo_cantiere_nome || trasfertaEsistente?.ultimo_cantiere_nome || null,
-        km_andata: kmA,
-        km_ritorno: kmR,
-        km_spostamenti: kmSpost || null,
-        km_totali: split?.km_totali ?? null,
-        fascia_andata: split?.fascia_andata ?? null,
-        fascia_ritorno: split?.fascia_ritorno ?? null,
+        ...valori,
         tipo_trasferta: tipoEffettivo || null,
         mezzo_proprio: mezzoProprio,
         note,
@@ -72,8 +75,10 @@ export default function ModificaTrasfertaGiorno({
       } else {
         await base44.entities.Trasferta.create(payload);
       }
-      queryClient.invalidateQueries({ queryKey: ["trasferte-mese"] });
+      await queryClient.invalidateQueries({ queryKey: ["trasferte-mese"] });
       onSalvata?.();
+    } catch (e) {
+      setErrore(e.message || "Impossibile salvare la correzione.");
     } finally {
       setSalvando(false);
     }
@@ -107,7 +112,7 @@ export default function ModificaTrasfertaGiorno({
             inputMode="decimal"
             step="0.1"
             value={kmAndata}
-            onChange={(e) => setKmAndata(e.target.value)}
+            onChange={(e) => { setKmAndata(e.target.value); setTipo(""); }}
             className="h-8 text-sm"
           />
         </div>
@@ -118,7 +123,7 @@ export default function ModificaTrasfertaGiorno({
             inputMode="decimal"
             step="0.1"
             value={kmRitorno}
-            onChange={(e) => setKmRitorno(e.target.value)}
+            onChange={(e) => { setKmRitorno(e.target.value); setTipo(""); }}
             className="h-8 text-sm"
           />
         </div>
@@ -162,13 +167,15 @@ export default function ModificaTrasfertaGiorno({
         <Button variant="ghost" size="sm" className="flex-1" onClick={() => setAperto(false)}>
           Annulla
         </Button>
-        <Button size="sm" className="flex-1 gap-1.5" onClick={salva} disabled={salvando}>
+        <Button size="sm" className="flex-1 gap-1.5" onClick={salva} disabled={salvando || kmNonValidi}>
           {salvando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
           Salva
         </Button>
       </div>
 
+      {errore && <p role="alert" className="text-xs text-destructive">{errore}</p>}
       <p className="text-[10px] text-muted-foreground">
+        Totale {valori.km_totali} km · Riconosciuti {valori.km_riconosciuti} km.
         Timbrature e rapportini restano invariati: cambia solo il dato della trasferta.
       </p>
     </Card>

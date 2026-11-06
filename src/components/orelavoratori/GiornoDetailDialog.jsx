@@ -252,7 +252,7 @@ export default function GiornoDetailDialog({
         )}
 
         {/* Correzione manuale della trasferta (timbrature e rapportini restano invariati) */}
-        {correzioneTrasferta && <ModificaTrasfertaGiorno {...correzioneTrasferta} />}
+        {correzioneTrasferta && <ModificaTrasfertaGiorno key={`${correzioneTrasferta.dataKey}-${correzioneTrasferta.collaboratore?.id}`} {...correzioneTrasferta} />}
 
         {/* Nota della giornata scritta dal dipendente */}
         {(notaGiornata?.testo || notaGiornata?.dinamica) && (
