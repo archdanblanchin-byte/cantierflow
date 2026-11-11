@@ -1,12 +1,12 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Trash2, Wrench, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import OreInput from "@/components/wizard/OreInput";
 import NumeroInput from "@/components/wizard/NumeroInput";
+import LavorazioneCombobox from "@/components/wizard/LavorazioneCombobox";
 import { fmtOre } from "@/lib/timbratureUtils";
 
 export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazione }) {
@@ -78,74 +78,47 @@ export default function Step4LavorazioniNormali({ data, onChange, tipiLavorazion
         <div key={i} className="rounded-xl border border-border p-4 bg-card space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 space-y-2">
-              {/* Dropdown 1: Categoria */}
+              {/* Ricerca lavorazione su tutto il catalogo */}
               <div>
-                <Label className="text-xs text-muted-foreground">Categoria</Label>
-                <Select
-                  value={lav.categoria || ""}
-                  onValueChange={(val) => updateLavorazione(i, { categoria: val, tipo_lavorazione_id: "", tipo_lavorazione_nome: "" })}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seleziona categoria..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* Categorie dall'anagrafe DB */}
-                    {[...new Set(tipiLavorazione.map(t => t.categoria).filter(Boolean))].map(cat => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                    <SelectItem value="__custom__">✏️ Personalizzata</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs text-muted-foreground">Lavorazione</Label>
+                <LavorazioneCombobox
+                  tipiLavorazione={tipiLavorazione}
+                  value={lav.tipo_lavorazione_id || ""}
+                  isCustom={!lav.tipo_lavorazione_id && (lav.descrizione_custom || "").trim() !== ""}
+                  placeholder="Cerca lavorazione..."
+                  onSelect={(tipo) => updateLavorazione(i, {
+                    tipo_lavorazione_id: tipo.id,
+                    tipo_lavorazione_nome: tipo.nome || "",
+                    categoria: tipo.categoria || "",
+                    descrizione_custom: "",
+                  })}
+                  onCustom={() => updateLavorazione(i, {
+                    tipo_lavorazione_id: "",
+                    tipo_lavorazione_nome: "",
+                    descrizione_custom: lav.descrizione_custom || "",
+                    categoria: "",
+                  })}
+                />
               </div>
 
-              {/* Dropdown 2: Tipo (filtrato per categoria) */}
-              {lav.categoria && lav.categoria !== "__custom__" && (
+              {/* Campo libero se tipo non trovato nel catalogo */}
+              {!lav.tipo_lavorazione_id && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Tipo lavorazione</Label>
-                  <Select
-                    value={lav.tipo_lavorazione_id || ""}
-                    onValueChange={(val) => {
-                      if (val === "__custom_tipo__") {
-                        updateLavorazione(i, { tipo_lavorazione_id: "", tipo_lavorazione_nome: "", descrizione_custom: "" });
-                      } else {
-                        const tipo = tipiLavorazione.find((t) => t.id === val);
-                        updateLavorazione(i, { tipo_lavorazione_id: val, tipo_lavorazione_nome: tipo?.nome || "", descrizione_custom: "" });
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Seleziona tipo..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tipiLavorazione.filter(t => t.categoria === lav.categoria).map((t) => (
-                        <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
-                      ))}
-                      <SelectItem value="__custom_tipo__">✏️ Non trovata — scrivi manualmente</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {/* Campo libero se tipo non trovato nella lista */}
-                  {!lav.tipo_lavorazione_id && lav.categoria !== "__custom__" && (lav.descrizione_custom !== undefined) && (
-                    <Input
-                      value={lav.descrizione_custom || ""}
-                      onChange={(e) => updateLavorazione(i, { descrizione_custom: e.target.value, tipo_lavorazione_nome: e.target.value })}
-                      className="mt-2"
-                      placeholder="Descrivi il tipo di lavorazione..."
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* Campo libero per categoria personalizzata */}
-              {lav.categoria === "__custom__" && (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Descrizione personalizzata</Label>
+                  <Label className="text-xs text-muted-foreground">Descrizione</Label>
                   <Input
                     value={lav.descrizione_custom || ""}
-                    onChange={(e) => updateLavorazione(i, { descrizione_custom: e.target.value, tipo_lavorazione_id: "", tipo_lavorazione_nome: e.target.value })}
+                    onChange={(e) => updateLavorazione(i, { descrizione_custom: e.target.value, tipo_lavorazione_nome: e.target.value })}
                     className="mt-1"
                     placeholder="Descrivi la lavorazione..."
                   />
                 </div>
+              )}
+
+              {/* Categoria di provenienza (solo se dal catalogo) */}
+              {lav.tipo_lavorazione_id && lav.categoria && (
+                <span className="inline-block text-[11px] text-muted-foreground bg-muted/50 rounded px-1.5 py-0.5">
+                  {lav.categoria}
+                </span>
               )}
             </div>
             <Button variant="ghost" size="icon" className="text-destructive mt-6 flex-shrink-0" onClick={() => removeLavorazione(i)}>
