@@ -306,6 +306,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
                       categoria: tipo?.categoria || lav.categoria || "",
                     });
                   }}
+                  searchable
                   options={[
                     ...catalogo.map((t) => ({ value: t.id, label: t.nome })),
                     { value: "__nuovo__", label: "＋ Nuova lavorazione" },

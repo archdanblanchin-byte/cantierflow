@@ -118,6 +118,7 @@ export default function RapportinoUnico({
                     onChange({ cantiere_id: val, cantiere_nome: c?.nome || "" });
                     setCambiaCantiere(false);
                   }}
+                  searchable
                   options={cantieri
                     .filter((c) => (c.stato ? c.stato === "aperto" : c.attivo !== false) || c.id === data.cantiere_id)
                     .sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "it"))
