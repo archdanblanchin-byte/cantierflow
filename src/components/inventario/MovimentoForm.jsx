@@ -13,7 +13,8 @@ const AZIONI = [
   { key: "rettifica", label: "Rettifica", icon: Scale, color: "bg-slate-600" },
 ];
 
-export default function MovimentoForm({ materiale, onDone, onCancel }) {
+export default function MovimentoForm({ materiale, onDone, onCancel, isGestore }) {
+  const azioni = isGestore ? AZIONI : AZIONI.filter((a) => a.key !== "rettifica");
   const [tipo, setTipo] = useState("carico");
   const [quantita, setQuantita] = useState("");
   const [nota, setNota] = useState("");
@@ -50,7 +51,7 @@ export default function MovimentoForm({ materiale, onDone, onCancel }) {
   return (
     <div className="rounded-xl border border-border bg-muted/40 p-3 space-y-3">
       <div className="grid grid-cols-3 gap-2">
-        {AZIONI.map((a) => (
+        {azioni.map((a) => (
           <button
             key={a.key}
             onClick={() => setTipo(a.key)}

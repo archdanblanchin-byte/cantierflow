@@ -18,7 +18,7 @@ export const SEZIONI_APP = [
   { key: "archivio_cantieri", label: "Archivio Cantieri", path: "/archivio-cantieri", icon: Archive, color: "bg-emerald-700" },
   { key: "foto", label: "Foto", path: "/foto", icon: Camera, color: "bg-purple-500" },
   { key: "anagrafe", label: "Anagrafe", path: "/anagrafe", icon: BookUser, color: "bg-slate-600" },
-  { key: "inventario", label: "Inventario", path: "/inventario", icon: Package, color: "bg-lime-600" },
+  { key: "inventario", label: "Magazzino", path: "/inventario", icon: Package, color: "bg-lime-600" },
   { key: "campioni", label: "Campioni e avanzi", path: "/campioni", icon: PaintBucket, color: "bg-fuchsia-600" },
   { key: "ore_lavoratori", label: "Ore Lavoratori", path: "/ore-lavoratori", icon: Clock, color: "bg-amber-500" },
   { key: "programmazione", label: "Programmazione", path: "/programmazione", icon: CalendarClock, color: "bg-sky-500" },

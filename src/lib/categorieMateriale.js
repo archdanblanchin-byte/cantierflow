@@ -19,6 +19,16 @@ export const CATEGORIE_MATERIALE = [
 
 export const SENZA_CATEGORIA = "Senza categoria";
 
+// Sottocategorie di gestione del magazzino. Il responsabile le usa per dividere
+// i materiali che deve controllare ogni giorno dagli altri.
+export const CONTROLLO_QUOTIDIANO = "controllare ogni giorno";
+export const SOTTOCATEGORIE_MATERIALE = [
+  CONTROLLO_QUOTIDIANO,
+  "stagionale",
+  "occasionale",
+  "non gestito",
+];
+
 export function etichettaCategoria(valore) {
   return String(valore || "").trim() || SENZA_CATEGORIA;
 }
@@ -53,6 +63,24 @@ export function categoriePresenti(materiali) {
   };
   return [...conteggi.keys()]
     .sort((a, b) => posizione(a) - posizione(b) || a.localeCompare(b, "it"))
+    .map((nome) => ({ nome, conteggio: conteggi.get(nome) }));
+}
+
+// Sottocategorie presenti in inventario, con il numero di prodotti per ciascuna.
+// "controllare ogni giorno" viene sempre mostrata per prima.
+export function sottocategoriePresenti(materiali) {
+  const conteggi = new Map();
+  materiali.forEach((m) => {
+    const s = String(m.sottocategoria || "").trim();
+    if (!s) return;
+    conteggi.set(s, (conteggi.get(s) || 0) + 1);
+  });
+  return [...conteggi.keys()]
+    .sort((a, b) => {
+      if (a === CONTROLLO_QUOTIDIANO) return -1;
+      if (b === CONTROLLO_QUOTIDIANO) return 1;
+      return a.localeCompare(b, "it");
+    })
     .map((nome) => ({ nome, conteggio: conteggi.get(nome) }));
 }
 

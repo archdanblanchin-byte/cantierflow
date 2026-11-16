@@ -89,10 +89,12 @@ export default async function (req) {
     const azione = body?.azione;
     const sr = base44.asServiceRole;
 
-    // Movimento manuale del magazziniere (carico, scarico, rettifica)
+    // Movimento manuale di magazzino.
+    // carico e scarico sono aperti a tutti i collaboratori (consultazione magazzino).
+    // rettifica (imposta la giacenza assoluta) è riservata al responsabile magazzino.
     if (azione === 'movimento') {
-      if (!puoGestireInventario(user)) {
-        return Response.json({ error: 'Non autorizzato' }, { status: 403 });
+      if (body.tipo === 'rettifica' && !puoGestireInventario(user)) {
+        return Response.json({ error: 'Non autorizzato alla rettifica' }, { status: 403 });
       }
       if (!body.materiale_id || !TIPI_MANUALI.includes(body.tipo)) {
         return Response.json({ error: 'Dati movimento non validi' }, { status: 400 });

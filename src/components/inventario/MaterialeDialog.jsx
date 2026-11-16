@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import CategoriaPicker from "@/components/inventario/CategoriaPicker";
+import SottocategoriaPicker from "@/components/inventario/SottocategoriaPicker";
 import MovimentoForm from "@/components/inventario/MovimentoForm";
 import MovimentiStorico from "@/components/inventario/MovimentiStorico";
 import { sottoSoglia } from "@/lib/inventario";
@@ -16,6 +17,7 @@ export default function MaterialeDialog({ materiale, open, onClose, isGestore, o
   const [posizione, setPosizione] = useState("");
   const [fornitore, setFornitore] = useState("");
   const [categoria, setCategoria] = useState("");
+  const [sottocategoria, setSottocategoria] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [suggerendo, setSuggerendo] = useState(false);
 
@@ -25,6 +27,7 @@ export default function MaterialeDialog({ materiale, open, onClose, isGestore, o
       setPosizione(materiale.posizione_scaffale || "");
       setFornitore(materiale.fornitore || "");
       setCategoria(materiale.categoria || "");
+      setSottocategoria(materiale.sottocategoria || "");
     }
   }, [materiale]);
 
@@ -39,6 +42,7 @@ export default function MaterialeDialog({ materiale, open, onClose, isGestore, o
         posizione_scaffale: posizione.trim(),
         fornitore: fornitore.trim(),
         categoria: categoria.trim(),
+        sottocategoria: sottocategoria.trim(),
       });
       toast.success("Scheda materiale aggiornata");
       onChanged?.();
@@ -125,6 +129,7 @@ export default function MaterialeDialog({ materiale, open, onClose, isGestore, o
 
           <MovimentoForm
             materiale={materiale}
+            isGestore={isGestore}
             onDone={() => {
               onChanged?.();
               onClose();
@@ -162,6 +167,15 @@ export default function MaterialeDialog({ materiale, open, onClose, isGestore, o
                     onSuggerisci={suggerisciCategoria}
                     suggerendo={suggerendo}
                   />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Sottocategoria</Label>
+                <p className="text-[10px] text-muted-foreground mb-1">
+                  Usala per dividere i materiali da controllare ogni giorno
+                </p>
+                <div className="mt-1">
+                  <SottocategoriaPicker valore={sottocategoria} onChange={setSottocategoria} />
                 </div>
               </div>
               <div className="flex gap-2">
