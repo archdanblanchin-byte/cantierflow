@@ -19,24 +19,32 @@ function Chip({ attivo, onClick, children, className }) {
 }
 
 // Filtri combinabili dell'inventario: stato scorta, scaffale, categoria e ordinamento.
-export default function FiltriInventario({ materiali, numeroSottoSoglia, filtri, onChange }) {
+export default function FiltriInventario({ materiali, numeroSottoSoglia, filtri, onChange, mostraSottoSoglia = true }) {
   const categorie = categoriePresenti(materiali);
   const scaffali = scaffaliPresenti(materiali);
 
   return (
     <div className="space-y-2.5">
       <div className="flex flex-wrap items-center gap-2">
-        <Chip attivo={!filtri.soloSottoSoglia} onClick={() => onChange({ soloSottoSoglia: false })}>
-          Tutti
-        </Chip>
-        <Chip
-          attivo={filtri.soloSottoSoglia}
-          onClick={() => onChange({ soloSottoSoglia: true })}
-          className={filtri.soloSottoSoglia ? "bg-amber-500 border-amber-500 text-white" : ""}
-        >
-          <AlertTriangle className="w-3 h-3" />
-          Sotto soglia {numeroSottoSoglia > 0 && `(${numeroSottoSoglia})`}
-        </Chip>
+        {mostraSottoSoglia ? (
+          <>
+            <Chip attivo={!filtri.soloSottoSoglia} onClick={() => onChange({ soloSottoSoglia: false })}>
+              Tutti
+            </Chip>
+            <Chip
+              attivo={filtri.soloSottoSoglia}
+              onClick={() => onChange({ soloSottoSoglia: true })}
+              className={filtri.soloSottoSoglia ? "bg-amber-500 border-amber-500 text-white" : ""}
+            >
+              <AlertTriangle className="w-3 h-3" />
+              Sotto soglia {numeroSottoSoglia > 0 && `(${numeroSottoSoglia})`}
+            </Chip>
+          </>
+        ) : (
+          <Chip attivo={!filtri.soloSottoSoglia} onClick={() => onChange({ soloSottoSoglia: false })}>
+            Tutti i prodotti
+          </Chip>
+        )}
 
         <Select
           value={filtri.scaffale || "tutti"}
