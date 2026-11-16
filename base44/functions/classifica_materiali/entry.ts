@@ -10,7 +10,7 @@ const puoGestireInventario = (user) =>
 // Categorie suggerite all'AI: sono le stesse proposte nell'interfaccia.
 const CATEGORIE = [
   'Pitture, vernici e solventi',
-  'Manti, intonaci e rasanti',
+  'Malte, intonaci e rasanti',
   'Pulizia, protezione e adesivi',
   'Rulli e pennelli',
   'Attrezzi e utensili',

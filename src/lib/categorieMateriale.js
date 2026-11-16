@@ -2,7 +2,7 @@
 // Sono un suggerimento: il magazziniere può comunque scrivere una categoria propria.
 export const CATEGORIE_MATERIALE = [
   "Pitture, vernici e solventi",
-  "Manti, intonaci e rasanti",
+  "Malte, intonaci e rasanti",
   "Pulizia, protezione e adesivi",
   "Rulli e pennelli",
   "Attrezzi e utensili",
