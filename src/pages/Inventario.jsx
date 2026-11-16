@@ -4,9 +4,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import {
-  ArrowLeft, BellRing, Clock, FileUp, Flag, Loader2,
+  ArrowLeft, BellRing, Clock, FileUp, Loader2,
   Package, PackagePlus, Search, Sparkles,
 } from "lucide-react";
+import MagazzinoBell from "@/components/inventario/MagazzinoBell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,19 +60,6 @@ export default function Inventario() {
     queryKey: ["materiali-anagrafe"],
     queryFn: () => caricaTuttiMateriali({ gestito_magazzino: { $ne: true } }),
     enabled: puoGestire,
-  });
-
-  const { data: segnalazioniAperte = [] } = useQuery({
-    queryKey: ["segnalazioni-materiale-aperte"],
-    queryFn: async () => {
-      const page = await base44.entities.SegnalazioneMateriale.filter(
-        { stato: "aperta" },
-        { sort: "-created_date", limit: 100 }
-      );
-      return page?.items || [];
-    },
-    enabled: puoGestire,
-    refetchInterval: 60000,
   });
 
   const aggiorna = () => {
@@ -166,14 +154,10 @@ export default function Inventario() {
             </div>
             {puoGestire && (
               <>
-                <Button variant="outline" size="icon" className="relative shrink-0" onClick={() => setShowSegnalazioni(true)} title="Materiale segnalato mancante">
-                  <Flag className="w-4 h-4" />
-                  {segnalazioniAperte.length > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
-                      {segnalazioniAperte.length > 9 ? "9+" : segnalazioniAperte.length}
-                    </span>
-                  )}
-                </Button>
+                <MagazzinoBell
+                  onOpenMateriale={setAperto}
+                  onOpenSegnalazioni={() => setShowSegnalazioni(true)}
+                />
                 <Button variant="outline" size="icon" className="shrink-0" onClick={() => setShowDestinatari(true)} title="Chi riceve gli avvisi">
                   <BellRing className="w-4 h-4" />
                 </Button>

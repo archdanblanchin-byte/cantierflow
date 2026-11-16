@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Bell, MapPin, ListTodo, AlertTriangle, Package, Flag, Trash2 } from "lucide-react";
+import { Bell, MapPin, ListTodo, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { caricaTuttiMateriali } from "@/lib/inventario";
 
+// Campanella generale dell'app: task e comunicazioni personali ricevute,
+// più le comunicazioni sui cantieri in cui sono programmato.
+// Gli avvisi del magazzino (scorte basse, materiale segnalato mancante) sono
+// raccolti nella campanella dedicata del Magazzino, non qui.
 function BottoneCancella({ onClick, label = "Cancella notifica" }) {
   return (
     <button
@@ -22,29 +25,10 @@ function BottoneCancella({ onClick, label = "Cancella notifica" }) {
 export default function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [nascoste, setNascoste] = useState([]);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
-
-  // Avvisi di scorta già cancellati dall'utente (per materiale + giacenza attuale):
-  // tornano a comparire solo se la giacenza cambia di nuovo.
-  useEffect(() => {
-    if (!user?.email) return;
-    try {
-      setNascoste(JSON.parse(localStorage.getItem(`scorte-nascoste-${user.email}`) || "[]"));
-    } catch {
-      setNascoste([]);
-    }
-  }, [user?.email]);
-
-  const chiaveScorta = (m) => `${m.id}:${Number(m.giacenza || 0)}`;
-  const nascondiScorte = (materiali) => {
-    const next = [...new Set([...nascoste, ...materiali.map(chiaveScorta)])];
-    setNascoste(next);
-    localStorage.setItem(`scorte-nascoste-${user.email}`, JSON.stringify(next));
-  };
 
   const { data: note = [] } = useQuery({
     queryKey: ["note-ricevute"],
@@ -66,48 +50,10 @@ export default function NotificationsBell() {
     enabled: !!user,
   });
 
-  const { data: materialiScorta = [] } = useQuery({
-    queryKey: ["materiali-inventario"],
-    queryFn: () => caricaTuttiMateriali({ gestito_magazzino: true }),
-    enabled: !!user,
-    refetchInterval: 60000,
-  });
-
-  const { data: destinatariScorta = [] } = useQuery({
-    queryKey: ["destinatari-scorta"],
-    queryFn: async () => {
-      const page = await base44.entities.DestinatarioScorta.filter({ attivo: true }, { limit: 100 });
-      return page?.items || [];
-    },
-    enabled: !!user,
-    refetchInterval: 120000,
-  });
-
-  // Materiale segnalato mancante in magazzino: la vede il magazziniere e l'amministratore
-  const isGestore = ["admin", "responsabile_tecnico"].includes(user?.role);
-  const { data: segnalazioniMateriale = [] } = useQuery({
-    queryKey: ["segnalazioni-materiale-aperte"],
-    queryFn: async () => {
-      const page = await base44.entities.SegnalazioneMateriale.filter(
-        { stato: "aperta" },
-        { sort: "-created_date", limit: 100 }
-      );
-      return page?.items || [];
-    },
-    enabled: !!user && isGestore,
-    refetchInterval: 60000,
-  });
-
   // Task / comunicazioni assegnati direttamente a me, non ancora visti
   const ricevute = (note || []).filter(
     (n) => (n.destinatari_email || []).includes(user?.email) && !(n.letto_da || []).includes(user?.email)
   );
-
-  // Scorte di magazzino sotto la soglia: avviso per chi è stato scelto come destinatario
-  const sonoDestinatario = (destinatariScorta || []).some((d) => d.email === user?.email);
-  const scorteBasse = (sonoDestinatario || user?.role === "admin" ? materialiScorta : [])
-    .filter((m) => Number(m.soglia_minima || 0) > 0 && Number(m.giacenza || 0) <= Number(m.soglia_minima || 0))
-    .filter((m) => !nascoste.includes(chiaveScorta(m)));
 
   // Comunicazioni sui cantieri dove sono programmato (oggi e domani)
   const oggi = new Date().toISOString().slice(0, 10);
@@ -126,12 +72,10 @@ export default function NotificationsBell() {
     !(n.letto_da || []).includes(user?.email) &&
     mieiCantieri.some((p) => p.cantiere_id === n.cantiere_id));
 
-  const count = ricevute.length + allarmiCantiere.length + scorteBasse.length + segnalazioniMateriale.length;
-  const daCancellare = count;
+  const count = ricevute.length + allarmiCantiere.length;
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["note-ricevute"] });
-    queryClient.invalidateQueries({ queryKey: ["segnalazioni-materiale-aperte"] });
   };
 
   const cancellaNota = async (n) => {
@@ -143,21 +87,10 @@ export default function NotificationsBell() {
     }
   };
 
-  const cancellaSegnalazione = async (s) => {
-    try {
-      await base44.entities.SegnalazioneMateriale.update(s.id, { stato: "gestita", gestita_da_nome: user?.full_name || user?.email });
-      refresh();
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const cancellaTutte = async () => {
-    if (scorteBasse.length) nascondiScorte(scorteBasse);
     await Promise.all([
       ...ricevute.map(cancellaNota),
       ...allarmiCantiere.map(cancellaNota),
-      ...segnalazioniMateriale.map(cancellaSegnalazione),
     ]);
     refresh();
   };
@@ -182,7 +115,7 @@ export default function NotificationsBell() {
           <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-border bg-popover shadow-xl z-50 p-2 space-y-1">
             <div className="sticky -top-2 -mx-2 px-3 py-2 bg-popover border-b border-border flex items-center justify-between gap-2 z-10">
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notifiche</span>
-              {daCancellare > 0 && (
+              {count > 0 && (
                 <button
                   onClick={cancellaTutte}
                   className="text-[11px] font-semibold text-rose-600 hover:underline flex items-center gap-1"
@@ -191,56 +124,6 @@ export default function NotificationsBell() {
                 </button>
               )}
             </div>
-
-            {scorteBasse.length > 0 && (
-              <>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700 px-2 py-1 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" /> Scorte sotto soglia · {scorteBasse.length}
-                </p>
-                {scorteBasse.slice(0, 6).map((m) => (
-                  <div key={`s-${m.id}`} className="flex items-center gap-1 rounded-lg hover:bg-accent bg-amber-500/10">
-                    <button
-                      onClick={() => { setOpen(false); navigate("/inventario"); }}
-                      className="flex-1 text-left p-2"
-                    >
-                      <p className="text-xs font-medium flex items-center gap-1.5">
-                        <Package className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                        <span>{m.nome}: rimasti {Number(m.giacenza || 0)} {m.unita_misura || ""}</span>
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        Soglia {Number(m.soglia_minima || 0)} {m.unita_misura || ""} · serve un carico
-                      </p>
-                    </button>
-                    <BottoneCancella onClick={() => nascondiScorte([m])} />
-                  </div>
-                ))}
-              </>
-            )}
-
-            {segnalazioniMateriale.length > 0 && (
-              <>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-700 px-2 py-1 flex items-center gap-1">
-                  <Flag className="w-3 h-3" /> Materiale segnalato mancante · {segnalazioniMateriale.length}
-                </p>
-                {segnalazioniMateriale.slice(0, 6).map((s) => (
-                  <div key={`m-${s.id}`} className="flex items-center gap-1 rounded-lg hover:bg-accent bg-rose-500/10">
-                    <button
-                      onClick={() => { setOpen(false); navigate("/inventario"); }}
-                      className="flex-1 text-left p-2"
-                    >
-                      <p className="text-xs font-medium flex items-center gap-1.5">
-                        <Package className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                        <span>{s.materiale_nome}{s.posizione_scaffale ? ` · scaffale ${s.posizione_scaffale}` : ""}</span>
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
-                        {s.testo} · da {s.user_nome || s.user_email}
-                      </p>
-                    </button>
-                    <BottoneCancella onClick={() => cancellaSegnalazione(s)} />
-                  </div>
-                ))}
-              </>
-            )}
 
             {allarmiCantiere.length > 0 && (
               <>
