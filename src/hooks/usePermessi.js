@@ -12,7 +12,23 @@ export function usePermessi() {
   const isGestore = isAdmin || ruolo === "responsabile_tecnico";
   // Permesso extra assegnato dall'amministratore dalla pagina Utenti: chi lo ha
   // gestisce l'inventario con gli stessi poteri dell'amministratore.
-  const gestoreInventario = isAdmin || user?.permessi_extra === "inventario";
+  // me() non espone sempre i campi personalizzati del record Utente, quindi lo
+  // recupiamo dal record completo come fallback quando manca.
+  const serveFallback = !!user?.email && !isAdmin && user?.permessi_extra === undefined;
+  const { data: mioRecord } = useQuery({
+    queryKey: ["mio-record", user?.email],
+    queryFn: async () => {
+      try {
+        const res = await base44.entities.User.filter({ email: user.email }, "-created_date", 1, 0);
+        return Array.isArray(res) ? res[0] : null;
+      } catch {
+        return null;
+      }
+    },
+    enabled: serveFallback,
+  });
+  const permessoExtra = mioRecord?.permessi_extra ?? user?.permessi_extra;
+  const gestoreInventario = isAdmin || permessoExtra === "inventario";
 
   const { data: permessiRaw = [], isLoading } = useQuery({
     queryKey: ["permessi-sezione"],
