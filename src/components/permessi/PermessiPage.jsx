@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Save, Lock, Loader2 } from "lucide-react";
 import { RUOLI, SEZIONI_APP, PERMESSI_DEFAULT } from "@/lib/permissions";
 import { useToast } from "@/components/ui/use-toast";
+import GestoreMagazzinoCard from "./GestoreMagazzinoCard";
 
 export default function PermessiPage() {
   const queryClient = useQueryClient();
@@ -82,6 +83,7 @@ export default function PermessiPage() {
 
   return (
     <div className="space-y-4">
+      <GestoreMagazzinoCard />
       <p className="text-xs text-muted-foreground">
         Attiva o disattiva le sezioni visibili per ogni fascia. L'Amministratore ha sempre accesso completo.
       </p>
