@@ -1,0 +1,55 @@
+{
+  "name": "SopralluogoAnagrafica",
+  "type": "object",
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "lavorazione",
+        "elemento",
+        "stanza",
+        "unita",
+        "sottrazione"
+      ],
+      "description": "Anagrafica del modulo Sopralluogo a cui appartiene la voce personalizzata"
+    },
+    "nome": {
+      "type": "string",
+      "description": "Nome della voce personalizzata"
+    }
+  },
+  "required": [
+    "tipo",
+    "nome"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

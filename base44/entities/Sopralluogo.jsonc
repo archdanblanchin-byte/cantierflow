@@ -1,0 +1,225 @@
+{
+  "name": "Sopralluogo",
+  "type": "object",
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "interno",
+        "esterno"
+      ],
+      "default": "interno",
+      "description": "Tipo di sopralluogo"
+    },
+    "cognome": {
+      "type": "string",
+      "description": "Cognome del cliente"
+    },
+    "nome": {
+      "type": "string",
+      "description": "Nome del cliente"
+    },
+    "cantiere_nome": {
+      "type": "string",
+      "description": "Nome del cantiere"
+    },
+    "indirizzo": {
+      "type": "string"
+    },
+    "citta": {
+      "type": "string"
+    },
+    "latitudine": {
+      "type": "number"
+    },
+    "longitudine": {
+      "type": "number"
+    },
+    "telefono": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "data": {
+      "type": "string",
+      "format": "date",
+      "description": "Data del sopralluogo"
+    },
+    "attenzione_attiva": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se presente il contatto Alla cortese attenzione"
+    },
+    "attenzione": {
+      "type": "object",
+      "description": "Contatto Alla cortese attenzione",
+      "properties": {
+        "nome": {
+          "type": "string"
+        },
+        "cognome": {
+          "type": "string"
+        },
+        "indirizzo": {
+          "type": "string"
+        },
+        "citta": {
+          "type": "string"
+        },
+        "telefono": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      }
+    },
+    "rilievi": {
+      "type": "array",
+      "description": "Rilievi dinamici: lavorazione, porzioni, misure, foto e file",
+      "items": {
+        "type": "object"
+      }
+    },
+    "stanze": {
+      "type": "array",
+      "description": "Dati storici: stanze (struttura precedente, conservata senza conversione)",
+      "items": {
+        "type": "object"
+      }
+    },
+    "facciate": {
+      "type": "array",
+      "description": "Dati storici: facciate (struttura precedente, conservata senza conversione)",
+      "items": {
+        "type": "object"
+      }
+    },
+    "prodotti_particolari": {
+      "type": "string"
+    },
+    "note_generali": {
+      "type": "string"
+    },
+    "note_dettaglio": {
+      "type": "string"
+    },
+    "nota_vocale_trascrizione": {
+      "type": "string",
+      "description": "Trascrizione della nota vocale su cliente e cantiere"
+    },
+    "nota_vocale_analisi": {
+      "type": "object",
+      "description": "Sintesi per sezioni della nota vocale"
+    },
+    "lavorazioni_trascrizione": {
+      "type": "string",
+      "description": "Trascrizione della descrizione vocale delle lavorazioni"
+    },
+    "lavorazioni_elenco": {
+      "type": "array",
+      "description": "Elenco numerato delle lavorazioni generato dall'AI",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "descrizione": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "foto_generali": {
+      "type": "array",
+      "description": "Immagini generali (file privati)",
+      "items": {
+        "type": "object"
+      }
+    },
+    "foto_quote": {
+      "type": "array",
+      "description": "Immagini esterne con quote e annotazioni (file privati)",
+      "items": {
+        "type": "object"
+      }
+    },
+    "allegati": {
+      "type": "array",
+      "description": "Allegati e scansioni PDF (file privati)",
+      "items": {
+        "type": "object"
+      }
+    },
+    "stato_manuale": {
+      "type": "string",
+      "enum": [
+        "bozza",
+        "compilato",
+        "da_sviluppare",
+        "preventivo_impostato"
+      ],
+      "description": "Stato scelto manualmente: prevale su quello calcolato"
+    },
+    "preventivo_riferimento": {
+      "type": "string",
+      "description": "Riferimento del preventivo collegato"
+    }
+  },
+  "required": [
+    "cognome"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
