@@ -117,3 +117,11 @@ a,
 .safe-area-bottom-pb {
   padding-bottom: max(env(safe-area-inset-bottom), 0px);
 }
+
+/* === Stampa Cronoprogramma === */
+@media print {
+  @page { size: landscape; margin: 8mm; }
+  body * { visibility: hidden !important; }
+  #crono-print-area, #crono-print-area * { visibility: visible !important; }
+  #crono-print-area { position: absolute; left: 0; top: 0; display: block !important; width: max-content; }
+}

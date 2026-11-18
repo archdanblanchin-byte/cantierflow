@@ -1,0 +1,171 @@
+{
+  "name": "CronoCantiere",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome del cantiere"
+    },
+    "descrizione": {
+      "type": "string",
+      "description": "Descrizione dei lavori"
+    },
+    "data_inizio": {
+      "type": "string",
+      "format": "date",
+      "description": "Data di inizio"
+    },
+    "ore_totali": {
+      "type": "number",
+      "default": 0,
+      "description": "Ore totali stimate"
+    },
+    "persone": {
+      "type": "number",
+      "default": 1,
+      "description": "Numero di persone assegnate"
+    },
+    "ore_giornaliere": {
+      "type": "number",
+      "default": 8,
+      "description": "Ore giornaliere per persona"
+    },
+    "giorni_maltempo": {
+      "type": "number",
+      "default": 0,
+      "description": "Giorni di maltempo previsti"
+    },
+    "giorni_pioggia": {
+      "type": "number",
+      "default": 0,
+      "description": "Giorni di pioggia"
+    },
+    "colore": {
+      "type": "string",
+      "description": "Colore del cantiere (#rrggbb)"
+    },
+    "stato": {
+      "type": "string",
+      "enum": [
+        "pianificato",
+        "in_corso",
+        "completato",
+        "sospeso"
+      ],
+      "default": "pianificato",
+      "description": "Stato del cantiere"
+    },
+    "data_confermata": {
+      "type": "boolean",
+      "default": false,
+      "description": "Data confermata con il cliente"
+    },
+    "capocantiere": {
+      "type": "string",
+      "description": "Nome del capocantiere"
+    },
+    "capocantiere_id": {
+      "type": "string",
+      "description": "ID del supervisore capocantiere"
+    },
+    "responsabile": {
+      "type": "string",
+      "description": "Nome del responsabile"
+    },
+    "responsabile_id": {
+      "type": "string",
+      "description": "ID del supervisore responsabile"
+    },
+    "indirizzo": {
+      "type": "string",
+      "description": "Indirizzo del cantiere"
+    },
+    "committente": {
+      "type": "string",
+      "description": "Committente"
+    },
+    "mezzi": {
+      "type": "array",
+      "description": "Mezzi assegnati",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "targa": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pause": {
+      "type": "array",
+      "description": "Pause/interruzioni",
+      "items": {
+        "type": "object",
+        "properties": {
+          "inizio": {
+            "type": "string"
+          },
+          "fine": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "note": {
+      "type": "string",
+      "description": "Note"
+    }
+  },
+  "required": [
+    "nome",
+    "data_inizio"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    }
+  }
+}
