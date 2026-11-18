@@ -1,0 +1,72 @@
+{
+  "name": "Supervisore",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome del supervisore"
+    },
+    "ruolo": {
+      "type": "string",
+      "enum": [
+        "capocantiere",
+        "responsabile"
+      ],
+      "default": "capocantiere",
+      "description": "Ruolo nel cronoprogramma"
+    },
+    "colore": {
+      "type": "string",
+      "description": "Colore associato (#rrggbb)"
+    }
+  },
+  "required": [
+    "nome",
+    "ruolo"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    }
+  }
+}
