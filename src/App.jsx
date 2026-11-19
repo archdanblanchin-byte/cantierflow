@@ -49,7 +49,7 @@ const AuthenticatedApp = () => {
   // BottomNav nascosta durante la compilazione del rapportino (wizard a tutto schermo)
   // per non coprire i bottoni Avanti/Indietro della barra di navigazione del wizard.
   const isWizardRoute = p.startsWith("/nuovo") || p.startsWith("/modifica-report");
-  const showBottomNav = !isWizardRoute;
+  const showBottomNav = !isWizardRoute && !p.startsWith("/embed");
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -96,6 +96,7 @@ const AuthenticatedApp = () => {
       <Route path="/programma" element={<Programma />} />
       <Route path="/programmazione" element={<Programmazione />} />
       <Route path="/cronoprogramma" element={<Cronoprogramma />} />
+      <Route path="/embed/cronoprogramma" element={<Cronoprogramma />} />
       <Route path="/furgoni" element={<Placeholder title="Furgoni" />} />
       <Route path="/documenti" element={<Documenti />} />
       <Route path="/inventario" element={<Inventario />} />
