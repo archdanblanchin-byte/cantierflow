@@ -1,7 +1,7 @@
 import {
   ClipboardList, Building2, Camera, BookUser,
   CalendarDays, BarChart2, Settings, Car,
-  HardHat, Clock, CalendarClock, StickyNote, Hammer, FileText, Archive, Package, PaintBucket, ListTodo, ClipboardCheck,
+  HardHat, Clock, CalendarClock, StickyNote, Hammer, FileText, Archive, Package, PaintBucket, ListTodo, ClipboardCheck, Ruler,
 } from "lucide-react";
 
 export const RUOLI = [
@@ -21,6 +21,7 @@ export const SEZIONI_APP = [
   { key: "inventario", label: "Magazzino", path: "/inventario", icon: Package, color: "bg-lime-600" },
   { key: "campioni", label: "Campioni e avanzi", path: "/campioni", icon: PaintBucket, color: "bg-fuchsia-600" },
   { key: "sopralluogo", label: "Sopralluogo", path: "/sopralluogo", icon: ClipboardCheck, color: "bg-orange-600" },
+  { key: "strumenti", label: "Strumenti", path: "/strumenti", icon: Ruler, color: "bg-indigo-600" },
   { key: "ore_lavoratori", label: "Ore Lavoratori", path: "/ore-lavoratori", icon: Clock, color: "bg-amber-500" },
   { key: "programmazione", label: "Programmazione", path: "/programmazione", icon: CalendarClock, color: "bg-sky-500" },
   { key: "programma", label: "Programma", path: "/programma", icon: CalendarDays, color: "bg-orange-500" },
@@ -36,8 +37,8 @@ export const SEZIONI_APP = [
 
 export const PERMESSI_DEFAULT = {
   admin: SEZIONI_APP.map(s => s.key),
-  responsabile_tecnico: ["sopralluogo", "rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "anagrafe", "inventario", "campioni", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "permessi_ferie", "uso_furgoni", "note", "task", "workflow", "documenti"],
-  capocantiere: ["sopralluogo", "rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "anagrafe", "inventario", "campioni", "ore_lavoratori", "programmazione", "programma", "permessi_ferie", "uso_furgoni", "note", "task", "workflow", "documenti"],
+  responsabile_tecnico: ["strumenti", "sopralluogo", "rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "anagrafe", "inventario", "campioni", "ore_lavoratori", "programmazione", "programma", "cronoprogramma", "permessi_ferie", "uso_furgoni", "note", "task", "workflow", "documenti"],
+  capocantiere: ["strumenti", "sopralluogo", "rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "anagrafe", "inventario", "campioni", "ore_lavoratori", "programmazione", "programma", "permessi_ferie", "uso_furgoni", "note", "task", "workflow", "documenti"],
   collaboratore: ["rapportini", "timbratura", "cantieri", "archivio_cantieri", "foto", "inventario", "campioni", "permessi_ferie", "uso_furgoni", "note", "task", "workflow", "documenti"],
 };
 

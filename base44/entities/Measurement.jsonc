@@ -1,0 +1,146 @@
+{
+  "name": "Measurement",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "ID del progetto"
+    },
+    "page_id": {
+      "type": "string",
+      "description": "ID della pagina"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "line",
+        "quota",
+        "wall",
+        "area",
+        "room",
+        "perimeter",
+        "opening",
+        "arrow",
+        "text",
+        "note",
+        "freehand",
+        "highlight",
+        "photo"
+      ],
+      "description": "Tipo di misurazione"
+    },
+    "points": {
+      "type": "array",
+      "description": "Punti [x, y] in pixel dell'immagine",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    },
+    "label": {
+      "type": "string"
+    },
+    "length": {
+      "type": "number",
+      "description": "Lunghezza in metri"
+    },
+    "area": {
+      "type": "number",
+      "description": "Area in metri quadri"
+    },
+    "perimeter": {
+      "type": "number",
+      "description": "Perimetro in metri"
+    },
+    "room_name": {
+      "type": "string",
+      "description": "Nome dell'ambiente"
+    },
+    "text": {
+      "type": "string",
+      "description": "Testo della nota"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "color": {
+      "type": "string",
+      "default": "#ef4444"
+    },
+    "lavorazione": {
+      "type": "string",
+      "description": "Voce di computo"
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "m",
+        "cm",
+        "mm"
+      ],
+      "default": "auto"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1
+    },
+    "opacity": {
+      "type": "number",
+      "default": 0.35
+    },
+    "stroke_width": {
+      "type": "number",
+      "default": 3
+    }
+  },
+  "required": [
+    "project_id",
+    "page_id",
+    "type",
+    "points"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

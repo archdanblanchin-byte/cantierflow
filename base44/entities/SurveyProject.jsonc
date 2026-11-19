@@ -1,0 +1,63 @@
+{
+  "name": "SurveyProject",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome del progetto di misurazione"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descrizione del progetto"
+    },
+    "color": {
+      "type": "string",
+      "default": "#0ea5e9",
+      "description": "Colore del progetto"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

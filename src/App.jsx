@@ -41,6 +41,9 @@ import ImportaFotoDrive from './pages/ImportaFotoDrive';
 import Inventario from './pages/Inventario';
 import Campioni from './pages/Campioni';
 import Sopraluogo from './pages/Sopraluogo';
+import Strumenti from './pages/Strumenti';
+import Misurazioni from './pages/Misurazioni';
+import MisurazioniWorkspace from './pages/MisurazioniWorkspace';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -49,7 +52,7 @@ const AuthenticatedApp = () => {
   // BottomNav nascosta durante la compilazione del rapportino (wizard a tutto schermo)
   // per non coprire i bottoni Avanti/Indietro della barra di navigazione del wizard.
   const isWizardRoute = p.startsWith("/nuovo") || p.startsWith("/modifica-report");
-  const showBottomNav = !isWizardRoute && !p.startsWith("/embed");
+  const showBottomNav = !isWizardRoute && !p.startsWith("/embed") && !p.startsWith("/strumenti/misurazioni/");
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -102,6 +105,9 @@ const AuthenticatedApp = () => {
       <Route path="/inventario" element={<Inventario />} />
       <Route path="/campioni" element={<Campioni />} />
       <Route path="/sopralluogo" element={<Sopraluogo />} />
+      <Route path="/strumenti" element={<Strumenti />} />
+      <Route path="/strumenti/misurazioni" element={<Misurazioni />} />
+      <Route path="/strumenti/misurazioni/:id" element={<MisurazioniWorkspace />} />
       <Route path="/idropulitrice" element={<Placeholder title="Idropulitrice" />} />
       <Route path="/ristorante" element={<Placeholder title="Ristorante" />} />
       <Route path="/permessi" element={<Permessi />} />

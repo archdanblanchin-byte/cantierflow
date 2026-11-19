@@ -1,0 +1,97 @@
+{
+  "name": "SurveyPage",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "ID del progetto"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nome della pagina"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "image",
+        "pdf"
+      ],
+      "default": "image"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "File privato dell'immagine di sfondo"
+    },
+    "page_index": {
+      "type": "number",
+      "default": 1,
+      "description": "Ordine della pagina"
+    },
+    "width": {
+      "type": "number",
+      "description": "Larghezza in pixel"
+    },
+    "height": {
+      "type": "number",
+      "description": "Altezza in pixel"
+    },
+    "scale": {
+      "type": "number",
+      "description": "Metri per pixel"
+    },
+    "calibration_px": {
+      "type": "number",
+      "description": "Pixel del segmento di calibrazione"
+    },
+    "calibration_m": {
+      "type": "number",
+      "description": "Metri reali del segmento di calibrazione"
+    }
+  },
+  "required": [
+    "project_id",
+    "name",
+    "source_url"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
