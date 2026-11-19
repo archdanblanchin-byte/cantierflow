@@ -40,7 +40,7 @@ import Documenti from './pages/Documenti';
 import ImportaFotoDrive from './pages/ImportaFotoDrive';
 import Inventario from './pages/Inventario';
 import Campioni from './pages/Campioni';
-import Sopralluogo from './pages/Sopralluogo';
+import Sopraluogo from './pages/Sopraluogo';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -100,7 +100,7 @@ const AuthenticatedApp = () => {
       <Route path="/documenti" element={<Documenti />} />
       <Route path="/inventario" element={<Inventario />} />
       <Route path="/campioni" element={<Campioni />} />
-      <Route path="/sopralluogo" element={<Sopralluogo />} />
+      <Route path="/sopralluogo" element={<Sopraluogo />} />
       <Route path="/idropulitrice" element={<Placeholder title="Idropulitrice" />} />
       <Route path="/ristorante" element={<Placeholder title="Ristorante" />} />
       <Route path="/permessi" element={<Permessi />} />

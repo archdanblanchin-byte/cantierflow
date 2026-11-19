@@ -1,0 +1,43 @@
+{
+  "name": "UnitaRilievo",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Unit\u00e0 di misura (es. m, m\u00b2, m\u00b3, pezzi, ml)"
+    }
+  },
+  "required": [
+    "nome"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -104,6 +104,15 @@ a,
   -webkit-touch-callout: none;
 }
 
+/* Barre scorrevoli senza barra di scorrimento visibile */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Safe areas per notch e home bar */
 .safe-area-top {
   padding-top: env(safe-area-inset-top);

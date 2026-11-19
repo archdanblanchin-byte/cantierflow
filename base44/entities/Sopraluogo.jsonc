@@ -1,0 +1,605 @@
+{
+  "name": "Sopraluogo",
+  "type": "object",
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "interno",
+        "esterno"
+      ],
+      "default": "interno",
+      "description": "Tipo di sopraluogo"
+    },
+    "cliente_cognome": {
+      "type": "string",
+      "description": "Cognome del cliente"
+    },
+    "cliente_nome_personale": {
+      "type": "string",
+      "description": "Nome del cliente"
+    },
+    "cliente_nome": {
+      "type": "string",
+      "description": "Nome completo del cliente (cognome + nome)"
+    },
+    "nome_cantiere": {
+      "type": "string",
+      "description": "Nome del cantiere"
+    },
+    "cliente_indirizzo": {
+      "type": "string",
+      "description": "Indirizzo"
+    },
+    "cliente_citta": {
+      "type": "string",
+      "description": "Citt\u00e0"
+    },
+    "cliente_lat": {
+      "type": "number",
+      "description": "Latitudine GPS"
+    },
+    "cliente_lng": {
+      "type": "number",
+      "description": "Longitudine GPS"
+    },
+    "cliente_telefono": {
+      "type": "string",
+      "description": "Telefono"
+    },
+    "cliente_mail": {
+      "type": "string",
+      "description": "Email"
+    },
+    "ca_attivo": {
+      "type": "boolean",
+      "default": false,
+      "description": "Sezione Alla c.a. attiva"
+    },
+    "ca_nome": {
+      "type": "string",
+      "description": "Nome contatto Alla c.a."
+    },
+    "ca_cognome": {
+      "type": "string",
+      "description": "Cognome contatto Alla c.a."
+    },
+    "ca_indirizzo": {
+      "type": "string",
+      "description": "Indirizzo contatto Alla c.a."
+    },
+    "ca_citta": {
+      "type": "string",
+      "description": "Citt\u00e0 contatto Alla c.a."
+    },
+    "ca_telefono": {
+      "type": "string",
+      "description": "Telefono contatto Alla c.a."
+    },
+    "ca_email": {
+      "type": "string",
+      "description": "Email contatto Alla c.a."
+    },
+    "data_sopraluogo": {
+      "type": "string",
+      "format": "date",
+      "description": "Data del sopraluogo"
+    },
+    "prodotti_particolari": {
+      "type": "string",
+      "description": "Prodotti particolari richiesti"
+    },
+    "note_generali": {
+      "type": "string",
+      "description": "Informazioni importanti su cliente e cantiere"
+    },
+    "note_dettaglio": {
+      "type": "string",
+      "description": "Dettagli da tenere in considerazione"
+    },
+    "allegati": {
+      "type": "array",
+      "description": "Documenti e file allegati al sopraluogo",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string",
+            "description": "Nome del file"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL del file caricato"
+          },
+          "size": {
+            "type": "number",
+            "description": "Dimensione in bytes"
+          }
+        }
+      }
+    },
+    "misure_extra": {
+      "type": "array",
+      "description": "Misure di riferimento NON sommate nel totale (es. ponteggi, copertura, lattoneria, spalette)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "descrizione": {
+            "type": "string",
+            "description": "Descrizione libera (es. Ponteggi, Copertura, Lattoneria, Spalette)"
+          },
+          "valore": {
+            "type": "number",
+            "description": "Valore di riferimento"
+          },
+          "unita": {
+            "type": "string",
+            "description": "Unit\u00e0 di misura (mq, ml, m, pz, lt, kg, n\u00b0)"
+          },
+          "ambito": {
+            "type": "string",
+            "enum": [
+              "interno",
+              "esterno"
+            ],
+            "default": "interno",
+            "description": "Ambito: interno o esterno"
+          }
+        }
+      }
+    },
+    "stanze": {
+      "type": "array",
+      "description": "Stanze rilevate (incluse facciate e travi esterne)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "ambito": {
+            "type": "string",
+            "enum": [
+              "interno",
+              "esterno"
+            ],
+            "description": "Ambito della misurazione: interno o esterno"
+          },
+          "nome_custom": {
+            "type": "string"
+          },
+          "orientamento": {
+            "type": "string",
+            "description": "Orientamento facciata (Nord, Sud, Est, Ovest, Altro)"
+          },
+          "lunghezza": {
+            "type": "number"
+          },
+          "larghezza": {
+            "type": "number"
+          },
+          "altezza": {
+            "type": "number"
+          },
+          "soffitto": {
+            "type": "boolean"
+          },
+          "travi": {
+            "type": "boolean"
+          },
+          "travi_ml": {
+            "type": "number"
+          },
+          "travi_sigillatura_ml": {
+            "type": "number"
+          },
+          "travi_sviluppo": {
+            "type": "number"
+          },
+          "travi_esterne": {
+            "type": "array",
+            "description": "Travi esterne con calcolo superficie",
+            "items": {
+              "type": "object",
+              "properties": {
+                "modalita": {
+                  "type": "string"
+                },
+                "lunghezza_m": {
+                  "type": "number"
+                },
+                "larghezza_m": {
+                  "type": "number"
+                },
+                "sviluppo": {
+                  "type": "number"
+                },
+                "mq": {
+                  "type": "number"
+                },
+                "descrizione": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "pareti_extra": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tipo": {
+                  "type": "string"
+                },
+                "modalita": {
+                  "type": "string"
+                },
+                "lunghezza_m": {
+                  "type": "number"
+                },
+                "altezza_m": {
+                  "type": "number"
+                },
+                "mq": {
+                  "type": "number"
+                },
+                "descrizione": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "aperture": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tipo": {
+                  "type": "string",
+                  "enum": [
+                    "porta",
+                    "arco"
+                  ]
+                },
+                "lunghezza": {
+                  "type": "number"
+                },
+                "altezza": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "misure": {
+            "type": "array",
+            "description": "Misure campate per facciate (Base \u00d7 Altezza con segmenti multipli)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "nome": {
+                  "type": "string",
+                  "description": "Nome della campata (es. Fronte strada)"
+                },
+                "basi": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Array di segmenti di base in metri"
+                },
+                "altezza": {
+                  "type": "string"
+                },
+                "mq": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "sottrazioni": {
+            "type": "array",
+            "description": "Porzioni da sottrarre (porte, finestre, pareti, ecc.)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tipo": {
+                  "type": "string",
+                  "enum": [
+                    "porta_1_lato",
+                    "porta_2_lati",
+                    "parete",
+                    "finestra",
+                    "porta",
+                    "altro"
+                  ]
+                },
+                "lunghezza": {
+                  "type": "string"
+                },
+                "altezza": {
+                  "type": "string"
+                },
+                "descrizione": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "porzioni": {
+            "type": "array",
+            "description": "Porzioni da aggiungere (pareti, soffitti, nicchie, pilastri, ecc.)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tipo": {
+                  "type": "string",
+                  "enum": [
+                    "parete",
+                    "soffitto",
+                    "controsoffitto",
+                    "nicchia",
+                    "pilastro",
+                    "altro"
+                  ]
+                },
+                "modalita": {
+                  "type": "string",
+                  "enum": [
+                    "lxa",
+                    "mq"
+                  ]
+                },
+                "lunghezza_m": {
+                  "type": "string"
+                },
+                "altezza_m": {
+                  "type": "string"
+                },
+                "mq": {
+                  "type": "number"
+                },
+                "descrizione": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "voci_extra": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tipo": {
+                  "type": "string"
+                },
+                "valore": {
+                  "type": "number"
+                },
+                "unita": {
+                  "type": "string"
+                },
+                "lunghezza_m": {
+                  "type": "number"
+                },
+                "altezza_m": {
+                  "type": "number"
+                },
+                "modalita": {
+                  "type": "string"
+                },
+                "lunghezze": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Array di segmenti di lunghezza per modalit\u00e0 L\u00d7A"
+                },
+                "descrizione": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "foto": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "foto_generali": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Immagini generali del sopraluogo (quote gi\u00e0 incorporate nell'immagine)"
+    },
+    "foto_esterno": {
+      "type": "array",
+      "description": "Foto con quote per sopraluogo esterno",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "url_annotata": {
+            "type": "string",
+            "description": "Immagine con le quote disegnate"
+          },
+          "quote": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "x1": {
+                  "type": "number"
+                },
+                "y1": {
+                  "type": "number"
+                },
+                "x2": {
+                  "type": "number"
+                },
+                "y2": {
+                  "type": "number"
+                },
+                "testo": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "audio_note": {
+      "type": "string",
+      "description": "Note audio trascritte"
+    },
+    "audio_lavorazioni": {
+      "type": "string",
+      "description": "Elenco lavorazioni da voce"
+    },
+    "stato": {
+      "type": "string",
+      "enum": [
+        "bozza",
+        "completato",
+        "inviato"
+      ],
+      "default": "bozza"
+    },
+    "stato_manuale": {
+      "type": "string",
+      "enum": [
+        "bozza",
+        "compilato",
+        "da_sviluppare",
+        "preventivo_impostato"
+      ],
+      "description": "Stato del sopralluogo impostato a mano dalla lista. Se vuoto lo stato viene calcolato dai dati."
+    },
+    "preventivo_id": {
+      "type": "string",
+      "description": "ID del preventivo collegato: se valorizzato il sopralluogo risulta 'Preventivo impostato'"
+    },
+    "preventivo_numero": {
+      "type": "string",
+      "description": "Numero del preventivo collegato"
+    },
+    "drive_folder_id": {
+      "type": "string",
+      "description": "ID cartella Drive del sopraluogo (su Drive)"
+    },
+    "drive_rilievi_folder_id": {
+      "type": "string",
+      "description": "ID sottocartella Drive 'Rilievi' del sopraluogo"
+    },
+    "drive_comunicazioni_folder_id": {
+      "type": "string",
+      "description": "ID sottocartella Drive 'Comunicazioni'"
+    },
+    "drive_fornitori_folder_id": {
+      "type": "string",
+      "description": "ID sottocartella Drive 'Fornitori'"
+    },
+    "drive_foto_folder_id": {
+      "type": "string",
+      "description": "ID sottocartella Drive 'Foto'"
+    },
+    "drive_Subappalti_folder_id": {
+      "type": "string",
+      "description": "ID sottocartella Drive 'Subappalti'"
+    },
+    "drive_pdf_id": {
+      "type": "string",
+      "description": "ID file PDF del sopraluogo salvato su Drive"
+    },
+    "drive_pdf_url": {
+      "type": "string",
+      "description": "Link al PDF del sopraluogo su Drive"
+    },
+    "rilievi": {
+      "type": "array",
+      "description": "Rilevamento misure per lavorazione: porzioni, note, foto e file",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "cliente_nome"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "responsabile_tecnico"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
