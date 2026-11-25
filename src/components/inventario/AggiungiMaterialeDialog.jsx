@@ -18,6 +18,7 @@ const num = (v) => Number(String(v ?? "").replace(",", ".")) || 0;
 // con tutti i dati gestionali (scaffale, fornitore, categoria, sottocategoria,
 // soglia, note). Disponibile per amministratore e magazziniere.
 export default function AggiungiMaterialeDialog({ open, onClose, materialiBase = [], onAdded }) {
+  const [modalita, setModalita] = useState("nuovo");
   const [materialeId, setMaterialeId] = useState("");
   const [nuovoNome, setNuovoNome] = useState("");
   const [nuovaUnita, setNuovaUnita] = useState("");
@@ -31,10 +32,10 @@ export default function AggiungiMaterialeDialog({ open, onClose, materialiBase =
   const [salvando, setSalvando] = useState(false);
 
   const disponibili = materialiBase.filter((m) => !m.gestito_magazzino);
-  const nuovo = !materialeId;
+  const nuovo = modalita === "nuovo";
 
   useEffect(() => {
-    if (open && !nuovo) {
+    if (open && modalita === "lista") {
       const m = materialiBase.find((x) => x.id === materialeId);
       if (m) {
         setPosizione(m.posizione_scaffale || "");
@@ -45,7 +46,11 @@ export default function AggiungiMaterialeDialog({ open, onClose, materialiBase =
         setSoglia(String(m.soglia_minima ?? 0));
       }
     }
-  }, [materialeId, open]); // eslint-disable-line
+  }, [materialeId, modalita, open]); // eslint-disable-line
+
+  useEffect(() => {
+    if (open && !disponibili.length) setModalita("nuovo");
+  }, [open]); // eslint-disable-line
 
   const reset = () => {
     setMaterialeId(""); setNuovoNome(""); setNuovaUnita(""); setGiacenza(""); setSoglia("");
@@ -53,9 +58,9 @@ export default function AggiungiMaterialeDialog({ open, onClose, materialiBase =
   };
 
   const salva = async () => {
-    const nome = nuovo ? nuovoNome.trim() : materialiBase.find((m) => m.id === materialeId)?.nome;
+    const nome = nuovo ? nuovoNome.trim() : (modalita === "lista" ? materialiBase.find((m) => m.id === materialeId)?.nome : "");
     if (!nome) {
-      toast.error("Scegli un materiale o scrivine il nome");
+      toast.error(nuovo ? "Scrivi il nome del materiale" : "Sceli un materiale dalla lista");
       return;
     }
     setSalvando(true);
@@ -113,6 +118,19 @@ export default function AggiungiMaterialeDialog({ open, onClose, materialiBase =
 
         <div className="space-y-4">
           {disponibili.length > 0 && (
+            <div className="grid grid-cols-2 gap-1 p-1 bg-muted rounded-lg">
+              <button type="button" onClick={() => setModalita("lista")}
+                className={`py-1.5 rounded-md text-xs font-semibold transition-colors ${modalita === "lista" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}>
+                Dalla lista
+              </button>
+              <button type="button" onClick={() => setModalita("nuovo")}
+                className={`py-1.5 rounded-md text-xs font-semibold transition-colors ${modalita === "nuovo" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}>
+                Nuovo da zero
+              </button>
+            </div>
+          )}
+
+          {modalita === "lista" && disponibili.length > 0 && (
             <div>
               <Label className="text-xs text-muted-foreground">Materiale dall'anagrafe</Label>
               <div className="mt-1">
@@ -127,19 +145,14 @@ export default function AggiungiMaterialeDialog({ open, onClose, materialiBase =
           )}
 
           {nuovo && (
-            <div className="rounded-xl border border-dashed border-border p-3 space-y-3">
-              <p className="text-xs text-muted-foreground">
-              {disponibili.length > 0 ? "Oppure crea un materiale nuovo da zero:" : "Crea un materiale nuovo da zero:"}
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Nome / descrizione</Label>
-                  <Input value={nuovoNome} onChange={(e) => setNuovoNome(e.target.value)} className="mt-1" placeholder="Es. Malta cementizia" />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Unità di misura</Label>
-                  <Input value={nuovaUnita} onChange={(e) => setNuovaUnita(e.target.value)} className="mt-1" placeholder="sacco, kg, pz, lt" />
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Nome / descrizione</Label>
+                <Input value={nuovoNome} onChange={(e) => setNuovoNome(e.target.value)} className="mt-1" placeholder="Es. Malta cementizia" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Unità di misura</Label>
+                <Input value={nuovaUnita} onChange={(e) => setNuovaUnita(e.target.value)} className="mt-1" placeholder="sacco, kg, pz, lt" />
               </div>
             </div>
           )}
