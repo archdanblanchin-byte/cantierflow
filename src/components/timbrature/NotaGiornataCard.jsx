@@ -114,13 +114,13 @@ export default function NotaGiornataCard({ cantieri }) {
       </Button>
         </div>
       </details>
-      <details className="border-t pt-2 hidden">
-        <summary className="cursor-pointer text-sm font-medium">Storico note vocali</summary>
-        <div className="mt-2 space-y-2">
-          <label className="flex flex-wrap items-center gap-2 text-xs font-medium">Giorno <Input className="ml-auto w-auto" type="date" value={giornoVocali || giornoRoma} max={giornoRoma} onChange={(e) => setGiornoVocali(e.target.value)} /></label>
-          <NoteVocaliElenco giorno={giornoVocali || giornoRoma} userId={user.id} empty />
-        </div>
-      </details>
+      
+
+
+
+
+
+      
     </Card>);
 
 }
