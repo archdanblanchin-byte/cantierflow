@@ -1,0 +1,108 @@
+{
+  "name": "NotaVocaleTimbratura",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "string",
+      "format": "date"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_nome": {
+      "type": "string"
+    },
+    "cantiere_id": {
+      "type": "string"
+    },
+    "cantiere_nome": {
+      "type": "string"
+    },
+    "audio_uri": {
+      "type": "string"
+    },
+    "trascrizione": {
+      "type": "string"
+    },
+    "attivita": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "ore": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "nome"
+        ]
+      }
+    }
+  },
+  "required": [
+    "data",
+    "user_id",
+    "user_email",
+    "cantiere_id",
+    "cantiere_nome",
+    "audio_uri",
+    "trascrizione"
+  ],
+  "rls": {
+    "create": {
+      "$and": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "data.user_email": "{{user.email}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

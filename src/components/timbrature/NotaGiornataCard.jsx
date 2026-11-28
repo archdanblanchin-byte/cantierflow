@@ -8,6 +8,9 @@ import DinamicaSelect from "@/components/DinamicaSelect";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { NotebookPen, Loader2, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import RegistraNotaGiornata from "@/components/timbrature/RegistraNotaGiornata";
+import NoteVocaliElenco from "@/components/timbrature/NoteVocaliElenco";
 
 const ESEMPI = [
   "Sono andato a prendere materiale dal fornitore",
@@ -17,13 +20,15 @@ const ESEMPI = [
 // Nota libera della giornata del dipendente: serve a spiegare le anomalie
 // (timbri in ritardo, materiale, visite mediche, spostamenti...) prima che
 // diventino un problema amministrativo. La vede anche l'amministratore.
-export default function NotaGiornataCard() {
+export default function NotaGiornataCard({ cantieri, ultimoCantiere }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [testo, setTesto] = useState("");
   const [dinamica, setDinamica] = useState("");
   const [salvando, setSalvando] = useState(false);
   const giornoKey = format(new Date(), "yyyy-MM-dd");
+  const giornoRoma = new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const [giornoVocali, setGiornoVocali] = useState('');
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
@@ -72,11 +77,12 @@ export default function NotaGiornataCard() {
 
   return (
     <Card className="p-4 space-y-2">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <NotebookPen className="w-4 h-4 text-primary" />
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Note della giornata</p>
+        <RegistraNotaGiornata cantieri={cantieri} ultimoCantiere={ultimoCantiere} giorno={giornoRoma} />
         {esistente && (
-          <span className="ml-auto flex items-center gap-1 text-[10px] text-emerald-600">
+          <span className="flex items-center gap-1 text-[10px] text-emerald-600">
             <Check className="w-3 h-3" /> salvata
           </span>
         )}
@@ -103,6 +109,10 @@ export default function NotaGiornataCard() {
         {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
         {esistente ? "Aggiorna nota" : "Salva nota"}
       </Button>
+      <div className="space-y-2 border-t pt-3">
+        <label className="flex flex-wrap items-center gap-2 text-xs font-medium">Giorno delle note vocali <Input className="ml-auto w-auto" type="date" value={giornoVocali || giornoRoma} max={giornoRoma} onChange={e => setGiornoVocali(e.target.value)} /></label>
+        <NoteVocaliElenco giorno={giornoVocali || giornoRoma} userId={user.id} empty />
+      </div>
     </Card>
   );
 }

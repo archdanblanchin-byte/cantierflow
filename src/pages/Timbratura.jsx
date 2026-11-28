@@ -26,6 +26,7 @@ import NotaSpostamentoLavorativo from "@/components/timbrature/NotaSpostamentoLa
 import ConfermaPosizioneDialog from "@/components/timbrature/ConfermaPosizioneDialog";
 import DomandeGuidaDialog from "@/components/timbrature/DomandeGuidaDialog";
 import NotaGiornataCard from "@/components/timbrature/NotaGiornataCard";
+import SequenzaUfficio from "@/components/timbrature/SequenzaUfficio";
 
 // Finestra di tempo entro cui un utente può annullare/modificare un timbro accidentale (1 ora)
 const UNDO_WINDOW_MS = 60 * 60 * 1000;
@@ -178,12 +179,12 @@ export default function Timbratura() {
   // Il rapportino unico di cantiere e giornata si crea al primo ingresso e si
   // riallinea da solo a ogni timbratura della squadra (anche di altri operatori).
   // Il calcolo gira sul server: così chi timbra dopo non crea un doppione.
-  const aggiornaRapportino = async (giorno) => {
+  const aggiornaRapportino = async (giorno, intervallo) => {
     try {
       const g = giorno ? new Date(giorno) : new Date();
       const i = new Date(g);i.setHours(0, 0, 0, 0);
       const f = new Date(g);f.setHours(23, 59, 59, 999);
-      await base44.functions.invoke("sync_rapportini_giornata", {
+      await base44.functions.invoke("sync_rapportini_giornata", intervallo || {
         inizio: i.toISOString(),
         fine: f.toISOString()
       });
@@ -442,6 +443,7 @@ export default function Timbratura() {
                   <span className="text-xs font-medium text-primary hidden sm:inline">Tutte</span>
                 </button>
               )}
+              {isAdmin && <SequenzaUfficio cantieri={cantieri} aggiornaRapportino={aggiornaRapportino} />}
               <button
                 onClick={() => navigate("/storico-timbrature")}
                 className="w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent transition-colors"
@@ -729,7 +731,7 @@ export default function Timbratura() {
         }
 
         {/* Nota libera della giornata: spiegazioni su anomalie e spostamenti */}
-        <NotaGiornataCard />
+        <NotaGiornataCard cantieri={cantieri} ultimoCantiere={activeCantiere || (ultimoTimbro ? {id:ultimoTimbro.cantiere_id,nome:ultimoTimbro.cantiere_nome} : null)} />
       </div>
 
       <ConfermaPosizioneDialog

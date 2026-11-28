@@ -39,9 +39,12 @@ function oggiIso() {
 
 // Più timbri in sequenza per lo stesso collaboratore e lo stesso giorno.
 export default function TimbraturaSequenzaDialog({
-  open, cantieri = [], onOpenChange, onSave, prefillEmail = "", prefillData = null,
+  open, cantieri = [], onOpenChange, onSave, prefillEmail = "", prefillData = null, sequenza = null,
 }) {
-  const persone = usePersoneTimbratura(open);
+  const anagrafica = usePersoneTimbratura(open);
+  const primo = sequenza?.[0];
+  const persone = primo && !anagrafica.some(p => p.email === primo.user_email)
+    ? [{ email: primo.user_email, nome: primo.user_nome || primo.user_email }, ...anagrafica] : anagrafica;
   const [userEmail, setUserEmail] = useState("");
   const [data, setData] = useState("");
   const [cantiereId, setCantiereId] = useState("");
@@ -53,14 +56,16 @@ export default function TimbraturaSequenzaDialog({
 
   useEffect(() => {
     if (!open) return;
-    setUserEmail(prefillEmail || "");
-    setData(prefillData || oggiIso());
-    setCantiereId("");
-    setPosizione("cantiere");
-    setLuogoLavoro("");
-    setNota("");
-    setRighe(SEQUENZA_INIZIALE.map((r) => ({ ...r })));
-  }, [open, prefillEmail, prefillData]);
+    setUserEmail(primo?.user_email || prefillEmail || "");
+    const rome = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome', year:'numeric', month:'2-digit', day:'2-digit' });
+    const ora = new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', hour:'2-digit', minute:'2-digit', hourCycle:'h23' });
+    setData(primo ? rome.format(new Date(primo.data_ora)) : prefillData || oggiIso());
+    setCantiereId(primo?.cantiere_id || "");
+    setPosizione(primo?.confermato_capannone ? "sede" : "cantiere");
+    setLuogoLavoro(primo?.luogo_lavoro || "");
+    setNota(primo?.nota || "");
+    setRighe(sequenza ? sequenza.map(t => ({ tipo_evento:t.tipo_evento, ora:ora.format(new Date(t.data_ora)) })) : SEQUENZA_INIZIALE.map(r => ({ ...r })));
+  }, [open, prefillEmail, prefillData, primo, sequenza]);
 
   const aggiornaRiga = (i, campo, valore) =>
     setRighe((rs) => rs.map((r, idx) => (idx === i ? { ...r, [campo]: valore } : r)));
@@ -70,7 +75,7 @@ export default function TimbraturaSequenzaDialog({
   const aggiungiRiga = () =>
     setRighe((rs) => [...rs, { tipo_evento: "ingresso", ora: "08:00" }]);
 
-  const valida = userEmail && data && righe.length > 0 && righe.every((r) => r.ora);
+  const valida = userEmail && data && (!sequenza || cantiereId) && righe.length > 0 && righe.every((r) => r.ora);
 
   const handleSave = async () => {
     setSaving(true);
@@ -92,6 +97,7 @@ export default function TimbraturaSequenzaDialog({
             user_nome: persona?.nome || "",
             tipo_evento: r.tipo_evento,
             data_ora: d.toISOString(),
+            ...(sequenza ? { giorno_roma:data, ora_roma:r.ora } : {}),
             cantiere_id: cantiereId || null,
             cantiere_nome: cantiere?.nome || null,
             confermato_capannone: inSede,
@@ -102,22 +108,23 @@ export default function TimbraturaSequenzaDialog({
           };
         });
 
-      await onSave(payloads);
-      onOpenChange(false);
+      if (await onSave(payloads) !== false) onOpenChange(false);
     } finally {
       setSaving(false);
     }
   };
 
-  const cantieriScelta = (cantieri || [])
-    .filter((c) => (c.stato ? c.stato === "aperto" : c.attivo !== false))
+  const cantieriDisponibili = primo && !cantieri.some(c => c.id === primo.cantiere_id)
+    ? [{id:primo.cantiere_id, nome:primo.cantiere_nome}, ...cantieri] : cantieri;
+  const cantieriScelta = cantieriDisponibili
+    .filter((c) => (sequenza && c.id === primo.cantiere_id) || (c.stato ? c.stato === "aperto" : c.attivo !== false))
     .sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "it"));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Aggiungi sequenza timbrature</DialogTitle>
+          <DialogTitle>{sequenza ? 'Modifica sequenza timbrature' : 'Aggiungi sequenza timbrature'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 py-2">
           <div className="space-y-1.5">
@@ -201,6 +208,7 @@ export default function TimbraturaSequenzaDialog({
               <div key={i} className="flex items-center gap-2">
                 <select
                   value={r.tipo_evento}
+                  disabled={!!sequenza}
                   onChange={(e) => aggiornaRiga(i, "tipo_evento", e.target.value)}
                   className={selectClass}
                 >
@@ -214,24 +222,14 @@ export default function TimbraturaSequenzaDialog({
                   onChange={(e) => aggiornaRiga(i, "ora", e.target.value)}
                   className="w-28 shrink-0"
                 />
-                <button
-                  type="button"
-                  onClick={() => rimuoviRiga(i)}
-                  className="w-8 h-8 rounded-md border border-border flex items-center justify-center shrink-0 hover:bg-destructive/10"
-                  aria-label="Rimuovi evento"
-                >
+                {!sequenza && <button type="button" onClick={() => rimuoviRiga(i)} className="w-8 h-8 rounded-md border border-border flex items-center justify-center shrink-0 hover:bg-destructive/10" aria-label="Rimuovi evento">
                   <X className="w-3.5 h-3.5 text-destructive" />
-                </button>
+                </button>}
               </div>
             ))}
-            <button
-              type="button"
-              onClick={aggiungiRiga}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border text-xs font-medium hover:bg-accent transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Aggiungi evento
-            </button>
+            {!sequenza && <button type="button" onClick={aggiungiRiga} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border text-xs font-medium hover:bg-accent transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Aggiungi evento
+            </button>}
           </div>
 
           <div className="space-y-1.5">
@@ -245,7 +243,7 @@ export default function TimbraturaSequenzaDialog({
           </Button>
           <Button onClick={handleSave} disabled={saving || !valida}>
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            Aggiungi {righe.length > 1 ? `${righe.length} timbrature` : "timbratura"}
+            {sequenza ? 'Salva modifiche' : `Aggiungi ${righe.length > 1 ? `${righe.length} timbrature` : 'timbratura'}`}
           </Button>
         </DialogFooter>
       </DialogContent>

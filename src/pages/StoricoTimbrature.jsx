@@ -17,6 +17,7 @@ import TimbraturaEditDialog from "@/components/timbrature/TimbraturaEditDialog";
 import TimbraturaAddDialog from "@/components/timbrature/TimbraturaAddDialog";
 import TimbraturaSequenzaDialog from "@/components/timbrature/TimbraturaSequenzaDialog";
 import GiornoPersoneList from "@/components/timbrature/GiornoPersoneList";
+import NoteVocaliElenco from "@/components/timbrature/NoteVocaliElenco";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -402,6 +403,7 @@ export default function StoricoTimbrature({ mode = "own" }) {
                       onAddSequenza={(email) => { setSeqPrefill({ email, data: giorno.key }); setSeqOpen(true); }}
                     />
                   )}
+                  {(!canSeeAll || isAdmin) && <NoteVocaliElenco giorno={giorno.key} userId={user?.id} tutte={canSeeAll} />}
                 </div>
               )}
             </Card>
