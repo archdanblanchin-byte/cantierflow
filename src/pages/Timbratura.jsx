@@ -560,8 +560,8 @@ export default function Timbratura() {
 
         <NotaGiornataCard cantieri={cantieri} />
 
-        <details className="rounded-lg border bg-card px-4 py-3">
-          <summary className="cursor-pointer text-sm font-medium">Dettagli della timbratura</summary>
+        <section aria-labelledby="dettagli-timbratura" className="rounded-lg border bg-card px-4 py-3">
+          <h2 id="dettagli-timbratura" className="text-sm font-medium">Dettagli della timbratura</h2>
           <div className="mt-3 space-y-3">
           <p className="text-xs text-muted-foreground">{activeSession
             ? "Per cambiare cantiere chiudi prima il lavoro. Lo spostamento viene calcolato automaticamente."
@@ -705,7 +705,7 @@ export default function Timbratura() {
         }
 
           </div>
-        </details>
+        </section>
 
         {/* Rapportini della giornata — creati e aggiornati in automatico */}
         {timbratureOrd.length > 0 &&
