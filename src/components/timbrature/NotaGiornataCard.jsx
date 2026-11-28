@@ -11,7 +11,7 @@ import { NotebookPen, Loader2, Check } from "lucide-react";
 import RegistraNotaGiornata from "@/components/timbrature/RegistraNotaGiornata";
 
 const ESEMPI = [
-"Sono andato a prendere materiale dal fornitore",
+"Ho ritirato il materiale per un’ora, ho fatto due ore di preventivi e il resto della giornata ho preparato il cantiere",
 "La timbratura iniziale è stata fatta in ritardo, dovrebbe essere per le 7:30"];
 
 
@@ -89,7 +89,7 @@ export default function NotaGiornataCard({ minutiGiornata }) {
         <summary className="cursor-pointer text-sm font-medium">Nota scritta</summary>
         <div className="mt-2 space-y-2">
       <Textarea
-            rows={2}
+            rows={Math.min(12, Math.max(2, testo.split("\n").length))}
             aria-label="Nota della giornata"
             disabled={salvando || !isSuccess}
             value={testo}

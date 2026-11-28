@@ -558,7 +558,7 @@ export default function Timbratura() {
           <p className="text-xs text-rose-700">{error}</p>
         </div>}
 
-        <NotaGiornataCard minutiGiornata={!activeSession && totGiornaliero > 0 ? Math.round(totGiornaliero * 60) : undefined} />
+        <NotaGiornataCard minutiGiornata={!activeSession && timbratureOrd[0]?.tipo_evento === "ingresso" && ultimoTimbro?.tipo_evento === "uscita" && totGiornaliero > 0 ? Math.round(totGiornaliero * 60) : undefined} />
 
         <section aria-labelledby="dettagli-timbratura" className="rounded-lg border bg-card px-4 py-3">
           <h2 id="dettagli-timbratura" className="text-sm font-medium">Dettagli della timbratura</h2>
