@@ -20,7 +20,7 @@ const ESEMPI = [
 // Nota libera della giornata del dipendente: serve a spiegare le anomalie
 // (timbri in ritardo, materiale, visite mediche, spostamenti...) prima che
 // diventino un problema amministrativo. La vede anche l'amministratore.
-export default function NotaGiornataCard({ cantieri, ultimoCantiere }) {
+export default function NotaGiornataCard({ cantieri }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [testo, setTesto] = useState("");
@@ -80,13 +80,16 @@ export default function NotaGiornataCard({ cantieri, ultimoCantiere }) {
       <div className="flex flex-wrap items-center gap-2">
         <NotebookPen className="w-4 h-4 text-primary" />
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Note della giornata</p>
-        <RegistraNotaGiornata cantieri={cantieri} ultimoCantiere={ultimoCantiere} giorno={giornoRoma} />
+        <RegistraNotaGiornata cantieri={cantieri} giorno={giornoRoma} />
         {esistente && (
           <span className="flex items-center gap-1 text-[10px] text-emerald-600">
             <Check className="w-3 h-3" /> salvata
           </span>
         )}
       </div>
+      <details className="border-t pt-2">
+        <summary className="cursor-pointer text-sm font-medium">Nota scritta</summary>
+        <div className="mt-2 space-y-2">
       <Textarea
         rows={2}
         value={testo}
@@ -109,10 +112,15 @@ export default function NotaGiornataCard({ cantieri, ultimoCantiere }) {
         {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
         {esistente ? "Aggiorna nota" : "Salva nota"}
       </Button>
-      <div className="space-y-2 border-t pt-3">
-        <label className="flex flex-wrap items-center gap-2 text-xs font-medium">Giorno delle note vocali <Input className="ml-auto w-auto" type="date" value={giornoVocali || giornoRoma} max={giornoRoma} onChange={e => setGiornoVocali(e.target.value)} /></label>
-        <NoteVocaliElenco giorno={giornoVocali || giornoRoma} userId={user.id} empty />
-      </div>
+        </div>
+      </details>
+      <details className="border-t pt-2">
+        <summary className="cursor-pointer text-sm font-medium">Storico note vocali</summary>
+        <div className="mt-2 space-y-2">
+          <label className="flex flex-wrap items-center gap-2 text-xs font-medium">Giorno <Input className="ml-auto w-auto" type="date" value={giornoVocali || giornoRoma} max={giornoRoma} onChange={e => setGiornoVocali(e.target.value)} /></label>
+          <NoteVocaliElenco giorno={giornoVocali || giornoRoma} userId={user.id} empty />
+        </div>
+      </details>
     </Card>
   );
 }

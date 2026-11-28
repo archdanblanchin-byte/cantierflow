@@ -4,40 +4,49 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import SheetSelect from '@/components/ui/sheet-select';
+import RevisioneNotaGiornata from '@/components/timbrature/RevisioneNotaGiornata';
 import useRegistrazione, { tempoVocale } from '@/lib/useRegistrazione';
 
-export default function RegistraNotaGiornata({ cantieri, ultimoCantiere, giorno }) {
+export default function RegistraNotaGiornata({ cantieri, giorno }) {
   const client = useQueryClient();
-  const [scelto, setScelto] = useState('');
+  const [bozza,setBozza] = useState(null);
+  const [errore,setErrore] = useState('');
+  const [salvando,setSalvando] = useState(false);
   const [avviando,setAvviando] = useState(false);
-  const contesto = useRef(null);
-  const opzioni = [...new Map([ultimoCantiere,...cantieri].filter(c => c?.id).map(c => [c.id,{value:c.id,label:c.nome}])).values()];
-  const id = scelto || ultimoCantiere?.id || '';
+  const lock = useRef(false);
   const {stato,secondi,avvia,ferma} = useRegistrazione({filePrivato:true,
     onAudio: async audio => {
-      await base44.functions.invoke('salvaNotaVocaleTimbratura',{audio,...contesto.current});
-      await client.invalidateQueries({queryKey:['note-vocali-timbratura']});
-      toast.success('Nota vocale salvata');
+      const { data } = await base44.functions.invoke('salvaNotaVocaleTimbratura',{azione:'analizza',audio,data:giorno});
+      setErrore('');
+      setBozza({...data,audio,giorno});
     },
     onErrore: messaggio => toast.error(messaggio),
   });
   useEffect(() => { if (stato === 'registrazione' && secondi >= 300) ferma(); }, [stato,secondi,ferma]);
   const inizia = async () => {
-    if (avviando || !id || stato !== 'idle') return;
-    contesto.current = {cantiere_id:id,data:giorno};
+    if (avviando || stato !== 'idle' || bozza) return;
     setAvviando(true);
     try { await avvia(); } finally { setAvviando(false); }
   };
+  const salva = async () => {
+    if (lock.current) return;
+    lock.current = true;
+    setSalvando(true);
+    setErrore('');
+    try {
+      await base44.functions.invoke('salvaNotaVocaleTimbratura',{azione:'salva',audio:bozza.audio,data:bozza.giorno,trascrizione:bozza.trascrizione,attivita:bozza.attivita});
+      setBozza(null);
+      client.invalidateQueries({queryKey:['note-vocali-timbratura']});
+      toast.success('Nota vocale salvata');
+    } catch (e) { setErrore(e?.response?.data?.error || 'Non è stato possibile salvare la nota vocale. Riprova.'); }
+    finally { lock.current = false; setSalvando(false); }
+  };
   return <>
-    <Button type="button" size="sm" className="ml-auto" variant={stato === 'registrazione' ? 'destructive' : 'default'} disabled={avviando || stato === 'elaborazione' || (!id && stato === 'idle')} onClick={stato === 'registrazione' ? ferma : inizia}>
+    <Button type="button" size="sm" className="ml-auto" variant={stato === 'registrazione' ? 'destructive' : 'default'} disabled={avviando || stato === 'elaborazione' || !!bozza} onClick={stato === 'registrazione' ? ferma : inizia}>
       {avviando || stato === 'elaborazione' ? <Loader2 className="w-4 h-4 animate-spin" /> : stato === 'registrazione' ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-      {stato === 'registrazione' ? `Salva ${tempoVocale(secondi)}` : stato === 'elaborazione' ? 'Elaborazione…' : 'Registra audio'}
+      {stato === 'registrazione' ? `Termina ${tempoVocale(secondi)}` : stato === 'elaborazione' ? 'Elaborazione…' : 'Registra audio'}
     </Button>
-    <div className="basis-full flex flex-wrap items-center gap-2">
-      <Label className="text-xs">Cantiere della nota vocale</Label>
-      <div className="min-w-36 flex-1"><SheetSelect value={id} onValueChange={setScelto} options={opzioni} searchable disabled={avviando || stato !== 'idle'} placeholder="Seleziona cantiere" /></div>
-    </div>
+    <RevisioneNotaGiornata bozza={bozza} cantieri={cantieri} busy={salvando} error={errore} onClose={() => setBozza(null)} onConfirm={salva}
+      onChange={(i,id) => setBozza(b => ({...b,attivita:b.attivita.map((a,j) => i === j ? {...a,cantiere_id:id} : a)}))} />
   </>;
 }

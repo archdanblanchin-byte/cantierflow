@@ -456,7 +456,7 @@ export default function Timbratura() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
         {/* Utente */}
         {user &&
         <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-primary/5 border border-primary/10">
@@ -525,12 +525,12 @@ export default function Timbratura() {
               Fine pausa pranzo
             </Button>
           </div>
-          <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
-            {activeSession
-              ? "Per lavorare in un altro cantiere chiudi prima il lavoro: il tempo tra la chiusura e la nuova apertura viene contato automaticamente come spostamento."
-              : "Lo spostamento non si timbra: il sistema lo ricava dall'intervallo tra la chiusura di un cantiere e l'apertura del successivo."}
-          </p>
         </div>
+
+        {lastTimbro && !error && <p role="status" className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+          <span>Timbratura registrata: {STEP_CONFIG[lastTimbro.tipo_evento]?.label || lastTimbro.tipo_evento} alle {format(new Date(lastTimbro.data_ora), "HH:mm")}</span>
+        </p>}
 
         {/* Annulla ultimo timbro (entro 1 ora) */}
         {ultimoTimbro && canUndo(ultimoTimbro) &&
@@ -553,6 +553,19 @@ export default function Timbratura() {
           </Card>
         }
 
+        {error && <div role="alert" className="flex items-start gap-2 p-3 rounded-lg bg-rose-50 border border-rose-200">
+          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+          <p className="text-xs text-rose-700">{error}</p>
+        </div>}
+
+        <NotaGiornataCard cantieri={cantieri} />
+
+        <details className="rounded-lg border bg-card px-4 py-3">
+          <summary className="cursor-pointer text-sm font-medium">Dettagli della timbratura</summary>
+          <div className="mt-3 space-y-3">
+          <p className="text-xs text-muted-foreground">{activeSession
+            ? "Per cambiare cantiere chiudi prima il lavoro. Lo spostamento viene calcolato automaticamente."
+            : "Lo spostamento viene calcolato automaticamente tra un cantiere e il successivo."}</p>
         {/* Spostamenti di oggi: minuti e km tra un cantiere e il successivo */}
         {spostamentiOggi.length > 0 &&
         <Card className="p-4 space-y-2">
@@ -606,14 +619,6 @@ export default function Timbratura() {
               </p>
             )}
           </Card>
-        }
-
-        {/* Errore */}
-        {error &&
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-rose-50 border border-rose-200">
-            <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-rose-700">{error}</p>
-          </div>
         }
 
         {/* Ultimo timbro */}
@@ -699,6 +704,9 @@ export default function Timbratura() {
           </div>
         }
 
+          </div>
+        </details>
+
         {/* Rapportini della giornata — creati e aggiornati in automatico */}
         {timbratureOrd.length > 0 &&
         <Card className="p-4 space-y-3 border-primary/30 bg-primary/5">
@@ -730,8 +738,7 @@ export default function Timbratura() {
           </Card>
         }
 
-        {/* Nota libera della giornata: spiegazioni su anomalie e spostamenti */}
-        <NotaGiornataCard cantieri={cantieri} ultimoCantiere={activeCantiere || (ultimoTimbro ? {id:ultimoTimbro.cantiere_id,nome:ultimoTimbro.cantiere_nome} : null)} />
+
       </div>
 
       <ConfermaPosizioneDialog

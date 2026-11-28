@@ -37,6 +37,15 @@
           },
           "ore": {
             "type": "number"
+          },
+          "cantiere_id": {
+            "type": "string"
+          },
+          "cantiere_nome": {
+            "type": "string"
+          },
+          "cantiere_citato": {
+            "type": "string"
           }
         },
         "required": [
@@ -49,8 +58,6 @@
     "data",
     "user_id",
     "user_email",
-    "cantiere_id",
-    "cantiere_nome",
     "audio_uri",
     "trascrizione"
   ],

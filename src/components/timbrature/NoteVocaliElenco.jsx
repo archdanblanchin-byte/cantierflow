@@ -32,10 +32,10 @@ export default function NoteVocaliElenco({ giorno, userId, cantiereId, tutte = f
   return <div className="space-y-2">
     <h3 className="text-xs font-semibold text-muted-foreground">Note vocali salvate</h3>
     {note.map(n => <details key={n.id} className="rounded-lg border bg-muted/30 px-3 py-2 text-sm">
-      <summary className="cursor-pointer font-medium">{n.cantiere_nome}{tutte && ` · ${n.user_nome || n.user_email}`} · {new Date(n.created_date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'})}</summary>
+      <summary className="cursor-pointer font-medium">{n.cantiere_nome || 'Nota vocale'}{tutte && ` · ${n.user_nome || n.user_email}`} · {new Date(n.created_date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'})}</summary>
       <div className="mt-2 space-y-2">
         <p className="whitespace-pre-wrap break-words">{n.trascrizione}</p>
-        {!!n.attivita?.length && <ul className="list-disc pl-5 text-xs text-muted-foreground">{n.attivita.map((a,i) => <li key={i}>{a.nome}{Number.isFinite(a.ore) && ` · ${a.ore.toLocaleString('it-IT',{maximumFractionDigits:2})} h`}</li>)}</ul>}
+        {!!n.attivita?.length && <ul className="list-disc pl-5 text-xs text-muted-foreground">{n.attivita.map((a,i) => <li key={i}>{a.nome}{Number.isFinite(a.ore) && ` · ${a.ore.toLocaleString('it-IT',{maximumFractionDigits:2})} h`} · {a.cantiere_nome || n.cantiere_nome || (a.cantiere_citato ? `Non assegnato (citato: ${a.cantiere_citato})` : 'Non assegnato')}</li>)}</ul>}
         <AudioNota uri={n.audio_uri} />
       </div>
     </details>)}
