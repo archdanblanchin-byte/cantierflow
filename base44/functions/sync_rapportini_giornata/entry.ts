@@ -50,6 +50,7 @@ export default async function (req) {
     });
 
     const risultati = [];
+    const oreCantieri = new Map(calcolaOrePerCantiere(timbrature).map((c) => [c.cantiere_id, c]));
 
     for (const [cantiereId, timb] of perCantiere) {
       const esistenti = (rapPerCantiere.get(cantiereId) || [])
@@ -58,7 +59,8 @@ export default async function (req) {
       // Un solo rapportino per cantiere e giornata: resta il primo creato.
       const keeper = esistenti[0] || null;
 
-      const squadra = calcolaSquadra(timb, collaboratoriList, capannone);
+      const calc = oreCantieri.get(cantiereId);
+      const squadra = calcolaSquadra(timb, collaboratoriList, capannone, calc ? [calc] : []);
       const notePrec = new Map(
         ((keeper && keeper.collaboratori) || []).map((c) => [
           c.user_email || c.collaboratore_id,
@@ -70,8 +72,7 @@ export default async function (req) {
         note_imprevisti: notePrec.get(s.user_email || s.collaboratore_id) || '',
       }));
       const oreTotali = collaboratori.reduce((s, c) => s + (c.ore_lavorate || 0), 0);
-      const calc = calcolaOrePerCantiere(timb).find((c) => c.cantiere_id === cantiereId);
-      const oreSpostamento = calc ? calc.ore_spostamento : 0;
+      const oreSpostamento = calc?.ore_spostamento ?? 0;
 
       if (!keeper) {
         await sr.entities.Rapportino.create({

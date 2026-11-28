@@ -11,8 +11,9 @@ export const ORE_STANDARD_GIORNALIERE = 8;
 // Ore in forma compatta per le celle del foglio: "8h", "7h45"
 export function fmtOreBreve(ore) {
   if (!ore || ore <= 0) return "";
-  const h = Math.floor(ore);
-  const min = Math.round((ore - h) * 60);
+  const minuti = Math.round(ore * 60);
+  const h = Math.floor(minuti / 60);
+  const min = minuti % 60;
   return min === 0 ? `${h}h` : `${h}h${String(min).padStart(2, "0")}`;
 }
 
@@ -159,6 +160,7 @@ export function buildRiepilogoMensile({
         cella.oreSpost = calc.oreSpost;
         cella.oreSpostTot = calc.oreSpostTot || 0;
         cella.perCantiere = calc.perCantiere;
+        cella.ore = calc.oreTotali;
       } else {
         // Nessuna timbratura nella giornata: si usano i rapportini (storico).
         cella.perCantiere = cella.oreRapportino || {};
@@ -171,7 +173,7 @@ export function buildRiepilogoMensile({
       // cella.oreSpost = spostamenti conteggiati come lavoro (solo il deficit
       // sotto le 8h). cella.oreSpostTot = tempo totale degli spostamenti
       // (mostrato nella colonna "Spost." del foglio).
-      cella.ore = arrotondaOre((cella.oreCantieri || 0) + (cella.oreSpost || 0));
+      if (!tims.length) cella.ore = arrotondaOre(cella.oreCantieri || 0);
       const trasfertaAuto = tims.length ? calcolaTrasfertaGiorno(tims, cantieri, config) : null;
       cella.trasferta = risolviTrasfertaGiorno(cella.trasfertaSalvata, trasfertaAuto, config);
       delete cella.trasfertaSalvata;
@@ -214,9 +216,9 @@ export function buildRiepilogoMensile({
       collaboratore: collab,
       celle,
       cantieriUsati: [...nomiCantieri].sort((a, b) => a.localeCompare(b, "it")),
-      totOre: arrotondaOre(totOre),
+      totOre,
       totStraordinari: arrotondaOre(totStraordinari),
-      totSpost: arrotondaOre(totSpost),
+      totSpost,
       totKm: Math.round(totKm * 10) / 10,
       nTrasferte,
       giorniLavorati,
@@ -229,7 +231,7 @@ export function buildRiepilogoMensile({
   const totaliGiorno = {};
   giorni.forEach((d) => {
     const k = chiave(d);
-    totaliGiorno[k] = arrotondaOre(righe.reduce((s, r) => s + (r.celle[k]?.ore || 0), 0));
+    totaliGiorno[k] = righe.reduce((s, r) => s + (r.celle[k]?.ore || 0), 0);
   });
 
   return { giorni, righe, totaliGiorno };
@@ -261,7 +263,7 @@ export function estraiRiepilogoCantiere(riepilogo, nomeCantiere) {
       Object.entries(r.celle).forEach(([k, c]) => {
         const ore = c.perCantiere?.[nomeCantiere] || 0;
         if (ore > 0) {
-          celle[k] = { ore: arrotondaOre(ore) };
+          celle[k] = { ore };
           totOre += ore;
           giorniLavorati++;
         }
@@ -269,7 +271,7 @@ export function estraiRiepilogoCantiere(riepilogo, nomeCantiere) {
       return {
         collaboratore: r.collaboratore,
         celle,
-        totOre: arrotondaOre(totOre),
+        totOre,
         giorniLavorati,
       };
     })
@@ -278,7 +280,7 @@ export function estraiRiepilogoCantiere(riepilogo, nomeCantiere) {
   const totaliGiorno = {};
   riepilogo.giorni.forEach((d) => {
     const k = format(d, "yyyy-MM-dd");
-    totaliGiorno[k] = arrotondaOre(righe.reduce((s, r) => s + (r.celle[k]?.ore || 0), 0));
+    totaliGiorno[k] = righe.reduce((s, r) => s + (r.celle[k]?.ore || 0), 0);
   });
 
   return {
@@ -286,6 +288,6 @@ export function estraiRiepilogoCantiere(riepilogo, nomeCantiere) {
     giorni: riepilogo.giorni,
     righe,
     totaliGiorno,
-    totale: arrotondaOre(righe.reduce((s, r) => s + r.totOre, 0)),
+    totale: righe.reduce((s, r) => s + r.totOre, 0),
   };
 }

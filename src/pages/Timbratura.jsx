@@ -17,7 +17,7 @@ import {
 "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { getPosizione, getCapannone, valutaPosizione, kmTraCantieri, STEP_CONFIG, arrotondaQuarti, fmtOre } from "@/lib/timbratureUtils";
+import { getPosizione, getCapannone, valutaPosizione, kmTraCantieri, STEP_CONFIG, fmtOre } from "@/lib/timbratureUtils";
 import { calcolaOrePerCantiere, classificaSpostamentiGiornata, minutiScopertiGiornata } from "@/lib/rapportiniFromTimbrature";
 import { getRuoloLabel } from "@/lib/permissions";
 import NewCantiereModal from "@/components/wizard/NewCantiereModal";
@@ -124,8 +124,8 @@ export default function Timbratura() {
       if (t.tipo_evento === "pausa_inizio") pIn = new Date(t.data_ora);else
       if (t.tipo_evento === "pausa_fine" && pIn) {pausaMs += new Date(t.data_ora) - pIn;pIn = null;}
     });
-    if (inPausa && pIn) return arrotondaQuarti(pIn - tIn);
-    return arrotondaQuarti(new Date() - tIn - pausaMs);
+    const fine = inPausa && pIn ? pIn : new Date();
+    return Math.max(0, fine - tIn - pausaMs) / 3600000;
   };
   const oreInCorso = calcolaOre();
   const orePerCantiere = calcolaOrePerCantiere(timbratureOrd).filter((c) => c.ore > 0);
@@ -161,7 +161,7 @@ export default function Timbratura() {
   const isTrasferta = spostamentoTipo === "trasferta";
   // Se trasferta: il totale lavorativo è solo la lavorazione; lo spostamento è separato.
   // Se lavorative: il totale include anche lo spostamento.
-  const totGiornaliero = isTrasferta ? totLavorazione : totLavorazione + totSpostamento;
+  const totGiornaliero = classGiornata.totGiornaliero;
   // Pausa pranzo totale giornaliera (NON conteggiata nelle ore lavorative, solo visibile)
   const totPausa = (() => {
     let ms = 0; let pIn = null;
@@ -170,7 +170,7 @@ export default function Timbratura() {
       else if (t.tipo_evento === "pausa_fine" && pIn) { ms += new Date(t.data_ora) - pIn; pIn = null; }
     });
     if (inPausa && pIn) ms += new Date() - pIn;
-    return arrotondaQuarti(ms);
+    return ms / 3600000;
   })();
 
 

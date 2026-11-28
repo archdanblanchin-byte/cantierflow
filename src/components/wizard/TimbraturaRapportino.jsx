@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { distanzaM, getPosizione, STEP_CONFIG, arrotondaQuarti, arrotondaMinutiSu, fmtOre, raggioAccettazione } from "@/lib/timbratureUtils";
+import { distanzaM, getPosizione, STEP_CONFIG, arrotondaMinutiSu, fmtOre, raggioAccettazione } from "@/lib/timbratureUtils";
 import { getRuoloLabel } from "@/lib/permissions";
 
 export default function TimbraturaRapportino({ cantiere, cantieri, rapportinoId, onEnsureDraft, onChange }) {
@@ -88,10 +88,10 @@ export default function TimbraturaRapportino({ cantiere, cantieri, rapportinoId,
     } else if (pausaInCorso) {
       ms -= new Date() - new Date(t_pausa_inizio.data_ora);
     }
-    return arrotondaMinutiSu(ms);
+    return t_uscita ? arrotondaMinutiSu(ms) : Math.max(0, ms) / 3600000;
   };
   const oreTotaliHours = calcolaOreTotali();
-  const durataPausa = arrotondaQuarti(t_pausa_inizio && t_pausa_fine ? new Date(t_pausa_fine.data_ora) - new Date(t_pausa_inizio.data_ora) : 0);
+  const durataPausa = t_pausa_inizio && t_pausa_fine ? (new Date(t_pausa_fine.data_ora) - new Date(t_pausa_inizio.data_ora)) / 3600000 : 0;
 
   useEffect(() => {
     if (t_uscita && oreTotaliHours > 0 && onChange) {

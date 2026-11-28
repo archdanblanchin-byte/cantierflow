@@ -9,12 +9,12 @@ const STEP_MIN = 5;
  * Input ORE in formato ore + minuti (mai decimali).
  * - due caselle separate: ORE e MINUTI
  * - i minuti si muovono a scatti di 5 (tasti + e − nella versione estesa)
- * - i minuti digitati si allineano allo scatto di 5 uscendo dal campo
+ * - i minuti digitati si allineano allo scatto di 5 salvo quando il rapportino richiede minuti esatti
  * - 60 minuti diventano automaticamente 1 ora (e i minuti negativi scalano l'ora)
  * - legge e scrive lo stesso valore decimale salvato sulle entità (nessuna migrazione dati)
  * - `compact` = solo le due caselle (per le celle strette delle lavorazioni)
  */
-export default function OreInput({ value, onChange, className, disabled, compact = false }) {
+export default function OreInput({ value, onChange, className, disabled, compact = false, minutiEsatti = false }) {
   const totMin = Math.max(0, Math.round((Number(value) || 0) * 60));
   const ore = Math.floor(totMin / 60);
   const minuti = totMin % 60;
@@ -98,7 +98,7 @@ export default function OreInput({ value, onChange, className, disabled, compact
         }}
         onBlur={() => {
           setTestoMinuti(null);
-          emit(ore, snapMinuti(minuti));
+          emit(ore, minutiEsatti ? minuti : snapMinuti(minuti));
         }}
         className={`min-w-0 text-center font-semibold tabular-nums ${campoW}`}
       />

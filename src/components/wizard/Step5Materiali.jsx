@@ -46,7 +46,7 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
 
       {/* Controlli di inserimento — uno dopo l'altro, sopra l'elenco */}
       <div className="flex flex-col gap-2 sticky top-0 z-10 -mx-1 px-1 py-1 bg-background/95 backdrop-blur">
-        <Button variant="outline" onClick={addMateriale} className="gap-2 h-11 w-full justify-center">
+        <Button onClick={addMateriale} className="gap-2 h-11 w-full justify-center bg-primary/90 hover:bg-primary">
           <Plus className="w-4 h-4" />
           Manualmente
         </Button>

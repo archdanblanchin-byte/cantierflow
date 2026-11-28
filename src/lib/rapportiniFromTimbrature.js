@@ -48,12 +48,13 @@ const minutiDelGiorno = (hhmmStr) => {
   return h * 60 + m;
 };
 
-// Fine della giornata locale in cui è iniziata la sessione. Un turno senza uscita
-// timbrata non può superare la mezzanotte: altrimenti le ore continuano a
-// crescere fino a oggi (un timbro dimenticato arrivava a oltre 30 ore).
+// La sessione non supera la mezzanotte italiana del giorno di inizio.
+const dataRoma = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' });
+const oraRoma = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', hour: '2-digit', hourCycle: 'h23' });
 const fineGiornata = (startMs) => {
-  const d = new Date(startMs);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
+  const [y, m, d] = dataRoma.format(new Date(startMs)).split('-').map(Number);
+  const mezzanotteUtc = Date.UTC(y, m - 1, d + 1);
+  return mezzanotteUtc - Number(oraRoma.format(mezzanotteUtc)) * 3600000;
 };
 
 // ─── ORE PER CANTIERE + SPOSTAMENTI AUTOMATICI ────────────────────────────────
@@ -84,6 +85,8 @@ export function calcolaOrePerCantiere(timbrature) {
   const { pausaChiude, pausaSposta } = calcolaPausaChiude(tOrd);
 
   const aperte = new Map();
+  const durate = new Map();
+  const inCorso = new Set();
   const chiudi = (email, ts) => {
     const open = aperte.get(email);
     if (!open) return;
@@ -93,7 +96,14 @@ export function calcolaOrePerCantiere(timbrature) {
     let pausaMs = open.pausaMs;
     if (open.pausaIn) pausaMs += Math.max(0, fine - open.pausaIn);
     const ms = fine - open.start - pausaMs;
-    if (ms > 0) g.ore_ms += ms;
+    if (ms > 0) {
+      g.ore_ms += ms;
+      if (!durate.has(email)) durate.set(email, new Map());
+      const siti = durate.get(email);
+      const prima = siti.get(g);
+      siti.delete(g);
+      siti.set(g, (prima || 0) + ms);
+    }
     aperte.delete(email);
   };
 
@@ -128,8 +138,11 @@ export function calcolaOrePerCantiere(timbrature) {
       chiudi(email, new Date(t.data_ora));
     }
   });
-  const adesso = new Date();
-  [...aperte.keys()].forEach((email) => chiudi(email, adesso)); // sessioni in corso
+  const adesso = Date.now();
+  for (const [email, open] of aperte) {
+    if (adesso < fineGiornata(open.start)) inCorso.add(email);
+    chiudi(email, adesso);
+  }
 
   // Spostamenti: intervallo tra la chiusura di un cantiere e l'apertura
   // successiva della stessa persona. La durata viene divisa a metà tra cantiere
@@ -150,12 +163,26 @@ export function calcolaOrePerCantiere(timbrature) {
     if (perCantiere[next.cantiere_id]) perCantiere[next.cantiere_id].spostamento_ms += meta;
   });
 
+  // Assegna l'unico arrotondamento della persona all'ultimo cantiere lavorato.
+  // Così la somma dei cantieri coincide con il totale, anche cambiando sito.
+  for (const [email, siti] of durate) {
+    const totale = [...siti.values()].reduce((a, b) => a + b, 0);
+    const ultimo = [...siti.keys()].at(-1);
+    const extra = inCorso.has(email) ? 0 : arrotondaMinutiSu(totale) - totale / 3600000;
+    for (const [sito, ms] of siti) {
+      (sito.orePerPersona ||= new Map()).set(email, ms / 3600000 + (sito === ultimo ? extra : 0));
+    }
+  }
   return Object.values(perCantiere).map((g) => ({
     cantiere_id: g.cantiere_id,
     cantiere_nome: g.cantiere_nome,
     ingresso: g.ingresso,
-    ore: arrotondaMinutiSu(g.ore_ms),
-    ore_spostamento: arrotondaMinutiSu(g.spostamento_ms),
+    ore: [...(g.orePerPersona?.values() || [])].reduce((a, b) => a + b, 0),
+    ore_ms: g.ore_ms,
+    spostamento_ms: g.spostamento_ms,
+    ore_spostamento: g.spostamento_ms / 3600000,
+    orePerPersona: g.orePerPersona,
+    inCorso: inCorso.size > 0,
   }));
 }
 
@@ -169,9 +196,14 @@ const ORE_LAVORO_GIORNO = 8;
 // lavorate. Fino a 8h, gli spostamenti restano lavoro (non generano trasferta).
 export function classificaSpostamentiGiornata(timbrature) {
   const perCantiere = calcolaOrePerCantiere(timbrature);
-  const totLavorazione = perCantiere.reduce((s, c) => s + (c.ore || 0), 0);
-  const totSpostamento = perCantiere.reduce((s, c) => s + (c.ore_spostamento || 0), 0);
-  const oltreOtto = totLavorazione > ORE_LAVORO_GIORNO;
+  const lavoroMs = perCantiere.reduce((s, c) => s + c.ore_ms, 0);
+  const spostamentoMs = perCantiere.reduce((s, c) => s + c.spostamento_ms, 0);
+  const totLavorazione = perCantiere.reduce((s, c) => s + c.ore, 0);
+  const totSpostamento = spostamentoMs / 3600000;
+  const oltreOtto = lavoroMs > ORE_LAVORO_GIORNO * 3600000;
+  const totaleMs = lavoroMs + (oltreOtto ? 0 : spostamentoMs);
+  const totGiornaliero = totaleMs === lavoroMs ? totLavorazione
+    : perCantiere.some((c) => c.inCorso) ? totaleMs / 3600000 : arrotondaMinutiSu(totaleMs);
   const oreSpostamentoLavorative = oltreOtto ? 0 : totSpostamento;
   const oreSpostamentoTrasferta = oltreOtto ? totSpostamento : 0;
   const spostamentoTipo = totSpostamento > 0 && oltreOtto ? "trasferta" : "lavorative";
@@ -181,14 +213,15 @@ export function classificaSpostamentiGiornata(timbrature) {
     oreSpostamentoLavorative,
     oreSpostamentoTrasferta,
     spostamentoTipo,
-    totGiornaliero: totLavorazione + oreSpostamentoLavorative,
+    totGiornaliero,
+    perCantiere,
   };
 }
 
 // ─── SQUADRA DELLA GIORNATA (da timbrature a righe rapportino) ────────────────
 // Una persona timbra per sé; il sistema ricostruisce per ognuna ingresso,
 // uscita, pausa, spostamenti, ore lavorate ed eventuali anomalie da verificare.
-export function buildSquadraDaTimbrature(timbrature, collaboratoriList = []) {
+export function buildSquadraDaTimbrature(timbrature, collaboratoriList = [], oreCantieri = calcolaOrePerCantiere(timbrature)) {
   const tOrd = sortTimbri(timbrature);
   const perUser = new Map();
 
@@ -282,12 +315,7 @@ export function buildSquadraDaTimbrature(timbrature, collaboratoriList = []) {
   });
 
   const rows = [...perUser.values()].map((u) => {
-    const oreMs = u.sessions.reduce(
-      (s, x) =>
-        s +
-        Math.max(0, Math.min(x.end || new Date(), fineGiornata(x.start)) - x.start - (x.pausaMs || 0)),
-      0
-    );
+    const oreLavorate = oreCantieri.reduce((s, sito) => s + (sito.orePerPersona?.get(u.user_email) || 0), 0);
     const coll = collaboratoriList.find(
       (c) => c.user_email && c.user_email.toLowerCase() === u.user_email.toLowerCase()
     );
@@ -300,7 +328,7 @@ export function buildSquadraDaTimbrature(timbrature, collaboratoriList = []) {
       ora_uscita: !inCorso && u.ultimo ? hhmm(u.ultimo.data_ora) : "",
       pausa_minuti: minutiDa(u.pausaMs),
       spostamento_minuti: minutiDa(u.spostamentoMs),
-      ore_lavorate: arrotondaMinutiSu(oreMs),
+      ore_lavorate: oreLavorate,
       cantieri: u.cantieri,
       note_timbrature: [...new Set(u.note)].join(" · "),
       // Ha timbrato dalla sede (capannone di Rivignano): nessuna trasferta,
@@ -385,7 +413,7 @@ export async function generaRapportiniDaGiornata({
     );
     if (esiste) continue;
 
-    const squadra = buildSquadraDaTimbrature(timb, collaboratoriList);
+    const squadra = buildSquadraDaTimbrature(timb, collaboratoriList, [calc]);
     const draft = await base44.entities.Rapportino.create({
       data: calc.ingresso?.data_ora || new Date().toISOString(),
       cantiere_id: cid,
@@ -420,11 +448,10 @@ export async function syncRapportinoOreDaTimbratura({ cantiere_id, giorno }) {
   const fine = new Date(g); fine.setHours(23, 59, 59, 999);
 
   const timb = await base44.entities.Timbratura.filter({
-    cantiere_id,
     data_ora: { $gte: inizio.toISOString(), $lt: fine.toISOString() },
-  });
+  }, 'data_ora', 5000);
   const calc = calcolaOrePerCantiere(timb).find((c) => c.cantiere_id === cantiere_id);
-  const squadra = buildSquadraDaTimbrature(timb, []);
+  const squadra = buildSquadraDaTimbrature(timb.filter((t) => t.cantiere_id === cantiere_id), [], calc ? [calc] : []);
 
   const rapportini = await base44.entities.Rapportino.filter({ cantiere_id });
   const r = rapportini.find((rr) => rr.data && stessaGiornata(rr.data, g));

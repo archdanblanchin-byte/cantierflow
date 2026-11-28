@@ -154,6 +154,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
   // Quadro ore
   const oreLavoratori = (data.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0) ||
     data.ore_totali_squadra || 0;
+  const minutiEsatti = Math.round(oreLavoratori * 60) % 5 !== 0;
   const oreExtra = items.filter((i) => i.extra).reduce((s, l) => s + (l.ore || 0), 0);
   const oreNormali = items.filter((i) => !i.extra).reduce((s, l) => s + (l.ore || 0), 0);
   const delta = oreLavoratori - oreExtra - oreNormali;
@@ -177,7 +178,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
 
       {/* Controlli di inserimento — sempre in alto, uno dopo l'altro, sopra l'elenco */}
       <div className="flex flex-col gap-2 sticky top-0 z-10 -mx-1 px-1 py-1 bg-background/95 backdrop-blur">
-        <Button variant="outline" onClick={addLavorazione} className="gap-2 h-11 w-full justify-center">
+        <Button onClick={addLavorazione} className="gap-2 h-11 w-full justify-center bg-primary/90 hover:bg-primary">
           <Plus className="w-4 h-4" />
           Manualmente
         </Button>
@@ -322,6 +323,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
                       <Label className="text-[11px] text-muted-foreground">Ore/persona</Label>
                       <OreInput
                         compact
+                        minutiEsatti={minutiEsatti}
                         value={lav.ore_per_persona ?? 0}
                         onChange={(v) => updateItem(i, { ore_per_persona: v })}
                       />
@@ -333,6 +335,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
                   <Label className="text-[11px] text-muted-foreground">Ore</Label>
                   <OreInput
                     compact
+                    minutiEsatti={minutiEsatti}
                     value={lav.ore ?? 0}
                     onChange={(v) => updateItem(i, { ore: v, modalita_calcolo: "manuale" })}
                   />

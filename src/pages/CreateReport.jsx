@@ -11,7 +11,7 @@ import RapportinoUnico from "@/components/rapportino/RapportinoUnico";
 import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
 import { usePermessoRapportinoManuale } from "@/hooks/usePermessoRapportinoManuale";
 import { fmtOre } from "@/lib/timbratureUtils";
-import { buildSquadraDaTimbrature, getRapportinoCantiereGiorno } from "@/lib/rapportiniFromTimbrature";
+import { buildSquadraDaTimbrature, calcolaOrePerCantiere, getRapportinoCantiereGiorno } from "@/lib/rapportiniFromTimbrature";
 import { caricaTuttiMateriali, sincronizzaScaricoRapportino } from "@/lib/inventario";
 
 const AUTOSAVE_INTERVAL = 60000; // 1 minuto
@@ -153,11 +153,11 @@ export default function CreateReport() {
     const inizioG = new Date(g); inizioG.setHours(0, 0, 0, 0);
     const fineG = new Date(g); fineG.setHours(23, 59, 59, 999);
     base44.entities.Timbratura.filter({
-      cantiere_id: formData.cantiere_id,
       data_ora: { $gte: inizioG.toISOString(), $lt: fineG.toISOString() },
-    }).then((timb) => {
+    }, 'data_ora', 5000).then((timb) => {
       if (annullato) return;
-      const squadra = buildSquadraDaTimbrature(timb, collaboratoriList);
+      const delCantiere = (t) => t.cantiere_id === formData.cantiere_id;
+      const squadra = buildSquadraDaTimbrature(timb.filter(delCantiere), collaboratoriList, calcolaOrePerCantiere(timb).filter(delCantiere));
       setFormData((prev) => {
         if (prev.cantiere_id !== formData.cantiere_id) return prev;
         const note = new Map((prev.collaboratori || []).map((c) => [c.user_email || c.collaboratore_id, c.note_imprevisti || ""]));

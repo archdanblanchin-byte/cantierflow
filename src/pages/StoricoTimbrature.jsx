@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { fmtOre } from "@/lib/timbratureUtils";
-import { calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
+import { classificaSpostamentiGiornata } from "@/lib/rapportiniFromTimbrature";
 import TimbraturaTimeline from "@/components/timbrature/TimbraturaTimeline";
 import TimbraturaEditDialog from "@/components/timbrature/TimbraturaEditDialog";
 import TimbraturaAddDialog from "@/components/timbrature/TimbraturaAddDialog";
@@ -23,12 +23,6 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
-
-// Calcola le ore totali di una giornata a partire dalla lista di timbrature.
-// Lo spostamento conta come chiusura del cantiere precedente (come l'uscita).
-function oreGiornata(timbs) {
-  return calcolaOrePerCantiere(timbs).reduce((s, c) => s + (c.ore || 0), 0);
-}
 
 export default function StoricoTimbrature({ mode = "own" }) {
   const navigate = useNavigate();
@@ -302,8 +296,7 @@ export default function StoricoTimbrature({ mode = "own" }) {
 
         {giorni.map((giorno) => {
           const aperto = !!aperti[giorno.key];
-          const ore = oreGiornata(giorno.list);
-          const oreSpost = calcolaOrePerCantiere(giorno.list).reduce((s, c) => s + (c.ore_spostamento || 0), 0);
+          const { totLavorazione: ore, totSpostamento: oreSpost, totGiornaliero } = canSeeAll ? {} : classificaSpostamentiGiornata(giorno.list);
           const nCantieri = new Set(
             giorno.list.map((t) => t.cantiere_id).filter(Boolean)
           ).size;
@@ -355,7 +348,7 @@ export default function StoricoTimbrature({ mode = "own" }) {
                         )}
                         {oreSpost > 0 && (
                           <Badge className="text-[10px] gap-1 bg-primary/10 text-primary border-primary/20 font-semibold">
-                            Tot {fmtOre(ore + oreSpost)}
+                            Tot {fmtOre(totGiornaliero)}
                           </Badge>
                         )}
                       </>

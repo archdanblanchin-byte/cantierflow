@@ -30,7 +30,7 @@ export default function DettaturaRapportino({ righe, catalogo = [], materiale = 
     setProposta(null);
   };
   return <>
-    <Button type="button" variant="outline" className="h-11 w-full gap-2" onClick={stato === 'registrazione' ? ferma : avvia} disabled={stato === 'elaborazione'}>
+    <Button type="button" variant={stato === 'registrazione' ? 'destructive' : 'default'} className="h-11 w-full gap-2" onClick={stato === 'registrazione' ? ferma : avvia} disabled={stato === 'elaborazione'}>
       {stato === 'registrazione' ? <><Square className="h-4 w-4" /> Ferma e rivedi <RecordingIndicator seconds={secondi} fmt={tempoVocale} /></> : stato === 'elaborazione' ? <><Loader2 className="h-4 w-4 animate-spin" /> Elaborazione…</> : <><Mic className="h-4 w-4" /> {righe.length ? 'Detta aggiunte o correzioni' : 'Registrazione vocale'}</>}
     </Button>
     <p className="text-xs text-muted-foreground">{materiale ? 'Puoi dettare nuovi materiali, correggere quantità o chiedere di rimuovere una voce.' : 'Puoi aggiungere, correggere o rimuovere voci. Per assegnare il residuo, di’ per esempio: «Le ore che restano vanno alla demolizione».'}</p>

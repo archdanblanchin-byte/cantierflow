@@ -1,12 +1,12 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { arrotondaOre, arrotondaOreSu, arrotondaQuarti, distanzaKmStrada, getCapannone, timbroInSede, coordinateTrasferta } from "@/lib/timbratureUtils";
+import { arrotondaOre, distanzaKmStrada, getCapannone, timbroInSede, coordinateTrasferta } from "@/lib/timbratureUtils";
 
 // Ore di lavoro previste nella giornata e conversione tempo/trasferta:
 // 1 minuto di lavoro mancante = 1 km di trasferta non riconosciuta.
 export const ORE_LAVORO_GIORNO = 8;
 export const KM_PER_MINUTO_MANCANTE = 1;
-import { classificaSpostamentiGiornata, calcolaOrePerCantiere } from "@/lib/rapportiniFromTimbrature";
+import { classificaSpostamentiGiornata } from "@/lib/rapportiniFromTimbrature";
 import { calcolaValoriTrasferta } from "@/lib/trasfertaValori";
 
 export function arrotondaOreQuarti(ore) {
@@ -26,7 +26,7 @@ export function calcolaSpostamenti(timbratureGiorno) {
     const idx = tims.indexOf(s);
     const next = tims[idx + 1];
     let durata = 0;
-    if (next) durata = arrotondaQuarti(new Date(next.data_ora) - new Date(s.data_ora));
+    if (next) durata = (new Date(next.data_ora) - new Date(s.data_ora)) / 3600000;
     return {
       id: s.id,
       destinazione: s.cantiere_destinazione_nome,
@@ -45,24 +45,17 @@ export function calcolaSpostamenti(timbratureGiorno) {
  * tratta attribuita al cantiere di partenza e a quello di arrivo).
  */
 export function oreGiornoDaTimbrature(timbratureGiorno) {
+  const calc = classificaSpostamentiGiornata(timbratureGiorno);
   const perCantiere = {};
-  let oreCantieriRaw = 0;
-  let oreSpostRaw = 0;
-  calcolaOrePerCantiere(timbratureGiorno).forEach((c) => {
+  calc.perCantiere.forEach((c) => {
     const nome = c.cantiere_nome || "—";
-    perCantiere[nome] = (perCantiere[nome] || 0) + (c.ore || 0);
-    oreCantieriRaw += c.ore || 0;
-    oreSpostRaw += c.ore_spostamento || 0;
+    perCantiere[nome] = (perCantiere[nome] || 0) + c.ore;
   });
-  // Regola delle 8 ore: oltre le 8h di lavoro in cantiere, gli spostamenti
-  // sono interamente trasferta (minuti esclusi dalle ore lavorate). Fino a 8h,
-  // gli spostamenti restano lavoro (tutti i minuti conteggiati).
-  const oltreOtto = oreCantieriRaw > ORE_LAVORO_GIORNO;
-  const oreSpostLavorative = oltreOtto ? 0 : oreSpostRaw;
   return {
-    oreCantieri: arrotondaOreSu(oreCantieriRaw),
-    oreSpost: arrotondaOreSu(oreSpostLavorative),
-    oreSpostTot: arrotondaOreSu(oreSpostRaw),
+    oreCantieri: calc.totLavorazione,
+    oreSpost: calc.oreSpostamentoLavorative,
+    oreSpostTot: calc.totSpostamento,
+    oreTotali: calc.totGiornaliero,
     perCantiere,
   };
 }
@@ -208,7 +201,7 @@ export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
   const cantieri = daTimbrature
     ? Object.entries(daTimbrature.perCantiere).map(([nome, ore]) => ({
         nome,
-        ore: arrotondaOreQuarti(ore),
+        ore,
         stato: cantieriMap[nome]?.stato || null,
       }))
     : cantieriRapportini;
@@ -258,7 +251,7 @@ export function buildDettaglioGiorno(vociRapportini, timbratureGiorno) {
     oreCantieri,
     oreSpostamenti,
     oreSpostamentiTot,
-    oreTotali: oreCantieri + oreSpostamentiTot,
+    oreTotali: daTimbrature?.oreTotali ?? oreCantieri + oreSpostamentiTot,
   };
 }
 

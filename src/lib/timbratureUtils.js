@@ -176,14 +176,14 @@ export function arrotondaOreSu(ore) {
 // restano esatte, così una giornata da 8h32 diventa 8h35 e non 8h30.
 export function arrotondaMinutiSu(ms, stepMin = ARROTONDAMENTO_MIN) {
   if (!ms || ms <= 0) return 0;
-  const minuti = Math.ceil(ms / 60000 / stepMin - 1e-9) * stepMin;
-  return Math.round((minuti / 60) * 1000) / 1000;
+  return Math.ceil(ms / (60000 * stepMin)) * stepMin / 60;
 }
 
 export function fmtOre(oreQuarti) {
   if (!oreQuarti || oreQuarti <= 0) return "0h";
-  const h = Math.floor(oreQuarti);
-  const min = Math.round((oreQuarti - h) * 60);
+  const minuti = Math.round(oreQuarti * 60);
+  const h = Math.floor(minuti / 60);
+  const min = minuti % 60;
   if (min === 0) return `${h}h`;
   return `${h}h ${min}min`;
 }
