@@ -4,7 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format, isToday } from "date-fns";
+import { format } from "date-fns";
+import { autoreRapportino, modificaRapportino } from "@/components/rapportino/accessoRapportino";
 import { it } from "date-fns/locale";
 import {
   ArrowLeft, MapPin, Truck, Users, Zap, Wrench, Package, Calendar, User, Trash2, Pencil,
@@ -74,14 +75,15 @@ export default function ReportDetail() {
   };
 
   const isAdmin = currentUser?.role === "admin";
-  // Compilano il rapportino: l'admin, l'autore entro la giornata e tutta la
-  // squadra (partecipanti) finché il rapportino è in bozza.
-  const oggi = report ? isToday(new Date(report.data)) : false;
-  const isAutore = !!report && report.user_email === currentUser?.email;
-  const inSquadra = !!report && (report.partecipanti_email || [])
-    .some((e) => (e || "").toLowerCase() === (currentUser?.email || "").toLowerCase());
-  const canEdit = !!report && !!currentUser &&
-    (isAdmin || (isAutore && oggi) || (inSquadra && oggi && report.stato === "bozza"));
+  const [adesso, setAdesso] = useState(Date.now);
+  useEffect(() => {
+    const aggiorna = () => setAdesso(Date.now());
+    const timer = setInterval(aggiorna, 1000);
+    window.addEventListener('focus', aggiorna);
+    return () => { clearInterval(timer); window.removeEventListener('focus', aggiorna); };
+  }, []);
+  const canEdit = modificaRapportino(report, currentUser, adesso);
+  const mostraScadenza = report?.stato === 'inviato' && !isAdmin && autoreRapportino(report, currentUser);
   // Classificazione spostamenti secondo la regola delle 8 ore (calcolo giornaliero)
   const { data: classificazione } = useClassificazioneSpostamento(report?.user_email, report?.data);
   const spoTipo = classificazione?.spostamentoTipo;
@@ -150,8 +152,8 @@ export default function ReportDetail() {
                 </Button>
               )}
               {canEdit && d.stato !== "bozza" && (
-                <Button variant="ghost" size="icon" onClick={() => navigate(`/modifica-report/${id}`)}>
-                  <Pencil className="w-4 h-4" />
+                <Button variant="outline" size="sm" onClick={() => navigate(`/modifica-report/${id}`)}>
+                  <Pencil className="w-4 h-4" /> Modifica
                 </Button>
               )}
               <AlertDialog>
@@ -183,6 +185,7 @@ export default function ReportDetail() {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
+        {mostraScadenza && <p className="mb-4 text-sm text-muted-foreground">{canEdit ? 'Puoi modificare questo rapportino fino alle 00:00 (ora italiana).' : 'La finestra di modifica si è chiusa alla mezzanotte del giorno di invio (ora italiana).'}</p>}
         <div className="rounded-xl border border-border bg-card divide-y divide-border">
           <DetailSection icon={MapPin} title="Cantiere">
             <DetailRow label="Cantiere" value={d.cantiere_nome} />

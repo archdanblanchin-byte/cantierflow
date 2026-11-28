@@ -108,6 +108,9 @@ export default async function (req) {
       // ─── Unione dei doppioni nel rapportino mantenuto ───────────────────────
       const doppioni = esistenti.slice(1);
       const tutti = [keeper, ...doppioni];
+      const invioConsolidato = keeper.stato !== 'inviato'
+        ? doppioni.find((r) => r.stato === 'inviato' && r.inviato_il && r.autore_invio_id)
+        : null;
 
       // Le voci identiche (stessa lavorazione/materiale/foto) non vanno ripetute.
       const unisci = (campo) => {
@@ -149,6 +152,11 @@ export default async function (req) {
             piattaforma: primoValore('piattaforma'),
             ore_utilizzo_piattaforma: primoValore('ore_utilizzo_piattaforma'),
             stato: tutti.some((r) => r.stato === 'inviato') ? 'inviato' : keeper.stato || 'bozza',
+            ...(invioConsolidato ? {
+              inviato_il: invioConsolidato.inviato_il,
+              autore_invio_id: invioConsolidato.autore_invio_id,
+              user_email: invioConsolidato.user_email || keeper.user_email,
+            } : {}),
           }
         : {};
 
@@ -157,7 +165,7 @@ export default async function (req) {
         ore_totali_squadra: oreTotali,
         ore_spostamento: oreSpostamento,
         collaboratori,
-        partecipanti_email: partecipanti,
+        partecipanti_email: invioConsolidato?.user_email ? [...new Set([...partecipanti, invioConsolidato.user_email])] : partecipanti,
         ...consolidato,
       });
 

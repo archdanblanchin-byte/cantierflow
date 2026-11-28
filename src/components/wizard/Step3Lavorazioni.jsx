@@ -7,7 +7,7 @@ import {
   Plus, Trash2, Wrench, AlertCircle, CheckCircle2, AlertTriangle, Users, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import AudioLavorazioniRecorder from "@/components/wizard/AudioLavorazioniRecorder";
+import DettaturaRapportino from "@/components/wizard/DettaturaRapportino";
 import OreInput from "@/components/wizard/OreInput";
 import NumeroInput from "@/components/wizard/NumeroInput";
 import NuovaLavorazioneDialog from "@/components/wizard/NuovaLavorazioneDialog";
@@ -64,7 +64,7 @@ function toNormaliShape(it) {
   };
 }
 function toExtraShape(it) {
-  const desc = it.tipo_lavorazione_nome || it.descrizione_custom || it.descrizione || "";
+  const desc = it.descrizione || it.tipo_lavorazione_nome || it.descrizione_custom || "";
   return {
     descrizione: desc,
     ore: it.ore || 0,
@@ -149,48 +149,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
     setNuovaLavIndex(null);
   };
 
-  // Resoconto vocale: aggiunge tutte le lavorazioni come preventivate; l'utente
-  // attiva poi il flag Extra sulle righe concordate fuori preventivo.
-  const handleAudioResult = (parsed) => {
-    const availableCats = [...new Set((tipiLavorazione || []).map((t) => t.categoria).filter(Boolean))];
-    let base = nextOrdine();
-    const nuovi = parsed.map((n) => {
-      const modalita_calcolo = n.modalita_calcolo === "per_persone" ? "per_persone" : "manuale";
-      const numero_persone = n.numero_persone || 0;
-      const ore_per_persona = n.ore_per_persona || 0;
-      const ore = modalita_calcolo === "per_persone"
-        ? Math.round(numero_persone * ore_per_persona * 100) / 100
-        : n.ore_totali || 0;
-      const descrizione = n.descrizione || "";
-      const catMatch = availableCats.find((c) => c.toLowerCase() === String(n.categoria).toLowerCase());
-      const item = {
-        extra: false,
-        ordine: base++,
-        tipo_lavorazione_id: "",
-        tipo_lavorazione_nome: n.tipo || "",
-        categoria: catMatch || "__custom__",
-        descrizione_custom: catMatch ? (n.tipo || "") : `${n.categoria || ""} - ${n.tipo || ""}`,
-        descrizione,
-        ore,
-        modalita_calcolo,
-        numero_persone,
-        ore_per_persona,
-      };
-      if (catMatch) {
-        const tipoMatch = (tipiLavorazione || []).find(
-          (t) => t.categoria === catMatch && t.nome.toLowerCase() === String(n.tipo).toLowerCase()
-        );
-        if (tipoMatch) {
-          item.tipo_lavorazione_id = tipoMatch.id;
-          item.tipo_lavorazione_nome = tipoMatch.nome;
-          item.categoria = catMatch;
-          item.descrizione_custom = "";
-        }
-      }
-      return item;
-    });
-    commit([...items, ...nuovi]);
-  };
+
 
   // Quadro ore
   const oreLavoratori = (data.collaboratori || []).reduce((s, c) => s + (c.ore_lavorate || 0), 0) ||
@@ -222,7 +181,7 @@ export default function Step3Lavorazioni({ data, onChange, tipiLavorazione }) {
           <Plus className="w-4 h-4" />
           Manualmente
         </Button>
-        <AudioLavorazioniRecorder mode="normali" tipiLavorazione={tipiLavorazione} onResult={handleAudioResult} />
+        <DettaturaRapportino righe={items} catalogo={catalogo} oreSquadra={oreLavoratori} onConfirm={commit} />
       </div>
 
       <div className="space-y-3">

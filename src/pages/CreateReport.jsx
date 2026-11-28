@@ -205,10 +205,7 @@ export default function CreateReport() {
     }
     setSubmitting(true);
     try {
-      let idSalvato = draftId;
-      if (draftId) {
-        await base44.entities.Rapportino.update(draftId, { ...formData, stato: "inviato" });
-      } else {
+      if (!draftId) {
         const esistente = await getRapportinoCantiereGiorno(formData.cantiere_id, formData.data || new Date());
         if (esistente) {
           setRapportinoEsistente(esistente);
@@ -216,16 +213,15 @@ export default function CreateReport() {
           setSubmitting(false);
           return;
         }
-        const creato = await base44.entities.Rapportino.create({ ...formData, stato: "inviato" });
-        idSalvato = creato.id;
       }
-      sincronizzaScaricoRapportino({ ...formData, id: idSalvato });
+      const { data: salvato } = await base44.functions.invoke('salvaRapportinoInviato', { id: draftId, dati: formData });
+      sincronizzaScaricoRapportino({ ...formData, id: salvato.id });
       queryClient.invalidateQueries({ queryKey: ["rapportini"] });
       queryClient.invalidateQueries({ queryKey: ["cantieri"] });
       toast.success("Rapportino inviato con successo!");
       navigate("/");
     } catch (err) {
-      toast.error("Errore nell'invio del rapportino: " + (err?.message || "riprova"));
+      toast.error(err?.response?.data?.error || "Non è stato possibile inviare il rapportino. Riprova.");
       setSubmitting(false);
     }
   };

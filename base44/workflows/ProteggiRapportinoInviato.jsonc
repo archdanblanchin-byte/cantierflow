@@ -1,0 +1,38 @@
+{
+  "trigger": {
+    "condition": "${ .trigger.data.entity_name == \"Rapportino\" }",
+    "config": {
+      "trigger_type": "hook",
+      "events": [],
+      "hook_type": "entity_before_write"
+    }
+  },
+  "name": "Proteggi il rapportino inviato",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "proteggi_rapportino_inviato",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "verifica": {
+          "call": "calculate_field",
+          "with": {
+            "field": "response",
+            "value": {
+              "allow": "${ (.trigger.data.service_role == true and .trigger.data.existing.stato != \"inviato\") or (.trigger.data.existing.inviato_il == .trigger.data.proposed.inviato_il and .trigger.data.existing.autore_invio_id == .trigger.data.proposed.autore_invio_id and ((.trigger.data.existing.stato != \"inviato\" and .trigger.data.proposed.stato != \"inviato\") or ((.trigger.data.service_role == true or .trigger.app_user.role == \"admin\") and .trigger.data.existing.stato == \"inviato\" and .trigger.data.proposed.stato == \"inviato\"))) }",
+              "reason": "Usa la funzione di invio o modifica del rapportino per salvare un rapportino inviato."
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Proteggi i dati di invio"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Fa verificare autore e scadenza per le modifiche dopo l\u2019invio e protegge i dati del primo invio."
+}

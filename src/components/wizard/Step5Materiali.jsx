@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import MaterialeCombobox from "@/components/wizard/MaterialeCombobox";
 import { Plus, Trash2, Package } from "lucide-react";
-import AudioMaterialiRecorder from "@/components/wizard/AudioMaterialiRecorder";
+import DettaturaRapportino from "@/components/wizard/DettaturaRapportino";
 import NumeroInput from "@/components/wizard/NumeroInput";
 import { Switch } from "@/components/ui/switch";
 
@@ -30,32 +30,7 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
     onChange({ materiali: materiali.filter((_, i) => i !== index) });
   };
 
-  const handleAudioResult = (items) => {
-    const mapped = items.map((m) => {
-      const match = materialiBase.find(
-        (b) => b.nome.toLowerCase() === String(m.nome).toLowerCase()
-      );
-      if (match) {
-        return {
-          materiale_id: match.id,
-          nome: match.nome,
-          unita_misura: m.unita_misura || match.unita_misura || "",
-          quantita: m.quantita || 0,
-          descrizione_custom: "",
-          descrizione: m.descrizione || "",
-        };
-      }
-      return {
-        materiale_id: "",
-        nome: m.nome,
-        unita_misura: m.unita_misura || "",
-        quantita: m.quantita || 0,
-        descrizione_custom: m.nome,
-        descrizione: m.descrizione || "",
-      };
-    });
-    onChange({ materiali: [...materiali, ...mapped] });
-  };
+
 
   return (
     <div className="space-y-4">
@@ -75,7 +50,7 @@ export default function Step5Materiali({ data, onChange, materialiBase }) {
           <Plus className="w-4 h-4" />
           Manualmente
         </Button>
-        <AudioMaterialiRecorder materialiBase={materialiBase} onResult={handleAudioResult} />
+        <DettaturaRapportino materiale righe={materiali} catalogo={materialiBase} onConfirm={(righe) => onChange({ materiali: righe })} />
       </div>
 
       {/* Istruzioni di compilazione */}

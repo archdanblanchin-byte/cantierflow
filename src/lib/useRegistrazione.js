@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 
 // Registrazione vocale: parte subito al tocco, mostra il tempo, carica l'audio
 // in privato e restituisce un URL firmato al termine (usato per la trascrizione).
-export default function useRegistrazione({ onAudio, onErrore }) {
+export default function useRegistrazione({ onAudio, onErrore, filePrivato = false }) {
   const [stato, setStato] = useState('idle'); // idle | registrazione | elaborazione
   const [secondi, setSecondi] = useState(0);
   const recRef = useRef(null);
@@ -30,6 +30,12 @@ export default function useRegistrazione({ onAudio, onErrore }) {
   useEffect(() => () => {
     fermaTimer();
     rilasciaWake();
+    const rec = recRef.current;
+    if (rec && rec.state !== 'inactive') {
+      rec.onstop = null;
+      rec.stop();
+      rec.stream.getTracks().forEach((track) => track.stop());
+    }
   }, []);
 
   const avvia = useCallback(async () => {
@@ -45,6 +51,7 @@ export default function useRegistrazione({ onAudio, onErrore }) {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
       rec.onstop = async () => {
+        fermaTimer();
         stream.getTracks().forEach((t) => t.stop());
         rilasciaWake();
         const tipo = rec.mimeType || 'audio/webm';
@@ -59,13 +66,13 @@ export default function useRegistrazione({ onAudio, onErrore }) {
         try {
           const file = new File([blob], `vocale.${ext}`, { type: tipo });
           const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
-          const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({
-            file_uri,
-            expires_in: 1800,
-          });
-          await onAudio(signed_url);
+          if (filePrivato) await onAudio(file_uri);
+          else {
+            const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 1800 });
+            await onAudio(signed_url);
+          }
         } catch (e) {
-          onErrore?.('Non sono riuscito a usare la registrazione. Riprova.');
+          onErrore?.(filePrivato && e?.response?.data?.error || 'Non sono riuscito a usare la registrazione. Riprova.');
         }
         setStato('idle');
       };
@@ -87,7 +94,7 @@ export default function useRegistrazione({ onAudio, onErrore }) {
     } catch (e) {
       onErrore?.('Microfono non disponibile: controlla i permessi del browser.');
     }
-  }, [onAudio, onErrore]);
+  }, [onAudio, onErrore, filePrivato]);
 
   const ferma = useCallback(() => {
     fermaTimer();

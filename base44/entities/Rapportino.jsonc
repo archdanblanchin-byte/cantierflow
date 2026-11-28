@@ -106,7 +106,7 @@
     },
     "collaboratori": {
       "type": "array",
-      "description": "Squadra del cantiere: compilata automaticamente dalle timbrature della giornata (ingresso, uscita, pausa, spostamenti, ore e anomalie). Il capo cantiere la controlla e la completa.",
+      "description": "Squadra del cantiere compilata dalle timbrature della giornata",
       "items": {
         "type": "object",
         "properties": {
@@ -226,7 +226,7 @@
           },
           "descrizione": {
             "type": "string",
-            "description": "Note/specifica del materiale (es. dove e stato preso, dettagli prodotto) estratto dal resoconto vocale"
+            "description": "Note/specifica del materiale estratta dal resoconto vocale"
           },
           "unita_misura": {
             "type": "string"
@@ -245,6 +245,15 @@
       ],
       "default": "bozza",
       "description": "Stato del rapportino"
+    },
+    "inviato_il": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Istante del primo invio registrato dal server"
+    },
+    "autore_invio_id": {
+      "type": "string",
+      "description": "ID del compilatore che ha inviato il rapportino"
     }
   },
   "required": [

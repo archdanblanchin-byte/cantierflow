@@ -219,6 +219,7 @@ export default function RapportinoUnico({
         onSave={onSaveDraft}
         saving={savingDraft}
         onSubmit={onSubmit}
+        inviato={data.stato === 'inviato'}
         submitting={submitting}
         canSubmit={canSubmit}
         hint={hint}

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { isToday } from "date-fns";
+import { modificaRapportino } from "@/components/rapportino/accessoRapportino";
 
 import RapportinoUnico from "@/components/rapportino/RapportinoUnico";
 import { computePartecipantiEmail } from "@/lib/rapportinoPartecipanti";
@@ -28,17 +28,7 @@ export default function EditReport() {
       const results = await base44.entities.Rapportino.filter({ id });
       const report = results[0];
       if (!report) { navigate("/"); return; }
-      // Chi compila il rapportino: l'admin sempre; l'autore entro la giornata;
-      // qualsiasi operatore della squadra finché il rapportino è in bozza.
-      const admin = user?.role === "admin";
-      const oggi = isToday(new Date(report.data));
-      const isAutore = report.user_email === user?.email;
-      const inSquadra = (report.partecipanti_email || [])
-        .some((e) => (e || "").toLowerCase() === (user?.email || "").toLowerCase());
-      const puoCompilare = admin
-        || (isAutore && oggi)
-        || (inSquadra && oggi && report.stato !== "inviato");
-      if (!puoCompilare) {
+      if (!modificaRapportino(report, user)) {
         toast.error("Non puoi modificare questo rapportino");
         navigate(`/report/${id}`);
         return;
@@ -81,11 +71,10 @@ export default function EditReport() {
 
   // Salva senza inviare: il rapportino resta aperto e modificabile durante la giornata
   const salvaBozza = async () => {
-    if (!formData) return;
+    if (!formData || formData.stato === 'inviato') return;
     setSavingDraft(true);
     try {
-      const stato = formData.stato === "inviato" ? "inviato" : "bozza";
-      await base44.entities.Rapportino.update(id, { ...formData, stato });
+      await base44.entities.Rapportino.update(id, { ...formData, stato: 'bozza' });
       sincronizzaScaricoRapportino({ ...formData, id });
       queryClient.invalidateQueries({ queryKey: ["rapportini"] });
       setLastSaved(new Date());
@@ -100,14 +89,14 @@ export default function EditReport() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      await base44.entities.Rapportino.update(id, { ...formData, stato: "inviato" });
+      await base44.functions.invoke('salvaRapportinoInviato', { id, dati: formData, aggiorna: formData.stato === 'inviato' });
       sincronizzaScaricoRapportino({ ...formData, id });
       queryClient.invalidateQueries({ queryKey: ["rapportini"] });
       toast.success("Rapportino aggiornato!");
       setSubmitting(false);
       navigate(`/report/${id}`);
     } catch (err) {
-      toast.error("Errore nell'invio del rapportino: " + (err?.message || "riprova"));
+      toast.error(err?.response?.data?.error || "Non è stato possibile salvare il rapportino. Riprova.");
       setSubmitting(false);
     }
   };

@@ -14,6 +14,7 @@ export default function RapportinoNav({
   submitting,
   canSubmit,
   hint,
+  inviato,
 }) {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t border-border safe-area-bottom">
@@ -30,22 +31,17 @@ export default function RapportinoNav({
           </Button>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            className="flex-1 h-11 gap-2"
-            onClick={onSave}
-            disabled={saving}
-          >
+          {!inviato && <Button variant="secondary" className="flex-1 h-11 gap-2" onClick={onSave} disabled={saving || submitting}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Salva e continua dopo
-          </Button>
+          </Button>}
           <Button
             className="flex-1 h-11 gap-2 shadow-lg shadow-primary/20"
             onClick={onSubmit}
-            disabled={!canSubmit || submitting}
+            disabled={!canSubmit || submitting || saving}
           >
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            {submitting ? "Invio…" : "Invia"}
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : inviato ? <Save className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+            {inviato ? (submitting ? 'Salvataggio…' : 'Salva modifiche') : (submitting ? 'Invio…' : 'Invia')}
           </Button>
         </div>
       </div>
