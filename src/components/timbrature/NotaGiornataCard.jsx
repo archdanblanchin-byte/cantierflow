@@ -13,9 +13,9 @@ import RegistraNotaGiornata from "@/components/timbrature/RegistraNotaGiornata";
 import NoteVocaliElenco from "@/components/timbrature/NoteVocaliElenco";
 
 const ESEMPI = [
-  "Sono andato a prendere materiale dal fornitore",
-  "La timbratura iniziale è stata fatta in ritardo, dovrebbe essere per le 7:30",
-];
+"Sono andato a prendere materiale dal fornitore",
+"La timbratura iniziale è stata fatta in ritardo, dovrebbe essere per le 7:30"];
+
 
 // Nota libera della giornata del dipendente: serve a spiegare le anomalie
 // (timbri in ritardo, materiale, visite mediche, spostamenti...) prima che
@@ -27,15 +27,15 @@ export default function NotaGiornataCard({ cantieri }) {
   const [dinamica, setDinamica] = useState("");
   const [salvando, setSalvando] = useState(false);
   const giornoKey = format(new Date(), "yyyy-MM-dd");
-  const giornoRoma = new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const giornoRoma = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const [giornoVocali, setGiornoVocali] = useState('');
 
-  useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
+  useEffect(() => {base44.auth.me().then(setUser).catch(() => {});}, []);
 
   const { data: note = [], isFetched } = useQuery({
     queryKey: ["nota-giornata", user?.email, giornoKey],
     queryFn: () => base44.entities.NotaGiornata.filter({ user_email: user.email, data: giornoKey }),
-    enabled: !!user,
+    enabled: !!user
   });
 
   const esistente = note[0] || null;
@@ -61,7 +61,7 @@ export default function NotaGiornataCard({ cantieri }) {
           user_email: user.email,
           user_nome: user.full_name || "",
           testo,
-          dinamica,
+          dinamica
         });
       }
       queryClient.invalidateQueries({ queryKey: ["nota-giornata"] });
@@ -81,30 +81,30 @@ export default function NotaGiornataCard({ cantieri }) {
         <NotebookPen className="w-4 h-4 text-primary" />
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Note della giornata</p>
         <RegistraNotaGiornata cantieri={cantieri} giorno={giornoRoma} />
-        {esistente && (
-          <span className="flex items-center gap-1 text-[10px] text-emerald-600">
+        {esistente &&
+        <span className="flex items-center gap-1 text-[10px] text-emerald-600">
             <Check className="w-3 h-3" /> salvata
           </span>
-        )}
+        }
       </div>
       <details className="border-t pt-2">
         <summary className="cursor-pointer text-sm font-medium">Nota scritta</summary>
         <div className="mt-2 space-y-2">
       <Textarea
-        rows={2}
-        value={testo}
-        onChange={(e) => setTesto(e.target.value)}
-        className="min-h-[52px] text-base sm:text-sm"
-        placeholder="Scrivi la nota della giornata..."
-      />
+            rows={2}
+            value={testo}
+            onChange={(e) => setTesto(e.target.value)}
+            className="min-h-[52px] text-base sm:text-sm"
+            placeholder="Scrivi la nota della giornata..." />
+          
       <div className="space-y-1">
         <p className="text-[11px] font-medium text-muted-foreground">Esempi</p>
         <ul className="space-y-0.5">
-          {ESEMPI.map((e) => (
-            <li key={e} className="text-[11px] text-muted-foreground/80 leading-snug">
+          {ESEMPI.map((e) =>
+              <li key={e} className="text-[11px] text-muted-foreground/80 leading-snug">
               · “{e}”
             </li>
-          ))}
+              )}
         </ul>
       </div>
       <DinamicaSelect value={dinamica} onChange={setDinamica} />
@@ -114,13 +114,13 @@ export default function NotaGiornataCard({ cantieri }) {
       </Button>
         </div>
       </details>
-      <details className="border-t pt-2">
+      <details className="border-t pt-2 hidden">
         <summary className="cursor-pointer text-sm font-medium">Storico note vocali</summary>
         <div className="mt-2 space-y-2">
-          <label className="flex flex-wrap items-center gap-2 text-xs font-medium">Giorno <Input className="ml-auto w-auto" type="date" value={giornoVocali || giornoRoma} max={giornoRoma} onChange={e => setGiornoVocali(e.target.value)} /></label>
+          <label className="flex flex-wrap items-center gap-2 text-xs font-medium">Giorno <Input className="ml-auto w-auto" type="date" value={giornoVocali || giornoRoma} max={giornoRoma} onChange={(e) => setGiornoVocali(e.target.value)} /></label>
           <NoteVocaliElenco giorno={giornoVocali || giornoRoma} userId={user.id} empty />
         </div>
       </details>
-    </Card>
-  );
+    </Card>);
+
 }
