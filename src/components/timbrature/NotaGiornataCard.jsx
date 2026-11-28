@@ -12,7 +12,9 @@ import RegistraNotaGiornata from "@/components/timbrature/RegistraNotaGiornata";
 
 const ESEMPI = [
 "Ho ritirato il materiale per un’ora, ho fatto due ore di preventivi e il resto della giornata ho preparato il cantiere",
-"La timbratura iniziale è stata fatta in ritardo, dovrebbe essere per le 7:30"];
+"La timbratura iniziale è stata fatta in ritardo, dovrebbe essere per le 7:30",
+"Correggi i preventivi: non due ore, ma un’ora e mezza",
+"Cancella la voce sul ritiro del materiale"];
 
 
 // Nota libera della giornata del dipendente: serve a spiegare le anomalie
@@ -64,8 +66,7 @@ export default function NotaGiornataCard({ minutiGiornata }) {
     }
   };
 
-  const salvaAudio = async (aggiunta) => {
-    const contenuto = [testo, aggiunta].filter(parte => parte.trim()).join("\n\n");
+  const salvaAudio = async (contenuto) => {
     setTesto(contenuto);
     if (dettagli.current) dettagli.current.open = true;
     await salva(contenuto);
@@ -78,7 +79,7 @@ export default function NotaGiornataCard({ minutiGiornata }) {
       <div className="flex flex-wrap items-center gap-2">
         <NotebookPen className="w-4 h-4 text-primary" />
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Note della giornata</p>
-        <RegistraNotaGiornata minutiGiornata={minutiGiornata} onSave={salvaAudio} disabled={salvando || !isSuccess} />
+        <RegistraNotaGiornata minutiGiornata={minutiGiornata} nota={testo} onSave={salvaAudio} disabled={salvando || !isSuccess} />
         {esistente && !salvando && esistente.testo === testo && (esistente.dinamica || "") === dinamica &&
         <span role="status" className="flex items-center gap-1 text-[10px] text-emerald-600">
             <Check className="w-3 h-3" /> salvata

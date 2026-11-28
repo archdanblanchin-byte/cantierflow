@@ -5,22 +5,27 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import useRegistrazione, { tempoVocale } from '@/lib/useRegistrazione';
 
-export default function RegistraNotaGiornata({ minutiGiornata, onSave, disabled }) {
+export default function RegistraNotaGiornata({ minutiGiornata, nota, onSave, disabled }) {
   const [avviando, setAvviando] = useState(false);
   const [caricando, setCaricando] = useState(false);
   const [errore, setErrore] = useState('');
   const input = useRef(null);
   const contesto = useRef(null);
-  contesto.current = { minutiGiornata, onSave };
+  contesto.current = { minutiGiornata, nota, onSave, disabled };
   const segnala = messaggio => setErrore(messaggio);
   const analizza = async audio => {
-    const { data } = await base44.functions.invoke('salvaNotaVocaleTimbratura', { azione: 'testo', audio, minutiGiornata: contesto.current.minutiGiornata });
-    if (!data?.testo?.trim()) {
-      segnala('Nessun parlato riconosciuto. La nota precedente è rimasta invariata.');
+    const { nota: originale, minutiGiornata } = contesto.current;
+    const { data } = await base44.functions.invoke('salvaNotaVocaleTimbratura', { azione: 'testo', audio, minutiGiornata, nota: originale });
+    if (typeof data?.testo !== 'string') {
+      segnala('Nessuna modifica riconosciuta. La nota è rimasta invariata.');
+      return;
+    }
+    if (contesto.current.nota !== originale || contesto.current.disabled) {
+      segnala('La nota è cambiata durante l’elaborazione: ripeti la dettatura per non perdere le modifiche.');
       return;
     }
     try {
-      await contesto.current.onSave(data.testo.trim());
+      await contesto.current.onSave(data.testo);
       if (data.avviso) toast.warning(data.avviso);
     } catch {
       segnala('Il testo è nella nota, ma non è stato salvato. Premi Salva nota per riprovare.');

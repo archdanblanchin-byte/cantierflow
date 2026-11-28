@@ -25,17 +25,17 @@ export const promptElenco = (trascrizione) => `Organizza la trascrizione della n
 const soloSeparatori = (s) => /^[\p{P}\s]*$/u.test(s);
 const formatDurata = (minuti) => [Math.floor(minuti / 60) ? `${Math.floor(minuti / 60)} h` : '', minuti % 60 ? `${minuti % 60} min` : ''].filter(Boolean).join(' ');
 
-export function formattaElenco(risultato, trascrizione, totale) {
+export function formattaElenco(risultato, trascrizione, totale, estrattiParziali = false) {
   const voci = risultato?.voci;
   if (!Array.isArray(voci) || !voci.length) return null;
   let fine = 0;
   for (const voce of voci) {
     const estratto = typeof voce?.estratto === 'string' ? voce.estratto.trim() : '';
     const inizio = estratto ? trascrizione.indexOf(estratto, fine) : -1;
-    if (inizio < 0 || !soloSeparatori(trascrizione.slice(fine, inizio))) return null;
+    if (inizio < 0 || (!estrattiParziali && !soloSeparatori(trascrizione.slice(fine, inizio)))) return null;
     fine = inizio + estratto.length;
   }
-  if (!soloSeparatori(trascrizione.slice(fine))) return null;
+  if (!estrattiParziali && !soloSeparatori(trascrizione.slice(fine))) return null;
 
   const residue = voci.filter(v => v.tipo === 'residuo');
   const lavoro = voci.filter(v => v.tipo === 'lavoro');
