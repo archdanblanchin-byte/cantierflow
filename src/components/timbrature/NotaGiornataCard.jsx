@@ -65,8 +65,10 @@ export default function NotaGiornataCard({ minutiGiornata }) {
   };
 
   const salvaAudio = async (aggiunta) => {
-    await salva([testo.trim(), aggiunta].filter(Boolean).join("\n\n"));
+    const contenuto = [testo, aggiunta].filter(parte => parte.trim()).join("\n\n");
+    setTesto(contenuto);
     if (dettagli.current) dettagli.current.open = true;
+    await salva(contenuto);
   };
 
   if (!user) return null;
@@ -77,8 +79,8 @@ export default function NotaGiornataCard({ minutiGiornata }) {
         <NotebookPen className="w-4 h-4 text-primary" />
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Note della giornata</p>
         <RegistraNotaGiornata minutiGiornata={minutiGiornata} onSave={salvaAudio} disabled={salvando || !isSuccess} />
-        {esistente &&
-        <span className="flex items-center gap-1 text-[10px] text-emerald-600">
+        {esistente && !salvando && esistente.testo === testo && (esistente.dinamica || "") === dinamica &&
+        <span role="status" className="flex items-center gap-1 text-[10px] text-emerald-600">
             <Check className="w-3 h-3" /> salvata
           </span>
         }
@@ -88,6 +90,8 @@ export default function NotaGiornataCard({ minutiGiornata }) {
         <div className="mt-2 space-y-2">
       <Textarea
             rows={2}
+            aria-label="Nota della giornata"
+            disabled={salvando || !isSuccess}
             value={testo}
             onChange={(e) => setTesto(e.target.value)}
             className="min-h-[52px] text-base sm:text-sm"
@@ -103,7 +107,9 @@ export default function NotaGiornataCard({ minutiGiornata }) {
               )}
         </ul>
       </div>
-      <DinamicaSelect value={dinamica} onChange={setDinamica} />
+      <fieldset disabled={salvando || !isSuccess}>
+        <DinamicaSelect value={dinamica} onChange={setDinamica} />
+      </fieldset>
       <Button onClick={() => salva(testo).catch(e => toast.error("Errore: " + e.message))} disabled={salvando || !isSuccess} className="w-full gap-2">
         {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
         {esistente ? "Aggiorna nota" : "Salva nota"}
